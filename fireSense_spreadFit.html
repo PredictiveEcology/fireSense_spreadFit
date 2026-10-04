@@ -2995,7 +2995,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">fireSense_spreadFit Manual</h1>
 <h3 class="subtitle">v.1.1.2</h3>
-<h4 class="date">Last updated: 2026-10-01</h4>
+<h4 class="date">Last updated: 2026-10-04</h4>
 
 </div>
 
@@ -3984,7 +3984,7 @@ integer defining the number of replicates the objective function will attempt ea
 </tr>
 <tr>
 <td style="text-align:left;">
-rep
+.rep
 </td>
 <td style="text-align:left;">
 integer
@@ -3999,7 +3999,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-An optional integer indicating which replicate run this represents. This is used to identify unique runs of <code>runDEoptim</code>, from a Cache perspective. For example, if this module is run twice with all the same data, Cache will think that the second run should recover the cache result, unless this <code>rep</code> is modified
+An optional integer indicating which replicate run this represents. This is used to identify unique runs of <code>runDEoptim</code>, from a Cache perspective. For example, if this module is run twice with all the same data, Cache will think that the second run should recover the cache result, unless this <code>.rep</code> is modified. A SpaDES-aware parameter: <code>SpaDES.project::setupProject()</code> sets <code>.globals$.rep</code> from the experiment’s <code>.rep</code>.
 </td>
 </tr>
 <tr>
