@@ -802,6 +802,42 @@ NA
 A simulated fire that burns any pixel of the outer edge of its own buffer is scored as a runaway (at least that big), not as a fire of the size it reached: in the size likelihood it has no density at the observed size, and in the Anderson-Darling and annual-area terms its size is the landscape’s pixel count. Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>; the threshold calibration uses the same setting.
 </td>
 </tr><tr><td style="text-align:left;">
+runawayEdgeFrac
+</td>
+<td style="text-align:left;">
+numeric
+</td>
+<td style="text-align:left;">
+0.01
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+A simulated fire is a runaway when it burns at least <code>max(runawayEdgeMin, ceiling(runawayEdgeFrac n))</code> of the <code>n</code> pixels of the edge ring of its own buffer (never more than <code>n</code>); one touched pixel is luck. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>. Not part of the DEoptim cache key.
+</td>
+</tr><tr><td style="text-align:left;">
+runawayEdgeMin
+</td>
+<td style="text-align:left;">
+integer
+</td>
+<td style="text-align:left;">
+3
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+The least number of edge-ring pixels that makes a fire a runaway; see <code>runawayEdgeFrac</code>.
+</td>
+</tr><tr><td style="text-align:left;">
 jumpTries
 </td>
 <td style="text-align:left;">
@@ -874,7 +910,7 @@ NA
 integer defining the number of replicates the objective function will attempt each fire.
 </td>
 </tr><tr><td style="text-align:left;">
-rep
+.rep
 </td>
 <td style="text-align:left;">
 integer
@@ -889,7 +925,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-An optional integer indicating which replicate run this represents. This is used to identify unique runs of <code>runDEoptim</code>, from a Cache perspective. For example, if this module is run twice with all the same data, Cache will think that the second run should recover the cache result, unless this <code>rep</code> is modified
+An optional integer indicating which replicate run this represents. This is used to identify unique runs of <code>runDEoptim</code>, from a Cache perspective. For example, if this module is run twice with all the same data, Cache will think that the second run should recover the cache result, unless this <code>.rep</code> is modified
 </td>
 </tr><tr><td style="text-align:left;">
 .c

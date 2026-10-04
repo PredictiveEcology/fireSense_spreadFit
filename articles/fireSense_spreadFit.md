@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.1.2"
-date: "Last updated: 2026-10-01"
+date: "Last updated: 2026-10-04"
 output:
   bookdown::html_document2:
     toc: true
@@ -462,12 +462,12 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> integer defining the number of replicates the objective function will attempt each fire. </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> rep </td>
+   <td style="text-align:left;"> .rep </td>
    <td style="text-align:left;"> integer </td>
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> An optional integer indicating which replicate run this represents. This is used to identify unique runs of `runDEoptim`, from a Cache perspective. For example, if this module is run twice with all the same data, Cache will think that the second run should recover the cache result, unless this `rep` is modified </td>
+   <td style="text-align:left;"> An optional integer indicating which replicate run this represents. This is used to identify unique runs of `runDEoptim`, from a Cache perspective. For example, if this module is run twice with all the same data, Cache will think that the second run should recover the cache result, unless this `.rep` is modified. A SpaDES-aware parameter: `SpaDES.project::setupProject()` sets `.globals$.rep` from the experiment's `.rep`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .c </td>
