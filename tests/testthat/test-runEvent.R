@@ -54,7 +54,7 @@ test_that("the simList's own covariate tables are not multiplied by 1000", {
 
 test_that("runDEoptim() receives the parameters, bounds, threshold and formula", {
   out <- fitted(list(iterDEoptim = 40L, nCoresNeeded = 12L, cores = c("hostA", "hostB"),
-                     objfunFireReps = 9L, rep = 3L, DEoptimControl = list(CR = 0.7), .c = 0.4,
+                     objfunFireReps = 9L, .rep = 3L, DEoptimControl = list(CR = 0.7), .c = 0.4,
                      SNLL_FS_thresh = 321L))
   a <- out$rec$deArgs
   expect_identical(a$itermax, 40L)
