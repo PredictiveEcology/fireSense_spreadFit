@@ -22,7 +22,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                  bestCluster = as.data.table(table(P(sim)$cores)))
   }
   messageDF(best$bestCluster)
-  fnName <- paste0("runDEoptim_", runName, "_", P(sim)$rep)
+  fnName <- paste0("runDEoptim_", runName, "_", P(sim)$.rep)
   DE <- Cache(runDEoptim(landscape = sim$rasterToMatch,
                    annualDTx1000 = covs$annualDTx1000,
                    nonAnnualDTx1000 = covs$nonAnnualDTx1000,
@@ -57,7 +57,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    .plotSize = P(sim)$.plotSize,
                    .plots = P(sim)$.plots,
                    plotEvery = P(sim)$.plotInterval,
-                   rep = P(sim)$rep,
+                   rep = P(sim)$.rep,
                    runName = runName,
                    sizeLik = P(sim)$sizeLik,
                    sizeLikDf = P(sim)$sizeLikDf,

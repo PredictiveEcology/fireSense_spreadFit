@@ -1,3 +1,7 @@
+# fireSense_spreadFit (development version)
+
+- The parameter `rep` is renamed `.rep`, a SpaDES-aware parameter like `.studyAreaName`: `SpaDES.project::setupProject()` sets `.globals$.rep` from the experiment's `.rep` (PredictiveEcology/SpaDES.project#190), as `fireSense_spreadPredict` uses it (PredictiveEcology/fireSense_spreadPredict#24). The DEoptim cache names use its value, as before, so cached generations are still found; the event cache key changes once.
+
 # fireSense_spreadFit 1.1.2
 
 - New parameters `runawayEdgeFrac` (`fireSenseUtils::fireSenseRunawayEdgeFrac`, 0.01) and `runawayEdgeMin` (`fireSenseUtils::fireSenseRunawayEdgeMin`, 3L), passed to `fireSenseUtils::runDEoptim()`: a simulated fire is a runaway only when it burns at least `max(runawayEdgeMin, ceiling(runawayEdgeFrac * ring size))` pixels of its buffer's edge ring, not one. Both are also passed to the threshold calibration, and are in `omitArgs` of the DEoptim and calibration `Cache()` calls: the rule only changes how quickly DEoptim moves away from an unlucky draw, so fits cached under the 1-cell rule stay valid. Needs fireSenseUtils >= 0.2.3.9077.
