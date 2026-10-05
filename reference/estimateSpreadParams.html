@@ -4,12 +4,14 @@ sign. Covariate coefficients get +/- upperAndLower, except drought-index terms (
 droughtIndexPattern, e.g. CMD, CMD_sm, cumMDC – lower bound 0, since drought should not
 increase spread probability) and youngAge (upper bound 0, to prevent self-propagating fires).
 Every other term, including any other annual covariate, is symmetric. The two remaining logistic
-parameters get fixed bounds. hillSlope1, the logistic slope, is not among them: it is fixed at
-1, not fitted, because it is not identifiable together with the covariate coefficients – with
-the linear predictor x = covariates %*% beta, hillSlope1 enters the link only as
-hillSlope1 * x, so scaling every coefficient by k and dividing hillSlope1 by k leaves
-every prediction unchanged (fireSenseUtils::fixHillSlope1() reinserts it before the objective
-evaluates par)."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
+parameters get fixed bounds. hillSlope1, the logistic slope, and inflectionPoint1, its Richards
+exponent, are not among them: both are fixed at 1, not fitted. hillSlope1 is not identifiable
+together with the covariate coefficients – with the linear predictor x = covariates %*% beta, it
+enters the link only as hillSlope1 * x, so scaling every coefficient by k and dividing
+hillSlope1 by k leaves every prediction unchanged. inflectionPoint1 is not a location; its
+fitted values were bimodal and spanned the bounds at no cost in the objective, and the
+coefficients explained half of its variance (fireSenseUtils::fixedLogisticPars; fixLogisticPars()
+reinserts both before the objective evaluates par)."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]--></head><body data-spy="scroll" data-target="#toc">
@@ -68,12 +70,14 @@ sign. Covariate coefficients get +/- <code>upperAndLower</code>, except drought-
 <code>droughtIndexPattern</code>, e.g. <code>CMD</code>, <code>CMD_sm</code>, <code>cumMDC</code> – lower bound 0, since drought should not
 increase spread probability) and <code>youngAge</code> (upper bound 0, to prevent self-propagating fires).
 Every other term, including any other annual covariate, is symmetric. The two remaining logistic
-parameters get fixed bounds. <code>hillSlope1</code>, the logistic slope, is not among them: it is fixed at
-1, not fitted, because it is not identifiable together with the covariate coefficients – with
-the linear predictor <code>x = covariates %*% beta</code>, <code>hillSlope1</code> enters the link only as
-<code>hillSlope1 * x</code>, so scaling every coefficient by <code>k</code> and dividing <code>hillSlope1</code> by <code>k</code> leaves
-every prediction unchanged (<code>fireSenseUtils::fixHillSlope1()</code> reinserts it before the objective
-evaluates <code>par</code>).</p>
+parameters get fixed bounds. <code>hillSlope1</code>, the logistic slope, and <code>inflectionPoint1</code>, its Richards
+exponent, are not among them: both are fixed at 1, not fitted. <code>hillSlope1</code> is not identifiable
+together with the covariate coefficients – with the linear predictor <code>x = covariates %*% beta</code>, it
+enters the link only as <code>hillSlope1 * x</code>, so scaling every coefficient by <code>k</code> and dividing
+<code>hillSlope1</code> by <code>k</code> leaves every prediction unchanged. <code>inflectionPoint1</code> is not a location; its
+fitted values were bimodal and spanned the bounds at no cost in the objective, and the
+coefficients explained half of its variance (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fixedLogisticPars.html" class="external-link">fireSenseUtils::fixedLogisticPars</a></code>; <code>fixLogisticPars()</code>
+reinserts both before the objective evaluates <code>par</code>).</p>
     </div>
 
     <div id="ref-usage">
@@ -113,13 +117,13 @@ table membership.</p></dd>
 
 <dt id="arg-uppertailbounds">upperTailBounds<a class="anchor" aria-label="anchor" href="#arg-uppertailbounds"></a></dt>
 <dd><p>numeric; if not <code>NULL</code>, the bounds of <code>upperTail1</code>, which is added after
-<code>inflectionPoint1</code> (link "logistic3pUpper").</p></dd>
+<code>maxAsymptote</code> (link "logistic3pUpper").</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>named numeric vector: <code>maxAsymptote</code>, <code>inflectionPoint1</code>, <code>upperTail1</code> (with
-<code>upperTailBounds</code>), then formula terms. No <code>hillSlope1</code> – it is fixed at 1, not fitted.</p>
+    <p>named numeric vector: <code>maxAsymptote</code>, <code>upperTail1</code> (with <code>upperTailBounds</code>), then formula
+terms. No <code>hillSlope1</code> or <code>inflectionPoint1</code> – both are fixed at 1, not fitted.</p>
     </div>
 
   </div>

@@ -512,7 +512,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-see <code>?DEoptim</code>. Lower limits for the logistic function parameters (lower bound, upper bound, slope, asymmetry) and the statistical model parameters (named in the order they appear in the formula). Do not include <code>hillSlope1</code>: it is fixed at 1, not fitted (see <code><a href="reference/estimateSpreadParams.html">estimateSpreadParams()</a></code>); supplying it is an error.
+see <code>?DEoptim</code>. Lower limits for the logistic function parameters (maxAsymptote, then upperTail1 if <code>link</code> is ‘logistic3pUpper’) and the statistical model parameters (named in the order they appear in the formula). Do not include <code>hillSlope1</code> or <code>inflectionPoint1</code>: they are fixed at 1, not fitted (see <code><a href="reference/estimateSpreadParams.html">estimateSpreadParams()</a></code>); supplying either is an error.
 </td>
 </tr><tr><td style="text-align:left;">
 maxFireSpread
@@ -925,7 +925,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-An optional integer indicating which replicate run this represents. This is used to identify unique runs of <code>runDEoptim</code>, from a Cache perspective. For example, if this module is run twice with all the same data, Cache will think that the second run should recover the cache result, unless this <code>.rep</code> is modified
+An optional integer indicating which replicate run this represents. This is used to identify unique runs of <code>runDEoptim</code>, from a Cache perspective. For example, if this module is run twice with all the same data, Cache will think that the second run should recover the cache result, unless this <code>.rep</code> is modified. A SpaDES-aware parameter: <code><a href="http://spades-project.predictiveecology.org/reference/setupProject.html" class="external-link">SpaDES.project::setupProject()</a></code> sets <code>.globals$.rep</code> from the experiment’s <code>.rep</code>.
 </td>
 </tr><tr><td style="text-align:left;">
 .c
@@ -1122,7 +1122,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-see <code>?DEoptim</code>. Upper limits for the logistic function parameters (lower bound, upper bound, slope, asymmetry) and the statistical model parameters (named in the order they appear in the formula). Do not include <code>hillSlope1</code>: it is fixed at 1, not fitted (see <code><a href="reference/estimateSpreadParams.html">estimateSpreadParams()</a></code>); supplying it is an error.
+see <code>?DEoptim</code>. Upper limits for the logistic function parameters (maxAsymptote, then upperTail1 if <code>link</code> is ‘logistic3pUpper’) and the statistical model parameters (named in the order they appear in the formula). Do not include <code>hillSlope1</code> or <code>inflectionPoint1</code>: they are fixed at 1, not fitted (see <code><a href="reference/estimateSpreadParams.html">estimateSpreadParams()</a></code>); supplying either is an error.
 </td>
 </tr><tr><td style="text-align:left;">
 useCache_DE

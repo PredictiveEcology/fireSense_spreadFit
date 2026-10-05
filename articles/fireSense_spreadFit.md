@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.1.2"
-date: "Last updated: 2026-10-04"
+date: "Last updated: 2026-10-05"
 output:
   bookdown::html_document2:
     toc: true
@@ -283,7 +283,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> see `?DEoptim`. Lower limits for the logistic function parameters (lower bound, upper bound, slope, asymmetry) and the statistical model parameters (named in the order they appear in the formula). Do not include `hillSlope1`: it is fixed at 1, not fitted (see `estimateSpreadParams()`); supplying it is an error. </td>
+   <td style="text-align:left;"> see `?DEoptim`. Lower limits for the logistic function parameters (maxAsymptote, then upperTail1 if `link` is 'logistic3pUpper') and the statistical model parameters (named in the order they appear in the formula). Do not include `hillSlope1` or `inflectionPoint1`: they are fixed at 1, not fitted (see `estimateSpreadParams()`); supplying either is an error. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> maxFireSpread </td>
@@ -555,7 +555,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> see `?DEoptim`. Upper limits for the logistic function parameters (lower bound, upper bound, slope, asymmetry) and the statistical model parameters (named in the order they appear in the formula). Do not include `hillSlope1`: it is fixed at 1, not fitted (see `estimateSpreadParams()`); supplying it is an error. </td>
+   <td style="text-align:left;"> see `?DEoptim`. Upper limits for the logistic function parameters (maxAsymptote, then upperTail1 if `link` is 'logistic3pUpper') and the statistical model parameters (named in the order they appear in the formula). Do not include `hillSlope1` or `inflectionPoint1`: they are fixed at 1, not fitted (see `estimateSpreadParams()`); supplying either is an error. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> useCache_DE </td>
