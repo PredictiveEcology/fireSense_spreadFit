@@ -32,5 +32,5 @@ test_that("the threshold calibration passes runawayEdgeFrac and runawayEdgeMin a
   code <- paste(deparse(def[[1]][[3]]), collapse = "\n")
   expect_match(code, "runawayEdgeFrac = P(sim)$runawayEdgeFrac", fixed = TRUE)
   expect_match(code, "runawayEdgeMin = P(sim)$runawayEdgeMin", fixed = TRUE)
-  expect_match(code, "omitArgs\\s*=\\s*c\\(\"runawayEdgeFrac\", \"runawayEdgeMin\"\\)")
+  expect_match(code, "omitArgs\\s*=\\s*c\\(\"runawayEdgeFrac\", \"runawayEdgeMin\"[,)]")
 })

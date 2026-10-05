@@ -321,6 +321,11 @@ defineModule(sim, list(
   outputObjects = rbind(
     createsOutput("covMinMax_spread", "data.table",
                   desc = "`data.table` of covariates min and max"),
+    createsOutput("covCentre_spread", "list",
+                  desc = paste("Named list, the mean of each rescaled covariate over the fitting data",
+                               "(`fireSenseUtils::spreadCovCentre()`), subtracted from it in the fit; `NULL` unless the",
+                               "formula has an intercept. Stored in the ledger row as",
+                               "`fireSenseUtils::spreadFitCovCentreTxt`, so `fireSense_spreadPredict` centres alike.")),
     createsOutput("DE", "data.table",
                   desc = "list of `DEoptim` objects, one per generation, ordered by best objective value"),
     createsOutput("studyAreaWithSpreadParams", "sf",
@@ -449,7 +454,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         nonAnnualDTx1000 = mod$covsX1000$nonAnnualDTx1000,
         fireBufferedListDT = mod$covsX1000$fireBufferedListDT,
         historicalFires = mod$covsX1000$historicalFires,
-        covMinMax = sim$covMinMax_spread,
+        covMinMax = sim$covMinMax_spread, covCentre = sim$covCentre_spread,
         formulaToFit = sim$fireSense_spreadFormula,
         objfunFireReps = P(sim)$objfunFireReps,
         tests = P(sim)$DEoptimTests,
@@ -677,6 +682,12 @@ spreadFitPrep <- function(sim) {
     fireLociList = sim$lociList,
     paramOrder = P(sim)$upper)
   
+  ## With an intercept the covariates are centred; the centre is found once, from the data the objective
+  ## uses, and every fit, threshold, validation and prediction of this fit uses it (NULL: no intercept).
+  sim$covCentre_spread <- fireSenseUtils::spreadCovCentre(
+    mod$covsX1000$annualDTx1000, mod$covsX1000$nonAnnualDTx1000, sim$fireSense_spreadFormula,
+    covMinMax = sim$covMinMax_spread, mutuallyExclusive = P(sim)[[mec]])
+
   namesWithGTZeroRows <- lapply(mod$covsX1000, function(x) names(x[sapply(x, function(y) NROW(y)) > 0]))
   annualDataNames <- grep("nonAnnual", names(namesWithGTZeroRows), invert = TRUE, value = TRUE)
   keepYearsNamed <- table(unname(unlist(namesWithGTZeroRows[annualDataNames]))) == length(annualDataNames)
@@ -890,7 +901,7 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
       nonAnnualDTx1000 = covs$nonAnnualDTx1000,
       fireBufferedListDT = covs$fireBufferedListDT,
       historicalFires = covs$historicalFires,
-      covMinMax = sim$covMinMax_spread,
+      covMinMax = sim$covMinMax_spread, covCentre = sim$covCentre_spread,
       formulaToFit = sim$fireSense_spreadFormula,
       objfunFireReps = P(sim)$objfunFireReps,
       tests = P(sim)$DEoptimTests,
@@ -937,7 +948,9 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
                                drawActivePars = deparse(drawActivePars),
                                spreadProbGates = deparse(fireSenseUtils::spreadProbGates),
                                spreadProbGateTest = deparse(fireSenseUtils::spreadProbGateTest)),
-            omitArgs = c("runawayEdgeFrac", "runawayEdgeMin"))
+            ## covCentre is NULL without an intercept: omitted then, so thresholds cached before it existed are found
+            omitArgs = c("runawayEdgeFrac", "runawayEdgeMin",
+                         fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread)))
   } else {
     P(sim)$SNLL_FS_thresh
   }
@@ -969,7 +982,8 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
 #' @param upperAndLower numeric; absolute bound for covariate coefficients.
 #' @param upperTailBounds numeric; if not `NULL`, the bounds of `upperTail1`, which is added after
 #'   `maxAsymptote` (link "logistic3pUpper").
-#' @return named numeric vector: `maxAsymptote`, `upperTail1` (with `upperTailBounds`), then formula
+#' @return named numeric vector: `maxAsymptote`, `upperTail1` (with `upperTailBounds`), then
+#'   `fireSenseUtils::spreadInterceptTxt` if the formula has an intercept (`~ 1 + ...`), then formula
 #'   terms. No `hillSlope1` or `inflectionPoint1` -- both are fixed at 1, not fitted.
 estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, whichBound,
                                  upperAndLower, fuelTerms = character(), upperAndLowerFuel = upperAndLower,
@@ -993,6 +1007,11 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
   newParams[whYA] <- ifelse(whichBound == "upper", 0, -(upperAndLower))
 
   names(newParams) <- formulaTerms
+  ## The intercept (a formula with `1 +`) is first among the covariate coefficients. It is the level of
+  ## the linear predictor, so like the covariates it gets a wide symmetric box that does not bind.
+  if (fireSenseUtils::spreadInterceptTxt %in% fireSenseUtils::spreadDesignCols(fireSense_spreadFormula))
+    newParams <- c(stats::setNames(if (whichBound == "upper") upperAndLower else -upperAndLower,
+                                   fireSenseUtils::spreadInterceptTxt), newParams)
 
   if (whichBound == "upper") {
     newParams <- c("maxAsymptote" = 0.276, newParams)

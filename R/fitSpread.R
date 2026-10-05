@@ -45,6 +45,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    mutuallyExclusive = P(sim)$mutuallyExclusiveCols, ## TODO: test
                    formulaToFit = sim$fireSense_spreadFormula,
                    covMinMax = sim$covMinMax_spread,
+                   covCentre = sim$covCentre_spread,
                    objFunCoresInternal = P(sim)$objFunCoresInternal,
                    tests = P(sim)$DEoptimTests,
                    maxFireSpread = P(sim)$maxFireSpread,
@@ -78,7 +79,9 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
         .cacheExtra = fnName,
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
-        omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "runawayEdgeFrac", "runawayEdgeMin"),
+        omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "runawayEdgeFrac", "runawayEdgeMin",
+                     ## NULL without an intercept: omitted then, so fits cached before it existed are found
+                     fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread)),
         useCache = P(sim)$useCache_DE
   )
   ## 1e6 is the objective's fail value (fireSenseUtils::.objfunSpreadFit). A population that is all
@@ -219,7 +222,7 @@ crossValidateSpreadOneFold <- function(sim, covs, k) {
 ## The objective's arguments for simulating `covs`' years; the likelihood options do not matter, the
 ## escape rule does (the fit simulates every fire from its escape size)
 spreadObjFunArgs <- function(sim, covs) {
-  list(landscape = sim$rasterToMatch,
+  args <- list(landscape = sim$rasterToMatch,
        annualDTx1000 = covs$annualDTx1000, nonAnnualDTx1000 = covs$nonAnnualDTx1000,
        fireBufferedListDT = covs$fireBufferedListDT, historicalFires = covs$historicalFires,
        formulaToFit = sim$fireSense_spreadFormula, covMinMax = sim$covMinMax_spread,
@@ -228,4 +231,8 @@ spreadObjFunArgs <- function(sim, covs) {
        mutuallyExclusive = P(sim)$mutuallyExclusiveCols, doAssertions = FALSE, verbose = 0,
        link = spreadLink(P(sim)$link), escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
        jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist)
+  ## the fit's centre, not the held-out years': assigning NULL adds nothing, so without an intercept the
+  ## arguments (and the cache key of the simulation that holds them) are what they were
+  args$covCentre <- sim$covCentre_spread
+  args
 }
