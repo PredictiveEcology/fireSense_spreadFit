@@ -288,10 +288,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> maxFireSpread </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 0.28 </td>
+   <td style="text-align:left;"> 0.276 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> optional. Maximum fire spread average to be passed to the `.objFun`. This puts an upper limit on `spreadProb` during optimization. </td>
+   <td style="text-align:left;"> optional. Maximum fire spread average to be passed to the `.objFun`; default `fireSenseUtils::spreadProbCeiling`, also the upper bound of `maxAsymptote`. `maxAsymptote` is the spread-probability ceiling in a typical year. The year random effect (`yearSpreadSD`) is added on the logit of the final spread probability, after the link, so in a given year p can exceed `maxAsymptote` or fall below `lowerSpreadProb`; that is intended, and there is no absolute cap because `spreadCpp` does not need one. `maxAsymptote` is bounded because runaway fires are slow to simulate and wasted if the parameters are wrong. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> link </td>
@@ -587,7 +587,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> c(0, 100.... </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Named list of `c(min, max)`: covariates rescaled with this FIXED range and not with the range of this polygon's data. `CMDsm = c(0, 100)` makes the covariate CMDsm / 100 in every polygon. With the data's range, 1 meant a CMDsm of 104 in one polygon and 297 in another, so the coefficient could not be compared across polygons, and a polygon that never gets dry stretched its small range over [0, 1]. Names not among the covariates are ignored. `fireSense_spreadPredict` rescales with the stored `covMinMax_spread`, so it follows. CMD, CMDsp and cumMDC (also mm) are the other candidates of fireSense_dataPrepFit's `spread = 'auto'`, so an ELF that picks one of them gets the same fixed scale. </td>
+   <td style="text-align:left;"> Named list of `c(min, max)`: the FIXED range every climate covariate is rescaled with, not the range of this polygon's data. Default `fireSenseUtils::climateCovRanges`, the one table of climate ranges, which documents each variable's units and says its values are provisional. `CMDsm = c(0, 100)` makes the covariate CMDsm / 100 in every polygon. With the data's range, 1 meant a CMDsm of 104 in one polygon and 297 in another, so the coefficient could not be compared across polygons, and a polygon that never gets dry stretched its small range over [0, 1]. A climate covariate with no entry stops the fit; there is no fallback to the data's range. `youngAge`, the `nfLCC_ ` groups and the `treedWetland` indicator are always `c(0, 1)` (`fireSenseUtils::spreadIndicatorRanges()`). `fireSense_spreadPredict` rescales with the stored `covMinMax_spread`, so it follows. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> yearSpreadSDBounds </td>

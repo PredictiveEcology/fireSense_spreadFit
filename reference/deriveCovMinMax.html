@@ -59,7 +59,12 @@ the data's, so that rescaling is <code>biomass / 1e4</code> in every polygon and
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">deriveCovMinMax</span><span class="op">(</span><span class="va">annualList</span>, <span class="va">nonAnnualList</span>, <span class="va">fuelCols</span>, fixedRange <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">deriveCovMinMax</span><span class="op">(</span></span>
+<span>  <span class="va">annualList</span>,</span>
+<span>  <span class="va">nonAnnualList</span>,</span>
+<span>  <span class="va">fuelCols</span>,</span>
+<span>  fixedRange <span class="op">=</span> <span class="fu">fireSenseUtils</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/fireSenseUtils/man/climateCovRanges.html" class="external-link">climateCovRanges</a></span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -79,12 +84,15 @@ the data's, so that rescaling is <code>biomass / 1e4</code> in every polygon and
 
 
 <dt id="arg-fixedrange">fixedRange<a class="anchor" aria-label="anchor" href="#arg-fixedrange"></a></dt>
-<dd><p>named list of <code>c(min, max)</code> that replace the data's range for those covariates.</p></dd>
+<dd><p>named list of <code>c(min, max)</code> that replace the data's range for those covariates;
+default <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/climateCovRanges.html" class="external-link">fireSenseUtils::climateCovRanges</a></code>. Every annual covariate that is not a 0/1 indicator is
+climate and must be in it, or this stops. Indicators are always <code>c(0, 1)</code>.</p></dd>
 
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p><code>data.table</code> with 2 rows (min, max) and one column per covariate.</p>
+    <p><code>data.table</code> with 2 rows (min, max) and one column per covariate. Stops if a covariate that
+is not given a fixed range has max &lt;= min.</p>
     </div>
 
   </div>
