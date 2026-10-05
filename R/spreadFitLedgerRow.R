@@ -9,7 +9,7 @@
 #'   `missingLCCgroup` and `covMinMax_spread`.
 #' @param numIterations integer, the number of DEoptim generations.
 #' @param objFunVal numeric, the objective values of the members in `params`.
-#' @param params `data.table`, one row per member, with `hillSlope1` (see `addHillSlope1ToLedger()`).
+#' @param params `data.table`, one row per member, with `hillSlope1` and `inflectionPoint1` (see `addFixedParsToLedger()`).
 #' @return an `sf` object with one row.
 spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params) {
   ## covMinMax_spread: prediction rescales covariates with it, exactly as this fit did

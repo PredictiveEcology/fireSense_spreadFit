@@ -68,7 +68,7 @@ test_that("runDEoptim() receives the parameters, bounds, threshold and formula",
   expect_identical(a$runName, "toyRun")
   expect_identical(a$formulaToFit, "~ 0 + CMDsm + youngAge + class1 + class2 + nf")
   expect_identical(a$lower, m(out$sim)$lower)
-  expect_identical(names(a$upper), c("maxAsymptote", "inflectionPoint1",
+  expect_identical(names(a$upper), c("maxAsymptote",
                                      "CMDsm", "youngAge", "class1", "class2", "nf", "yearSpreadSD"))
   expect_identical(a$mutuallyExclusive, list(youngAge = c("class", "nonForest", "class1", "class2", "nf")))
   expect_identical(a$covMinMax, out$sim$covMinMax_spread)
@@ -118,11 +118,13 @@ test_that("the ledger row: polygon id, 5 best members, their values, and the cov
   expect_identical(row$numIterations[[1]], 3L)           # toyDE() has 3 blocks
   ## toyDE(): member k has first parameter k and value 8 - k, so the 5 best are members 7..3
   best <- row$params[[1]]
-  ## hillSlope1 is fixed at 1, not fitted, so it is not in names(m(out$sim)$lower); the ledger row
-  ## gets it back, right after maxAsymptote, so it predicts like an old row (addHillSlope1ToLedger())
-  expect_identical(names(best), append(names(m(out$sim)$lower), "hillSlope1", after = 1L))
+  ## hillSlope1 and inflectionPoint1 are fixed at 1, not fitted, so they are not in
+  ## names(m(out$sim)$lower); the ledger row gets them back, right after maxAsymptote, so it predicts
+  ## like an old row (addFixedParsToLedger())
+  expect_identical(names(best), append(names(m(out$sim)$lower), c("hillSlope1", "inflectionPoint1"), after = 1L))
   expect_equal(best$maxAsymptote, c(7, 6, 5, 4, 3))
   expect_identical(best$hillSlope1, rep(1, 5))
+  expect_identical(best$inflectionPoint1, rep(1, 5))
   expect_equal(row$objFunVal[[1]], c(1, 2, 3, 4, 5))
   expect_identical(row$covMinMax_spread[[1]], out$sim$covMinMax_spread)
   expect_true(sf::st_equals(row, toyStudyArea(), sparse = FALSE)[1, 1])

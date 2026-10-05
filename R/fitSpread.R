@@ -174,7 +174,7 @@ fitAndScoreFold <- function(sim, covs, fold, k) {
              .functionName = paste0("simulateHeldOut_", sim$.runName, "_cvFold", k))
   ## the held-out years only: observed against simulated burning from the other fold's fit
   spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], heldCovs, paste0(sim$.runName, "_cvFold", k, "_heldOut"))
-  fit <- spreadFitLedgerRow(sim, length(DE), best$objFunVal, addHillSlope1ToLedger(best$params))
+  fit <- spreadFitLedgerRow(sim, length(DE), best$objFunVal, addFixedParsToLedger(best$params))
   list(sims = data.table(fold = k, s), fit = fit,
        fitYears = years[fold != k], heldOutYears = years[fold == k])
 }
