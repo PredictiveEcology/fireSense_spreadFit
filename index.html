@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.4</span>
       </span>
     </div>
 
@@ -1501,6 +1501,17 @@ data.table
 </td>
 <td style="text-align:left;">
 <code>data.table</code> of covariates min and max
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+covCentre_spread
+</td>
+<td style="text-align:left;">
+list
+</td>
+<td style="text-align:left;">
+Named list, the mean of each rescaled covariate over the fitting data (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadCovCentre.html" class="external-link">fireSenseUtils::spreadCovCentre()</a></code>), subtracted from it in the fit; <code>NULL</code> unless the formula has an intercept. Stored in the ledger row as <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadFitCovCentreTxt</a></code>, so <code>fireSense_spreadPredict</code> centres alike.
 </td>
 </tr>
 <tr>
