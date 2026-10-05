@@ -9,7 +9,7 @@ annual <- list(year2001 = data.table::data.table(pixelID = 1L, CMDsm = 1, youngA
 test_that("upper bounds: +B for covariates, 0 for youngAge, maxAsymptote first, no hillSlope1 or inflectionPoint1", {
   expect_identical(
     estimateSpreadParams(form, annual, whichBound = "upper", upperAndLower = 9),
-    c(maxAsymptote = 0.276,
+    c(maxAsymptote = fireSenseUtils::spreadProbCeiling,
       CMDsm = 9, youngAge = 0, class1 = 9, nf = 9))
   expect_false(any(names(fireSenseUtils::fixedLogisticPars) %in%
                      names(estimateSpreadParams(form, annual, "upper", upperAndLower = 9))))

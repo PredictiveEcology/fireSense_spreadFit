@@ -83,9 +83,15 @@ defineModule(sim, list(
                                  "appear in the formula). Do not include `hillSlope1` or `inflectionPoint1`:",
                                  "they are fixed at 1, not fitted (see `estimateSpreadParams()`); supplying",
                                  "either is an error.")),
-    defineParameter("maxFireSpread", "numeric", default = 0.28,
-                    desc = paste0("optional. Maximum fire spread average to be passed to the `.objFun`. ",
-                                  "This puts an upper limit on `spreadProb` during optimization.")),
+    defineParameter("maxFireSpread", "numeric", default = fireSenseUtils::spreadProbCeiling,
+                    desc = paste0("optional. Maximum fire spread average to be passed to the `.objFun`; default ",
+                                  "`fireSenseUtils::spreadProbCeiling`, also the upper bound of `maxAsymptote`. ",
+                                  "`maxAsymptote` is the spread-probability ceiling in a typical year. The year random ",
+                                  "effect (`yearSpreadSD`) is added on the logit of the final spread probability, after the ",
+                                  "link, so in a given year p can exceed `maxAsymptote` or fall below `lowerSpreadProb`; ",
+                                  "that is intended, and there is no absolute cap because `spreadCpp` does not need one. ",
+                                  "`maxAsymptote` is bounded because runaway fires are slow to simulate and wasted if the ",
+                                  "parameters are wrong.")),
     defineParameter("link", "character", default = "logistic3p",
                     desc = paste("The spread link. 'logistic3p', or 'logistic3pUpper': the same curve with",
                                  "Stukel's upper tail, one more parameter `upperTail1` that changes only how the",
@@ -254,16 +260,17 @@ defineModule(sim, list(
     defineParameter("visualizeDEoptim", "Path", default = asPath(figurePath(sim)),
                     desc = paste("Directory where `runDEoptim` saves parameter plots every `.plotInterval` generations.",
                                  "Reset to `figurePath(sim)` unless its last folder is the module name.")),
-    defineParameter("covFixedRange", "list", default = list(CMDsm = c(0, 100), CMD = c(0, 100), CMDsp = c(0, 100),
-                                                            cumMDC = c(0, 100)),
-                    desc = paste("Named list of `c(min, max)`: covariates rescaled with this FIXED range and not with the",
-                                 "range of this polygon's data. `CMDsm = c(0, 100)` makes the covariate CMDsm / 100 in every",
-                                 "polygon. With the data's range, 1 meant a CMDsm of 104 in one polygon and 297 in another,",
-                                 "so the coefficient could not be compared across polygons, and a polygon that never gets",
-                                 "dry stretched its small range over [0, 1]. Names not among the covariates are ignored.",
-                                 "`fireSense_spreadPredict` rescales with the stored `covMinMax_spread`, so it follows. CMD, CMDsp and",
-                                 "cumMDC (also mm) are the other candidates of fireSense_dataPrepFit's `spread = 'auto'`,",
-                                 "so an ELF that picks one of them gets the same fixed scale.")),
+    defineParameter("covFixedRange", "list", default = fireSenseUtils::climateCovRanges,
+                    desc = paste("Named list of `c(min, max)`: the FIXED range every climate covariate is rescaled with, not",
+                                 "the range of this polygon's data. Default `fireSenseUtils::climateCovRanges`, the one table of",
+                                 "climate ranges, which documents each variable's units and says its values are provisional.",
+                                 "`CMDsm = c(0, 100)` makes the covariate CMDsm / 100 in every polygon. With the data's range,",
+                                 "1 meant a CMDsm of 104 in one polygon and 297 in another, so the coefficient could not be",
+                                 "compared across polygons, and a polygon that never gets dry stretched its small range over",
+                                 "[0, 1]. A climate covariate with no entry stops the fit; there is no fallback to the data's",
+                                 "range. `youngAge`, the `nfLCC_*` groups and the `treedWetland` indicator are always `c(0, 1)`",
+                                 "(`fireSenseUtils::spreadIndicatorRanges()`). `fireSense_spreadPredict` rescales with the",
+                                 "stored `covMinMax_spread`, so it follows.")),
     defineParameter("yearSpreadSDBounds", "numeric", default = c(0, 1),
                     desc = paste("Bounds of `yearSpreadSD`, the sd of a per-year random effect on logit spread",
                                  "probability (`fireSenseUtils::.objfunSpreadFit()`), when `lower`/`upper` are not",
@@ -720,9 +727,12 @@ fuelColumns <- function(nonAnnualList) {
 #' @param annualList list of `data.table`s of annual covariates, one per year.
 #' @param nonAnnualList list of `data.table`s of non-annual covariates, fuel biomass on the LINEAR scale.
 #' @param fuelCols names of the fuel biomass columns, from [fuelColumns()].
-#' @param fixedRange named list of `c(min, max)` that replace the data's range for those covariates.
-#' @return `data.table` with 2 rows (min, max) and one column per covariate.
-deriveCovMinMax <- function(annualList, nonAnnualList, fuelCols, fixedRange = list()) {
+#' @param fixedRange named list of `c(min, max)` that replace the data's range for those covariates;
+#'   default `fireSenseUtils::climateCovRanges`. Every annual covariate that is not a 0/1 indicator is
+#'   climate and must be in it, or this stops. Indicators are always `c(0, 1)`.
+#' @return `data.table` with 2 rows (min, max) and one column per covariate. Stops if a covariate that
+#'   is not given a fixed range has max <= min.
+deriveCovMinMax <- function(annualList, nonAnnualList, fuelCols, fixedRange = fireSenseUtils::climateCovRanges) {
 
   nonAnnRescales <- rbindlist(nonAnnualList)
   vals1 <- setdiff(colnames(nonAnnRescales), "pixelID")
@@ -748,12 +758,27 @@ deriveCovMinMax <- function(annualList, nonAnnualList, fuelCols, fixedRange = li
   vals2 <- setdiff(colnames(annRescales), c("buffer", "pixelID", "ids"))
   covMinMax2 <- annRescales[, lapply(.SD, range), .SDcols = vals2]
   covMinMax <- cbind(covMinMax1, covMinMax2)
+  ## 0/1 indicators (youngAge, nfLCC_*, treedWetland) are always c(0, 1): the data's range of a constant
+  ## one is 0 wide and rescaleKnown2() would divide by 0. An annual column that is not one is climate, and
+  ## has no fallback to the data's range: it needs an entry in `fixedRange`.
+  indicatorRange <- fireSenseUtils::spreadIndicatorRanges(names(covMinMax))
+  noRange <- setdiff(vals2, c(names(indicatorRange), names(fixedRange)))
+  if (length(noRange))
+    stop("fireSense_spreadFit: climate covariate(s) ", paste0("'", noRange, "'", collapse = ", "),
+         " have no fixed range. Add each to fireSenseUtils::climateCovRanges (or to the `covFixedRange` ",
+         "parameter); climate is never rescaled with the data's range.")
+  fixedRange <- c(indicatorRange, fixedRange[setdiff(names(fixedRange), names(indicatorRange))])
   ## a fixed range is the same in every polygon and every predicted year; the data's range is neither
   for (cn in intersect(names(fixedRange), names(covMinMax))) {
     stopifnot(length(fixedRange[[cn]]) == 2L, is.numeric(fixedRange[[cn]]), fixedRange[[cn]][2] > fixedRange[[cn]][1])
     ## an NA in the data must still reach spreadFitPrep()'s check, so a range that is NA is left NA
     if (!anyNA(covMinMax[[cn]])) set(covMinMax, NULL, cn, as.numeric(fixedRange[[cn]]))
   }
+  ## what is left has the data's range: a covariate that is constant cannot be rescaled (0 / 0)
+  flat <- names(covMinMax)[vapply(covMinMax, function(r) isTRUE(r[2] <= r[1]), logical(1))]
+  if (length(flat))
+    stop("fireSense_spreadFit: covariate(s) ", paste0("'", flat, "'", collapse = ", "),
+         " are constant in the data (max <= min), so they cannot be rescaled. Remove them from the formula.")
   covMinMax
 }
 
@@ -1014,7 +1039,7 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
                                    fireSenseUtils::spreadInterceptTxt), newParams)
 
   if (whichBound == "upper") {
-    newParams <- c("maxAsymptote" = 0.276, newParams)
+    newParams <- c("maxAsymptote" = fireSenseUtils::spreadProbCeiling, newParams)
   } else {
     newParams <- c("maxAsymptote" = 0.25, newParams)
   }

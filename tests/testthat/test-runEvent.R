@@ -73,7 +73,7 @@ test_that("runDEoptim() receives the parameters, bounds, threshold and formula",
   expect_identical(a$mutuallyExclusive, list(youngAge = c("class", "nonForest", "class1", "class2", "nf")))
   expect_identical(a$covMinMax, out$sim$covMinMax_spread)
   expect_identical(a$tests, c("adTest", "SNLL_FS"))
-  expect_identical(a$maxFireSpread, 0.28)
+  expect_identical(a$maxFireSpread, fireSenseUtils::spreadProbCeiling)
 })
 
 test_that("runDEoptim() always receives iterStep = 1, even if a user still sets the (now unknown) parameter", {
