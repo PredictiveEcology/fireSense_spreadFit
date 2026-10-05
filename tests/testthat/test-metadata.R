@@ -36,7 +36,8 @@ test_that("outputs are the expected names and classes", {
   outputs <- stats::setNames(md$outputObjects$objectClass, md$outputObjects$objectName)
   expect_identical(
     outputs[order(names(outputs))],
-    c(covMinMax_spread          = "data.table",
+    c(covCentre_spread          = "list",
+      covMinMax_spread          = "data.table",
       DE                        = "data.table",
       fsSpreadFit_hists         = "ggplot",
       lociList                  = "list",
