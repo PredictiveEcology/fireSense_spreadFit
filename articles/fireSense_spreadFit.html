@@ -1531,6 +1531,17 @@ data.table
 </tr>
 <tr>
 <td style="text-align:left;">
+covCentre_spread
+</td>
+<td style="text-align:left;">
+list
+</td>
+<td style="text-align:left;">
+Named list, the mean of each rescaled covariate over the fitting data (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadCovCentre.html" class="external-link">fireSenseUtils::spreadCovCentre()</a></code>), subtracted from it in the fit; <code>NULL</code> unless the formula has an intercept. Stored in the ledger row as <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadFitCovCentreTxt</a></code>, so <code>fireSense_spreadPredict</code> centres alike.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 DE
 </td>
 <td style="text-align:left;">

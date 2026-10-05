@@ -662,6 +662,11 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-sprea
    <td style="text-align:left;"> `data.table` of covariates min and max </td>
   </tr>
   <tr>
+   <td style="text-align:left;"> covCentre_spread </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> Named list, the mean of each rescaled covariate over the fitting data (`fireSenseUtils::spreadCovCentre()`), subtracted from it in the fit; `NULL` unless the formula has an intercept. Stored in the ledger row as `fireSenseUtils::spreadFitCovCentreTxt`, so `fireSense_spreadPredict` centres alike. </td>
+  </tr>
+  <tr>
    <td style="text-align:left;"> DE </td>
    <td style="text-align:left;"> data.table </td>
    <td style="text-align:left;"> list of `DEoptim` objects, one per generation, ordered by best objective value </td>
