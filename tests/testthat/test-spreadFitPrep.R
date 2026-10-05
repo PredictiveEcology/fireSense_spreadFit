@@ -90,8 +90,8 @@ test_that("covMinMax_spread: fixed range for fuel, own range for cover and annua
                         CMDsm = c(0, 100), youngAge = c(0, 1)))
 })
 
-test_that("covFixedRange = list() goes back to the data's range for CMDsm", {
-  expect_identical(prepared(list(covFixedRange = list()))$covMinMax_spread$CMDsm, c(10, 40))
+test_that("covFixedRange = list() no longer falls back to the data's range for CMDsm: the fit stops", {
+  expect_error(prepared(list(covFixedRange = list())), "'CMDsm'.*climateCovRanges")
 })
 
 test_that("rescaleAll = FALSE leaves covMinMax_spread unset", {
