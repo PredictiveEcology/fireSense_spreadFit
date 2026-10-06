@@ -321,6 +321,10 @@ defineModule(sim, list(
                  desc = "template raster for study area"),
     expectsInput("spreadFirePoints", "sf",
                  desc = "list of `sf` points, one element per year, of fire ignition locations"),
+    expectsInput("studyAreaWithSpreadParams", "sf",
+                 desc = paste("Rows of the shared fit ledger, set by `fireSense_dataPrepFit`; `init` checks them for a",
+                              "fit of this polygon. Declared as an input so the event's cache key includes it,",
+                              "otherwise a cache hit restores an older copy over the current rows.")),
     expectsInput("studyArea", "sf",
                  desc = "Polygon being fit; its geometry and crs go in the ledger row. Defaults to NWT.",
                  sourceURL = "https://drive.google.com/open?id=1LUxoY2-pgkCmmNH5goagBp3IMpj6YrdU")

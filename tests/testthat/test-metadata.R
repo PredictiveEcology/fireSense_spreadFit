@@ -27,8 +27,17 @@ test_that("inputs are the expected names and classes", {
       rasterToMatch                          = "SpatRaster",
       spreadFirePoints                       = "sf",
       spreadFitAdditionalColNames            = "character",
-      studyArea                              = "sf")
+      studyArea                              = "sf",
+      studyAreaWithSpreadParams              = "sf")
   )
+})
+
+## The init event reads the ledger rows dataPrepFit sets; an object that is only an output is
+## left out of the event's cache key, and a cache hit then restores a stale copy over it.
+test_that("studyAreaWithSpreadParams is both an input and an output", {
+  md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
+  expect_true("studyAreaWithSpreadParams" %in% md$inputObjects$objectName)
+  expect_true("studyAreaWithSpreadParams" %in% md$outputObjects$objectName)
 })
 
 test_that("outputs are the expected names and classes", {

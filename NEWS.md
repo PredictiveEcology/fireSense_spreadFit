@@ -1,3 +1,7 @@
+# fireSense_spreadFit (development version)
+
+- `studyAreaWithSpreadParams` is now declared as an `expectsInput` (it stays a `createsOutput`). `init` reads the ledger rows `fireSense_dataPrepFit` sets, but as an output only it was not in the event's cache key, so a cache hit restored the rows from an older job (ELF 14.3: 720 iterations, no intercept) over the current ones and `fireSense_spreadPredict` failed on missing covariates.
+
 # fireSense_spreadFit 1.1.5
 
 - `covFixedRange` defaults to `fireSenseUtils::climateCovRanges`, the one table of climate ranges (values unchanged, 0-100, and provisional), and a climate covariate with no entry stops the fit, naming it: there is no fallback to the data's range, so `covFixedRange = list()` now stops. `youngAge`, the `nfLCC_*` groups and the `treedWetland` indicator are always `c(0, 1)` (`fireSenseUtils::spreadIndicatorRanges()`), so a constant one no longer rescales by 0 / 0; `deriveCovMinMax()` stops, naming it, on any covariate left with max <= min. `maxFireSpread` defaults to, and the upper bound of `maxAsymptote` is, `fireSenseUtils::spreadProbCeiling` (0.276; `maxFireSpread` was 0.28). Docs: `maxAsymptote` is the ceiling in a typical year; the year random effect acts on the logit after the link, so a year's p can pass it. Fits change and cached fits re-key. Needs the `fireSenseUtils` change in PredictiveEcology/fireSenseUtils (floor to be set once it has a version).
