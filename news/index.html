@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.5</span>
       </span>
     </div>
 
@@ -53,6 +53,11 @@
 
     <div class="section level2">
 <h2 class="page-header" data-toc-text="development version" id="firesense_spreadfit-development-version">fireSense_spreadFit (development version)<a class="anchor" aria-label="anchor" href="#firesense_spreadfit-development-version"></a></h2>
+<ul><li>
+<code>studyAreaWithSpreadParams</code> is now declared as an <code>expectsInput</code> (it stays a <code>createsOutput</code>). <code>init</code> reads the ledger rows <code>fireSense_dataPrepFit</code> sets, but as an output only it was not in the event’s cache key, so a cache hit restored the rows from an older job (ELF 14.3: 720 iterations, no intercept) over the current ones and <code>fireSense_spreadPredict</code> failed on missing covariates.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.1.5" id="firesense_spreadfit-115">fireSense_spreadFit 1.1.5<a class="anchor" aria-label="anchor" href="#firesense_spreadfit-115"></a></h2>
 <ul><li>
 <code>covFixedRange</code> defaults to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/climateCovRanges.html" class="external-link">fireSenseUtils::climateCovRanges</a></code>, the one table of climate ranges (values unchanged, 0-100, and provisional), and a climate covariate with no entry stops the fit, naming it: there is no fallback to the data’s range, so <code>covFixedRange = list()</code> now stops. <code>youngAge</code>, the <code>nfLCC_*</code> groups and the <code>treedWetland</code> indicator are always <code>c(0, 1)</code> (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadIndicators.html" class="external-link">fireSenseUtils::spreadIndicatorRanges()</a></code>), so a constant one no longer rescales by 0 / 0; <code><a href="../reference/deriveCovMinMax.html">deriveCovMinMax()</a></code> stops, naming it, on any covariate left with max &lt;= min. <code>maxFireSpread</code> defaults to, and the upper bound of <code>maxAsymptote</code> is, <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadProbBounds.html" class="external-link">fireSenseUtils::spreadProbCeiling</a></code> (0.276; <code>maxFireSpread</code> was 0.28). Docs: <code>maxAsymptote</code> is the ceiling in a typical year; the year random effect acts on the logit after the link, so a year’s p can pass it. Fits change and cached fits re-key. Needs the <code>fireSenseUtils</code> change in PredictiveEcology/fireSenseUtils (floor to be set once it has a version).</li>
 </ul></div>

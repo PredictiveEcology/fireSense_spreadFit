@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.1.4"
-date: "Last updated: 2026-10-05"
+subtitle: "v.1.1.5"
+date: "Last updated: 2026-10-06"
 output:
   bookdown::html_document2:
     toc: true
@@ -138,6 +138,12 @@ Table \@ref(tab:moduleInputs-fireSense-spreadFit) shows the full list of module 
    <td style="text-align:left;"> spreadFirePoints </td>
    <td style="text-align:left;"> sf </td>
    <td style="text-align:left;"> list of `sf` points, one element per year, of fire ignition locations </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> studyAreaWithSpreadParams </td>
+   <td style="text-align:left;"> sf </td>
+   <td style="text-align:left;"> Rows of the shared fit ledger, set by `fireSense_dataPrepFit`; `init` checks them for a fit of this polygon. Declared as an input so the event's cache key includes it, otherwise a cache hit restores an older copy over the current rows. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
