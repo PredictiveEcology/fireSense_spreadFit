@@ -15,7 +15,7 @@ test_that("default bounds are built from the formula and the annual covariates, 
   expect_identical(p$upper, c(maxAsymptote = 0.276,
                               CMDsm = 50, youngAge = 0, class1 = 100, class2 = 100, nf = 50, yearSpreadSD = 1))
   expect_identical(p$lower, c(maxAsymptote = 0.25,
-                              CMDsm = 0, youngAge = -50, class1 = -100, class2 = -100, nf = -50, yearSpreadSD = 0))
+                              CMDsm = 0, youngAge = -50, class1 = 0, class2 = 0, nf = -50, yearSpreadSD = 0))
   expect_false(any(c("hillSlope1", "inflectionPoint1") %in% c(names(p$upper), names(p$lower))))
 })
 
@@ -23,7 +23,7 @@ test_that("upperAndLowerValFuel sets the fuel bounds, and only those", {
   ## fuel is biomass / 1e4, not [0, 1]: bounds should be wide enough not to bind, not narrow
   p <- P1(prepared(list(upperAndLowerValFuel = 25)))
   expect_identical(unname(p$upper[c("class1", "class2", "nf", "CMDsm")]), c(25, 25, 50, 50))
-  expect_identical(unname(p$lower[c("class1", "class2", "nf", "youngAge")]), c(-25, -25, -50, -50))
+  expect_identical(unname(p$lower[c("class1", "class2", "nf", "youngAge")]), c(0, 0, -50, -50))  # fuel lower is 0
 })
 
 test_that("upperAndLowerVal sets the size of the default bounds", {
@@ -38,7 +38,7 @@ test_that("supplied bounds are kept; only the missing one is filled", {
           CMDsm = 1, youngAge = 0, class1 = 2, class2 = 3, nf = 4)
   p <- P1(prepared(list(upper = up)))
   expect_identical(p$upper, up)
-  expect_identical(unname(p$lower[c("class1", "nf")]), c(-100, -50))
+  expect_identical(unname(p$lower[c("class1", "nf")]), c(0, -50))
   ## the supplied upper has no yearSpreadSD, so the filled-in lower has none either
   expect_identical(names(p$lower), names(up))
 })

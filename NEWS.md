@@ -1,5 +1,6 @@
 # fireSense_spreadFit (development version)
 
+- Default DEoptim bounds: fuel biomass coefficients (`dom_agb_*`, `sec_agb_*`, `treedWetland_agb`) now have a lower bound of 0 (upper still `upperAndLowerValFuel`), as drought terms do. With the intercept and centred covariates, fits put the intercept near the spread-probability ceiling and gave fuel biomass negative coefficients, so low-biomass (recently burned) stands were the most flammable. That positive feedback produced runaway fires 3-6 times the observed area in NRV runs (ELFs 5.4 and 14.3). With fuel >= 0, more fuel can only raise spread probability and the intercept must come down. Fits change and cached fits re-key.
 - `studyAreaWithSpreadParams` is now declared as an `expectsInput` (it stays a `createsOutput`). `init` reads the ledger rows `fireSense_dataPrepFit` sets, but as an output only it was not in the event's cache key, so a cache hit restored the rows from an older job (ELF 14.3: 720 iterations, no intercept) over the current ones and `fireSense_spreadPredict` failed on missing covariates.
 
 # fireSense_spreadFit 1.1.5
