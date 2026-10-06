@@ -23,6 +23,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
   }
   messageDF(best$bestCluster)
   fnName <- paste0("runDEoptim_", runName, "_", P(sim)$.rep)
+  runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)
   DE <- Cache(runDEoptim(landscape = sim$rasterToMatch,
                    annualDTx1000 = covs$annualDTx1000,
                    nonAnnualDTx1000 = covs$nonAnnualDTx1000,
@@ -73,6 +74,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    penaliseRunaways = P(sim)$penaliseRunaways,
                    runawayEdgeFrac = P(sim)$runawayEdgeFrac,
                    runawayEdgeMin = P(sim)$runawayEdgeMin,
+                   runawayBufferMultiple = runawayMultiple,
                    profileReps = if (diagnostics) P(sim)$profileReps else 0L,
                    simulateMembers = if (diagnostics) P(sim)$simulateMembers else 0L),
         .functionName = fnName,
@@ -80,8 +82,10 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
         omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "runawayEdgeFrac", "runawayEdgeMin",
-                     ## NULL without an intercept: omitted then, so fits cached before it existed are found
-                     fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread)),
+                     ## NULL without an intercept (or with runawayBufferMultiple NA): omitted then, so fits
+                     ## cached before it existed are found
+                     fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread,
+                                                  runawayBufferMultiple = runawayMultiple)),
         useCache = P(sim)$useCache_DE
   )
   ## 1e6 is the objective's fail value (fireSenseUtils::.objfunSpreadFit). A population that is all
@@ -98,6 +102,10 @@ spreadLink <- function(link) if (identical(link, "logistic3pUpper")) link
 
 ## `escapeSizeHa` as the objective takes it: NULL (the old fit) for NULL or NA
 escapeSizeHaOrNULL <- function(x) if (length(x) && !is.na(x)) x
+
+## `runawayBufferMultiple` as the objective takes it, by the same rule: NULL (a runaway scores the size it
+## burned) for NULL or NA
+runawayBufferMultipleOrNULL <- escapeSizeHaOrNULL
 
 #' Turn the fit's re-score, profile and simulations into `sim` objects
 #'
