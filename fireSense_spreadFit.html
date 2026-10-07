@@ -2994,8 +2994,8 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">fireSense_spreadFit Manual</h1>
-<h3 class="subtitle">v.1.1.4</h3>
-<h4 class="date">Last updated: 2026-10-05</h4>
+<h3 class="subtitle">v.1.1.5</h3>
+<h4 class="date">Last updated: 2026-10-06</h4>
 
 </div>
 
@@ -3196,6 +3196,20 @@ sf
 </td>
 <td style="text-align:left;">
 list of <code>sf</code> points, one element per year, of fire ignition locations
+</td>
+<td style="text-align:left;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+studyAreaWithSpreadParams
+</td>
+<td style="text-align:left;">
+sf
+</td>
+<td style="text-align:left;">
+Rows of the shared fit ledger, set by <code>fireSense_dataPrepFit</code>; <code>init</code> checks them for a fit of this polygon. Declared as an input so the event’s cache key includes it, otherwise a cache hit restores an older copy over the current rows.
 </td>
 <td style="text-align:left;">
 NA
@@ -3551,7 +3565,7 @@ maxFireSpread
 numeric
 </td>
 <td style="text-align:left;">
-0.28
+0.276
 </td>
 <td style="text-align:left;">
 NA
@@ -3560,7 +3574,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-optional. Maximum fire spread average to be passed to the <code>.objFun</code>. This puts an upper limit on <code>spreadProb</code> during optimization.
+optional. Maximum fire spread average to be passed to the <code>.objFun</code>; default <code>fireSenseUtils::spreadProbCeiling</code>, also the upper bound of <code>maxAsymptote</code>. <code>maxAsymptote</code> is the spread-probability ceiling in a typical year. The year random effect (<code>yearSpreadSD</code>) is added on the logit of the final spread probability, after the link, so in a given year p can exceed <code>maxAsymptote</code> or fall below <code>lowerSpreadProb</code>; that is intended, and there is no absolute cap because <code>spreadCpp</code> does not need one. <code>maxAsymptote</code> is bounded because runaway fires are slow to simulate and wasted if the parameters are wrong.
 </td>
 </tr>
 <tr>
@@ -4298,7 +4312,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Named list of <code>c(min, max)</code>: covariates rescaled with this FIXED range and not with the range of this polygon’s data. <code>CMDsm = c(0, 100)</code> makes the covariate CMDsm / 100 in every polygon. With the data’s range, 1 meant a CMDsm of 104 in one polygon and 297 in another, so the coefficient could not be compared across polygons, and a polygon that never gets dry stretched its small range over [0, 1]. Names not among the covariates are ignored. <code>fireSense_spreadPredict</code> rescales with the stored <code>covMinMax_spread</code>, so it follows. CMD, CMDsp and cumMDC (also mm) are the other candidates of fireSense_dataPrepFit’s <code>spread = &#39;auto&#39;</code>, so an ELF that picks one of them gets the same fixed scale.
+Named list of <code>c(min, max)</code>: the FIXED range every climate covariate is rescaled with, not the range of this polygon’s data. Default <code>fireSenseUtils::climateCovRanges</code>, the one table of climate ranges, which documents each variable’s units and says its values are provisional. <code>CMDsm = c(0, 100)</code> makes the covariate CMDsm / 100 in every polygon. With the data’s range, 1 meant a CMDsm of 104 in one polygon and 297 in another, so the coefficient could not be compared across polygons, and a polygon that never gets dry stretched its small range over [0, 1]. A climate covariate with no entry stops the fit; there is no fallback to the data’s range. <code>youngAge</code>, the <code>nfLCC_</code> groups and the <code>treedWetland</code> indicator are always <code>c(0, 1)</code> (<code>fireSenseUtils::spreadIndicatorRanges()</code>). <code>fireSense_spreadPredict</code> rescales with the stored <code>covMinMax_spread</code>, so it follows.
 </td>
 </tr>
 <tr>

@@ -78,7 +78,10 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    profileReps = if (diagnostics) P(sim)$profileReps else 0L,
                    simulateMembers = if (diagnostics) P(sim)$simulateMembers else 0L),
         .functionName = fnName,
-        .cacheExtra = fnName,
+        ## The objective is a callee Cache() does not digest; its bodies are in the key, so a change in
+        ## how fits are scored (e.g. fireSenseUtils' runaway censoring, 2026-10-01) is a cache miss,
+        ## not an old fit served under the new rules.
+        .cacheExtra = list(fnName, objectiveBodies()),
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
         omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "runawayEdgeFrac", "runawayEdgeMin",
@@ -96,6 +99,11 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
          thresh, ") on the first two fire years.")
   DE
 }
+
+## The spread objective's bodies, for the Cache keys of the fit and the threshold calibration
+objectiveBodies <- function()
+  list(objfunSpreadFit = deparse(fireSenseUtils::.objfunSpreadFit),
+       objFunInner = deparse(utils::getFromNamespace("objFunInner", "fireSenseUtils")))
 
 ## The `link` the objective is given: NULL is its default, logistic3p
 spreadLink <- function(link) if (identical(link, "logistic3pUpper")) link
