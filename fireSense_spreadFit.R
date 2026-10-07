@@ -282,7 +282,7 @@ defineModule(sim, list(
     defineParameter("upperAndLowerVal", "numeric", default = 50,
                     desc = paste("Bound given to each covariate coefficient (`upper` = this, `lower` = minus this) when `upper` or",
                                  "`lower` is not supplied. Bounds should be wide enough that they do not influence the fitted",
-                                 "value; only the sign of drought-index and `youngAge` terms is constrained (see",
+                                 "value; only the sign of drought-index, `youngAge` and fuel biomass terms is constrained (see",
                                  "`estimateSpreadParams()`). A held-out experiment (7 ELFs x 2 folds) found estimates up to",
                                  "25.7 and youngAge medians down to -23.0 with the previous default of 9.")),
     defineParameter("upperAndLowerValFuel", "numeric", default = 100,
@@ -613,6 +613,7 @@ spreadFitPrep <- function(sim) {
   # veg coefficients should probably have bounds of 4
   # however youngAge should have an upper limit of zero to prevent self-propagating fires
   # MDC should have a lower limit of zero - drought shouldn't increase spread probability
+  # fuel biomass should have a lower limit of zero - more fuel shouldn't decrease spread probability
   ## yearSpreadSD (the per-year random effect) is in the default bounds unless turned off; when one bound
   ## is supplied, the one filled in includes it only if the supplied one does, so the two stay aligned
   fsdBounds <- if (!anyNA(Par$yearSpreadSDBounds)) Par$yearSpreadSDBounds
@@ -993,7 +994,12 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
 #' Bounds should be wide enough that they do not influence the fitted value, except to constrain
 #' sign. Covariate coefficients get +/- `upperAndLower`, except drought-index terms (name matches
 #' `droughtIndexPattern`, e.g. `CMD`, `CMD_sm`, `cumMDC` -- lower bound 0, since drought should not
-#' increase spread probability) and `youngAge` (upper bound 0, to prevent self-propagating fires).
+#' increase spread probability), fuel biomass terms (`fuelTerms`: lower bound 0, upper `upperAndLowerFuel`)
+#' and `youngAge` (upper bound 0, to prevent self-propagating fires). Fuel is bounded below by 0
+#' because, with the intercept and centred covariates, fits put the intercept near the spread-probability
+#' ceiling and gave fuel biomass negative coefficients, so low-biomass (recently burned) stands were the
+#' most flammable. That positive feedback produced runaway fires 3-6 times the observed area in NRV runs
+#' (ELFs 5.4 and 14.3). With fuel >= 0, more fuel can only raise spread probability and the intercept must come down.
 #' Every other term, including any other annual covariate, is symmetric. The two remaining logistic
 #' parameters get fixed bounds. `hillSlope1`, the logistic slope, and `inflectionPoint1`, its Richards
 #' exponent, are not among them: both are fixed at 1, not fitted. `hillSlope1` is not identifiable
@@ -1010,6 +1016,7 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
 #'   table membership.
 #' @param whichBound "upper" or "lower".
 #' @param upperAndLower numeric; absolute bound for covariate coefficients.
+#' @param fuelTerms,upperAndLowerFuel character names of the fuel biomass terms, and their upper bound (lower is 0).
 #' @param upperTailBounds numeric; if not `NULL`, the bounds of `upperTail1`, which is added after
 #'   `maxAsymptote` (link "logistic3pUpper").
 #' @return named numeric vector: `maxAsymptote`, `upperTail1` (with `upperTailBounds`), then
@@ -1030,7 +1037,8 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
   }
   newParams <- as.vector(newParams)
   ## fuel biomass is biomass / 1e4, not [0, 1], so its coefficients need a wider box
-  newParams[formulaTerms %in% fuelTerms] <- if (whichBound == "upper") upperAndLowerFuel else -upperAndLowerFuel
+  ## and a lower bound of 0: more fuel can only raise spread probability
+  newParams[formulaTerms %in% fuelTerms] <- if (whichBound == "upper") upperAndLowerFuel else 0
   whDrought <- grepl(droughtIndexPattern, formulaTerms)
   whYA <- formulaTerms %in% youngAge
   newParams[whDrought] <- ifelse(whichBound == "upper", upperAndLower, 0)

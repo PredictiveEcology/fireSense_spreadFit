@@ -46,7 +46,7 @@ test_that("a term is bounded by name, not by annual-table membership", {
   expect_identical(unname(c(lo["cumMDC"], up["cumMDC"])), c(0, 50))
   expect_identical(unname(c(lo["PPT_sm"], up["PPT_sm"])), c(-50, 50))
   expect_identical(unname(c(lo["youngAge"], up["youngAge"])), c(-50, 0))
-  expect_identical(unname(c(lo["fuel1"], up["fuel1"])), c(-100, 100))
+  expect_identical(unname(c(lo["fuel1"], up["fuel1"])), c(0, 100))  # fuel biomass: lower 0, upper unchanged
   expect_identical(unname(c(lo["nf"], up["nf"])), c(-50, 50))
 
   ## youngAge absent from the annual table: still bounded as youngAge, by name
