@@ -2995,7 +2995,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">fireSense_spreadFit Manual</h1>
 <h3 class="subtitle">v.1.1.5</h3>
-<h4 class="date">Last updated: 2026-10-06</h4>
+<h4 class="date">Last updated: 2026-10-07</h4>
 
 </div>
 
@@ -3873,7 +3873,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-A simulated fire that burns any pixel of the outer edge of its own buffer is scored as a runaway (at least that big), not as a fire of the size it reached: in the size likelihood it has no density at the observed size, and in the Anderson-Darling and annual-area terms its size is the landscape’s pixel count. Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size. Passed to <code>fireSenseUtils::runDEoptim()</code>; the threshold calibration uses the same setting.
+A simulated fire that burns its buffer’s outer edge (see <code>runawayEdgeFrac</code>) is a runaway, censored in the size likelihood: it has no density at the observed size. The Anderson-Darling, annual-area and area-distribution terms score the size it burned. Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size in the likelihood too. Passed to <code>fireSenseUtils::runDEoptim()</code>; the threshold calibration uses the same setting.
 </td>
 </tr>
 <tr>
@@ -4372,7 +4372,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Bound given to each covariate coefficient (<code>upper</code> = this, <code>lower</code> = minus this) when <code>upper</code> or <code>lower</code> is not supplied. Bounds should be wide enough that they do not influence the fitted value; only the sign of drought-index and <code>youngAge</code> terms is constrained (see <code>estimateSpreadParams()</code>). A held-out experiment (7 ELFs x 2 folds) found estimates up to 25.7 and youngAge medians down to -23.0 with the previous default of 9.
+Bound given to each covariate coefficient (<code>upper</code> = this, <code>lower</code> = minus this) when <code>upper</code> or <code>lower</code> is not supplied. Bounds should be wide enough that they do not influence the fitted value; only the sign of drought-index, <code>youngAge</code> and fuel biomass terms is constrained (see <code>estimateSpreadParams()</code>). A held-out experiment (7 ELFs x 2 folds) found estimates up to 25.7 and youngAge medians down to -23.0 with the previous default of 9.
 </td>
 </tr>
 <tr>
