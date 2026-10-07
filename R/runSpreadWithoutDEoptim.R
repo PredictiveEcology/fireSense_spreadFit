@@ -20,6 +20,9 @@
 #' @param mutuallyExclusive named list of mutually exclusive covariates.
 #' @param doObjFunAssertions logical; passed to `doAssertions`.
 #' @param covMinMax `data.table` of covariate min and max, or NULL for no rescaling.
+#' @param covCentre named list of covariate centres (`fireSenseUtils::spreadCovCentre()`) subtracted from the
+#'   rescaled covariates, as in the fit; `NULL` (no intercept) centres nothing. Passed to `.objfunSpreadFit()`
+#'   and `fireSenseUtils::spreadProbGates()`, so the threshold is calibrated on the fit's objective.
 #' @param objfunFireReps integer; passed to `Nreps`, the replicates per fire.
 #' @param maxFireSpread numeric; upper limit on mean spread probability.
 #' @param weighted logical; weight the SNLL by log fire size. Also used in the rough threshold estimate.
@@ -38,7 +41,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                                     annualDTx1000, nonAnnualDTx1000, fireBufferedListDT,
                                     mutuallyExclusive = list("youngAge" = "vegPC"),
                                     doObjFunAssertions = getOption("fireSenseUtils.assertions", TRUE),
-                                    historicalFires, covMinMax, objfunFireReps, maxFireSpread,
+                                    historicalFires, covMinMax, covCentre = NULL, objfunFireReps, maxFireSpread,
                                     weighted = TRUE, tests = c("snll_fs", "adtest"),
                                     formulaToFit,
                                     pars = NULL, plot.it = TRUE, mode = "fit",
@@ -98,7 +101,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                                  historicalFires = historicalFires,
                                  formulaToFit = formulaToFit,
                                  tests = tests,
-                                 covMinMax = covMinMax,
+                                 covMinMax = covMinMax, covCentre = covCentre,
                                  Nreps = objfunFireReps,
                                  maxFireSpread = maxFireSpread,
                                  verbose = TRUE,
@@ -145,7 +148,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
       gates <- function(parList) {
         spreadProbGates(parList, annualDTx1000 = annualDTx1000, nonAnnualDTx1000 = nonAnnualDTx1000,
                         historicalFires = historicalFires, formulaToFit = formulaToFit,
-                        covMinMax = covMinMax, mutuallyExclusive = mutuallyExclusive,
+                        covMinMax = covMinMax, covCentre = covCentre, mutuallyExclusive = mutuallyExclusive,
                         maxFireSpread = maxFireSpread, escapeSizeHa = escapeSizeHa,
                         landscape = flammableRTM, link = link, doAssertions = FALSE)$pass
       }
@@ -174,7 +177,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                       historicalFires = historicalFires,
                       formulaToFit = formulaToFit,
                       tests = tests,
-                      covMinMax = covMinMax,
+                      covMinMax = covMinMax, covCentre = covCentre,
                       Nreps = objfunFireReps,
                       maxFireSpread = maxFireSpread,
                       weighted = weighted, escapeSizeHa = escapeSizeHa,

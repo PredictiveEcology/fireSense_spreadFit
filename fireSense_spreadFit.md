@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.1.2"
-date: "Last updated: 2026-10-01"
+subtitle: "v.1.1.5"
+date: "Last updated: 2026-10-06"
 output:
   bookdown::html_document2:
     toc: true
@@ -136,6 +136,12 @@ Table \@ref(tab:moduleInputs-fireSense-spreadFit) shows the full list of module 
    <td style="text-align:left;"> spreadFirePoints </td>
    <td style="text-align:left;"> sf </td>
    <td style="text-align:left;"> list of `sf` points, one element per year, of fire ignition locations </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> studyAreaWithSpreadParams </td>
+   <td style="text-align:left;"> sf </td>
+   <td style="text-align:left;"> Rows of the shared fit ledger, set by `fireSense_dataPrepFit`; `init` checks them for a fit of this polygon. Declared as an input so the event's cache key includes it, otherwise a cache hit restores an older copy over the current rows. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -281,15 +287,15 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> see `?DEoptim`. Lower limits for the logistic function parameters (lower bound, upper bound, slope, asymmetry) and the statistical model parameters (named in the order they appear in the formula). Do not include `hillSlope1`: it is fixed at 1, not fitted (see `estimateSpreadParams()`); supplying it is an error. </td>
+   <td style="text-align:left;"> see `?DEoptim`. Lower limits for the logistic function parameters (maxAsymptote, then upperTail1 if `link` is 'logistic3pUpper') and the statistical model parameters (named in the order they appear in the formula). Do not include `hillSlope1` or `inflectionPoint1`: they are fixed at 1, not fitted (see `estimateSpreadParams()`); supplying either is an error. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> maxFireSpread </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 0.28 </td>
+   <td style="text-align:left;"> 0.276 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> optional. Maximum fire spread average to be passed to the `.objFun`. This puts an upper limit on `spreadProb` during optimization. </td>
+   <td style="text-align:left;"> optional. Maximum fire spread average to be passed to the `.objFun`; default `fireSenseUtils::spreadProbCeiling`, also the upper bound of `maxAsymptote`. `maxAsymptote` is the spread-probability ceiling in a typical year. The year random effect (`yearSpreadSD`) is added on the logit of the final spread probability, after the link, so in a given year p can exceed `maxAsymptote` or fall below `lowerSpreadProb`; that is intended, and there is no absolute cap because `spreadCpp` does not need one. `maxAsymptote` is bounded because runaway fires are slow to simulate and wasted if the parameters are wrong. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> link </td>
@@ -460,12 +466,12 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> integer defining the number of replicates the objective function will attempt each fire. </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> rep </td>
+   <td style="text-align:left;"> .rep </td>
    <td style="text-align:left;"> integer </td>
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> An optional integer indicating which replicate run this represents. This is used to identify unique runs of `runDEoptim`, from a Cache perspective. For example, if this module is run twice with all the same data, Cache will think that the second run should recover the cache result, unless this `rep` is modified </td>
+   <td style="text-align:left;"> An optional integer indicating which replicate run this represents. This is used to identify unique runs of `runDEoptim`, from a Cache perspective. For example, if this module is run twice with all the same data, Cache will think that the second run should recover the cache result, unless this `.rep` is modified. A SpaDES-aware parameter: `SpaDES.project::setupProject()` sets `.globals$.rep` from the experiment's `.rep`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .c </td>
@@ -553,7 +559,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> see `?DEoptim`. Upper limits for the logistic function parameters (lower bound, upper bound, slope, asymmetry) and the statistical model parameters (named in the order they appear in the formula). Do not include `hillSlope1`: it is fixed at 1, not fitted (see `estimateSpreadParams()`); supplying it is an error. </td>
+   <td style="text-align:left;"> see `?DEoptim`. Upper limits for the logistic function parameters (maxAsymptote, then upperTail1 if `link` is 'logistic3pUpper') and the statistical model parameters (named in the order they appear in the formula). Do not include `hillSlope1` or `inflectionPoint1`: they are fixed at 1, not fitted (see `estimateSpreadParams()`); supplying either is an error. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> useCache_DE </td>
@@ -585,7 +591,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> c(0, 100.... </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Named list of `c(min, max)`: covariates rescaled with this FIXED range and not with the range of this polygon's data. `CMDsm = c(0, 100)` makes the covariate CMDsm / 100 in every polygon. With the data's range, 1 meant a CMDsm of 104 in one polygon and 297 in another, so the coefficient could not be compared across polygons, and a polygon that never gets dry stretched its small range over [0, 1]. Names not among the covariates are ignored. `fireSense_spreadPredict` rescales with the stored `covMinMax_spread`, so it follows. CMD, CMDsp and cumMDC (also mm) are the other candidates of fireSense_dataPrepFit's `spread = 'auto'`, so an ELF that picks one of them gets the same fixed scale. </td>
+   <td style="text-align:left;"> Named list of `c(min, max)`: the FIXED range every climate covariate is rescaled with, not the range of this polygon's data. Default `fireSenseUtils::climateCovRanges`, the one table of climate ranges, which documents each variable's units and says its values are provisional. `CMDsm = c(0, 100)` makes the covariate CMDsm / 100 in every polygon. With the data's range, 1 meant a CMDsm of 104 in one polygon and 297 in another, so the coefficient could not be compared across polygons, and a polygon that never gets dry stretched its small range over [0, 1]. A climate covariate with no entry stops the fit; there is no fallback to the data's range. `youngAge`, the `nfLCC_ ` groups and the `treedWetland` indicator are always `c(0, 1)` (`fireSenseUtils::spreadIndicatorRanges()`). `fireSense_spreadPredict` rescales with the stored `covMinMax_spread`, so it follows. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> yearSpreadSDBounds </td>
@@ -658,6 +664,11 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-sprea
    <td style="text-align:left;"> covMinMax_spread </td>
    <td style="text-align:left;"> data.table </td>
    <td style="text-align:left;"> `data.table` of covariates min and max </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> covCentre_spread </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> Named list, the mean of each rescaled covariate over the fitting data (`fireSenseUtils::spreadCovCentre()`), subtracted from it in the fit; `NULL` unless the formula has an intercept. Stored in the ledger row as `fireSenseUtils::spreadFitCovCentreTxt`, so `fireSense_spreadPredict` centres alike. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> DE </td>

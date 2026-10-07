@@ -42,10 +42,10 @@ test_that("the fit gets the chosen likelihood and asks for the diagnostics", {
   expect_identical(a$simulateMembers, 10L)
 })
 
-test_that("link 'logistic3pUpper' adds upperTail1 as the 3rd parameter and names the link", {
+test_that("link 'logistic3pUpper' adds upperTail1 as the 2nd parameter and names the link", {
   a <- fittedWith(list(link = "logistic3pUpper", upperTailBounds = c(-0.5, 0.8)))$rec$deArgs
   expect_identical(a$link, "logistic3pUpper")
-  expect_identical(names(a$lower)[1:3], c("maxAsymptote", "inflectionPoint1", "upperTail1"))
+  expect_identical(names(a$lower)[1:2], c("maxAsymptote", "upperTail1"))
   expect_identical(names(a$upper), names(a$lower))
   expect_identical(unname(c(a$lower["upperTail1"], a$upper["upperTail1"])), c(-0.5, 0.8))
 })

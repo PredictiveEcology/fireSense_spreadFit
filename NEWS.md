@@ -1,6 +1,24 @@
-# fireSense_spreadFit 1.1.2
+# fireSense_spreadFit (development version)
+
+- `studyAreaWithSpreadParams` is now declared as an `expectsInput` (it stays a `createsOutput`). `init` reads the ledger rows `fireSense_dataPrepFit` sets, but as an output only it was not in the event's cache key, so a cache hit restored the rows from an older job (ELF 14.3: 720 iterations, no intercept) over the current ones and `fireSense_spreadPredict` failed on missing covariates.
 
 - The fit's and the threshold calibration's cache keys include the spread objective's bodies (`objectiveBodies()`), so a change in how fireSenseUtils scores a fit is a cache miss. Needed for fireSenseUtils' change to runaway censoring (likelihood only): the earlier fits under-burned held-out years and must not be served from the cache. Needs fireSenseUtils >= 0.2.3.9079.
+
+# fireSense_spreadFit 1.1.5
+
+- `covFixedRange` defaults to `fireSenseUtils::climateCovRanges`, the one table of climate ranges (values unchanged, 0-100, and provisional), and a climate covariate with no entry stops the fit, naming it: there is no fallback to the data's range, so `covFixedRange = list()` now stops. `youngAge`, the `nfLCC_*` groups and the `treedWetland` indicator are always `c(0, 1)` (`fireSenseUtils::spreadIndicatorRanges()`), so a constant one no longer rescales by 0 / 0; `deriveCovMinMax()` stops, naming it, on any covariate left with max <= min. `maxFireSpread` defaults to, and the upper bound of `maxAsymptote` is, `fireSenseUtils::spreadProbCeiling` (0.276; `maxFireSpread` was 0.28). Docs: `maxAsymptote` is the ceiling in a typical year; the year random effect acts on the logit after the link, so a year's p can pass it. Fits change and cached fits re-key. Needs the `fireSenseUtils` change in PredictiveEcology/fireSenseUtils (floor to be set once it has a version).
+
+# fireSense_spreadFit 1.1.4
+
+- Optional free intercept with centred covariates, off by default. A spread formula with an intercept (`~ 1 + ...`, from `fireSense_dataPrepFit`'s `spreadIntercept`) gets default bounds `+/- upperAndLowerVal` for `fireSenseUtils::spreadInterceptTxt`, first among the covariate coefficients. The mean of each rescaled covariate over the data the objective uses (`fireSenseUtils::spreadCovCentre()`) is found once in `spreadFitPrepare`, kept as `sim$covCentre_spread`, passed as `covCentre` to `runDEoptim()`, the threshold calibration and the held-out simulation, and stored in the ledger row (`fireSenseUtils::spreadFitCovCentreTxt`) so `fireSense_spreadPredict` centres alike. Without an intercept `covCentre_spread` is `NULL`, the ledger row has no such column, and `covCentre` is in `omitArgs` of the fit and threshold `Cache()` calls, so they keep their keys apart from the code they digest. A held-out fold is centred at the full data's means. Needs fireSenseUtils >= 0.2.3.9083 (PredictiveEcology/fireSenseUtils#131).
+
+# fireSense_spreadFit 1.1.3
+
+- `inflectionPoint1` (the spread link's Richards exponent) is fixed at 1, not fitted, as `hillSlope1` already is. In the 2026-10-04 fits its best values were bimodal (11 of 29 at the lower bound 0.1, 11 at 2-4), it spanned 0.1-3.9 inside a final population while the objective hardly changed, and the covariate coefficients explained a median 50% of its variance. `estimateSpreadParams()` no longer puts it in the default bounds, so `upperTail1` is now the 2nd parameter; a supplied `upper`/`lower` naming `inflectionPoint1` (or `hillSlope1`) is an error. `addHillSlope1ToLedger()` is now `addFixedParsToLedger()` and restores `hillSlope1 = 1` and `inflectionPoint1 = 1` (`fireSenseUtils::fixedLogisticPars`) after `maxAsymptote`, so ledger rows keep the full logistic parameter set and `fireSense_spreadPredict` is unchanged; an old row keeps predicting with its own fitted `inflectionPoint1`. Needs fireSenseUtils >= 0.2.3.9082 (PredictiveEcology/fireSenseUtils#130). This changes the DEoptim cache key; fits made with `inflectionPoint1` need redoing.
+
+- The parameter `rep` is renamed `.rep`, a SpaDES-aware parameter like `.studyAreaName`: `SpaDES.project::setupProject()` sets `.globals$.rep` from the experiment's `.rep` (PredictiveEcology/SpaDES.project#190), as `fireSense_spreadPredict` uses it (PredictiveEcology/fireSense_spreadPredict#24). The DEoptim cache names use its value, as before, so cached generations are still found; the event cache key changes once.
+
+# fireSense_spreadFit 1.1.2
 
 - New parameters `runawayEdgeFrac` (`fireSenseUtils::fireSenseRunawayEdgeFrac`, 0.01) and `runawayEdgeMin` (`fireSenseUtils::fireSenseRunawayEdgeMin`, 3L), passed to `fireSenseUtils::runDEoptim()`: a simulated fire is a runaway only when it burns at least `max(runawayEdgeMin, ceiling(runawayEdgeFrac * ring size))` pixels of its buffer's edge ring, not one. Both are also passed to the threshold calibration, and are in `omitArgs` of the DEoptim and calibration `Cache()` calls: the rule only changes how quickly DEoptim moves away from an unlucky draw, so fits cached under the 1-cell rule stay valid. Needs fireSenseUtils >= 0.2.3.9077.
 

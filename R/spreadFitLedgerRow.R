@@ -1,15 +1,16 @@
 #' The ledger row of a fit
 #'
 #' One row of the shared fit ledger: the polygon's geometry, the columns in
-#' `fireSenseUtils::spreadFitAdditionalColNamesTxt`, and `polygonID`. The `run` event writes it to the
+#' `fireSenseUtils::spreadFitAdditionalColNamesTxt`, `polygonID`, and, when the fit has an intercept, the
+#' covariate centres (`fireSenseUtils::spreadFitCovCentreTxt`). The `run` event writes it to the
 #' ledger, and a held-out fold saves it beside its held-out result, so `fireSense_spreadPredict` reads
 #' either the same way.
 #'
 #' @param sim a `simList`; uses `.ELFind`, `studyArea`, `sppEquiv`, `nonForestedLCCGroups`,
-#'   `missingLCCgroup` and `covMinMax_spread`.
+#'   `missingLCCgroup`, `covMinMax_spread` and `covCentre_spread`.
 #' @param numIterations integer, the number of DEoptim generations.
 #' @param objFunVal numeric, the objective values of the members in `params`.
-#' @param params `data.table`, one row per member, with `hillSlope1` (see `addHillSlope1ToLedger()`).
+#' @param params `data.table`, one row per member, with `hillSlope1` and `inflectionPoint1` (see `addFixedParsToLedger()`).
 #' @return an `sf` object with one row.
 spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params) {
   ## covMinMax_spread: prediction rescales covariates with it, exactly as this fit did
@@ -21,6 +22,10 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params) {
                    I(list(sim$missingLCCgroup)),
                    I(list(sim$covMinMax_spread))) |>
     setNames(fireSenseUtils::spreadFitAdditionalColNamesTxt)
+  ## covCentre_spread: a fit with an intercept centred its covariates, and prediction centres them alike.
+  ## A fit without one has no such column, so its row is what it always was.
+  if (!is.null(sim$covCentre_spread))
+    df[[fireSenseUtils::spreadFitCovCentreTxt]] <- I(list(sim$covCentre_spread))
   # The ledger is keyed by polygon identity, NOT by run label -- see the
   # `.ELFind` input declaration. This row is shared cloud state that every
   # other project reads, so validate before writing.

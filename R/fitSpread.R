@@ -22,7 +22,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                  bestCluster = as.data.table(table(P(sim)$cores)))
   }
   messageDF(best$bestCluster)
-  fnName <- paste0("runDEoptim_", runName, "_", P(sim)$rep)
+  fnName <- paste0("runDEoptim_", runName, "_", P(sim)$.rep)
   DE <- Cache(runDEoptim(landscape = sim$rasterToMatch,
                    annualDTx1000 = covs$annualDTx1000,
                    nonAnnualDTx1000 = covs$nonAnnualDTx1000,
@@ -45,6 +45,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    mutuallyExclusive = P(sim)$mutuallyExclusiveCols, ## TODO: test
                    formulaToFit = sim$fireSense_spreadFormula,
                    covMinMax = sim$covMinMax_spread,
+                   covCentre = sim$covCentre_spread,
                    objFunCoresInternal = P(sim)$objFunCoresInternal,
                    tests = P(sim)$DEoptimTests,
                    maxFireSpread = P(sim)$maxFireSpread,
@@ -57,7 +58,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    .plotSize = P(sim)$.plotSize,
                    .plots = P(sim)$.plots,
                    plotEvery = P(sim)$.plotInterval,
-                   rep = P(sim)$rep,
+                   rep = P(sim)$.rep,
                    runName = runName,
                    sizeLik = P(sim)$sizeLik,
                    sizeLikDf = P(sim)$sizeLikDf,
@@ -81,7 +82,9 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
         .cacheExtra = list(fnName, objectiveBodies()),
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
-        omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "runawayEdgeFrac", "runawayEdgeMin"),
+        omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "runawayEdgeFrac", "runawayEdgeMin",
+                     ## NULL without an intercept: omitted then, so fits cached before it existed are found
+                     fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread)),
         useCache = P(sim)$useCache_DE
   )
   ## 1e6 is the objective's fail value (fireSenseUtils::.objfunSpreadFit). A population that is all
@@ -182,7 +185,7 @@ fitAndScoreFold <- function(sim, covs, fold, k) {
              .functionName = paste0("simulateHeldOut_", sim$.runName, "_cvFold", k))
   ## the held-out years only: observed against simulated burning from the other fold's fit
   spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], heldCovs, paste0(sim$.runName, "_cvFold", k, "_heldOut"))
-  fit <- spreadFitLedgerRow(sim, length(DE), best$objFunVal, addHillSlope1ToLedger(best$params))
+  fit <- spreadFitLedgerRow(sim, length(DE), best$objFunVal, addFixedParsToLedger(best$params))
   list(sims = data.table(fold = k, s), fit = fit,
        fitYears = years[fold != k], heldOutYears = years[fold == k])
 }
@@ -227,7 +230,7 @@ crossValidateSpreadOneFold <- function(sim, covs, k) {
 ## The objective's arguments for simulating `covs`' years; the likelihood options do not matter, the
 ## escape rule does (the fit simulates every fire from its escape size)
 spreadObjFunArgs <- function(sim, covs) {
-  list(landscape = sim$rasterToMatch,
+  args <- list(landscape = sim$rasterToMatch,
        annualDTx1000 = covs$annualDTx1000, nonAnnualDTx1000 = covs$nonAnnualDTx1000,
        fireBufferedListDT = covs$fireBufferedListDT, historicalFires = covs$historicalFires,
        formulaToFit = sim$fireSense_spreadFormula, covMinMax = sim$covMinMax_spread,
@@ -236,4 +239,8 @@ spreadObjFunArgs <- function(sim, covs) {
        mutuallyExclusive = P(sim)$mutuallyExclusiveCols, doAssertions = FALSE, verbose = 0,
        link = spreadLink(P(sim)$link), escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
        jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist)
+  ## the fit's centre, not the held-out years': assigning NULL adds nothing, so without an intercept the
+  ## arguments (and the cache key of the simulation that holds them) are what they were
+  args$covCentre <- sim$covCentre_spread
+  args
 }

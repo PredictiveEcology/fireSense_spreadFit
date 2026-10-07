@@ -15,7 +15,7 @@ defineModule(sim, list(
     person("Alex M.", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(fireSense_spreadFit = "1.1.2"),
+  version = list(fireSense_spreadFit = "1.1.5"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = NA_character_, # e.g., "year",
   citation = list("citation.bib"),
@@ -28,7 +28,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development",
                   "PredictiveEcology/clusters@development (>= 0.0.52)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9079)",
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9084)",
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
     defineParameter(".plots", "character|logical", default = NULL, ## TODO: use .plotInitialTime etc.
@@ -78,14 +78,20 @@ defineModule(sim, list(
                                  "If the directory does not exist at this path, will attempt to create it.")),
     defineParameter("lower", "numeric", default = NA,
                     desc = paste("see `?DEoptim`. Lower limits for the logistic function",
-                                 "parameters (lower bound, upper bound, slope, asymmetry)",
+                                 "parameters (maxAsymptote, then upperTail1 if `link` is 'logistic3pUpper')",
                                  "and the statistical model parameters (named in the order they",
-                                 "appear in the formula). Do not include `hillSlope1`: it is fixed",
-                                 "at 1, not fitted (see `estimateSpreadParams()`); supplying it",
-                                 "is an error.")),
-    defineParameter("maxFireSpread", "numeric", default = 0.28,
-                    desc = paste0("optional. Maximum fire spread average to be passed to the `.objFun`. ",
-                                  "This puts an upper limit on `spreadProb` during optimization.")),
+                                 "appear in the formula). Do not include `hillSlope1` or `inflectionPoint1`:",
+                                 "they are fixed at 1, not fitted (see `estimateSpreadParams()`); supplying",
+                                 "either is an error.")),
+    defineParameter("maxFireSpread", "numeric", default = fireSenseUtils::spreadProbCeiling,
+                    desc = paste0("optional. Maximum fire spread average to be passed to the `.objFun`; default ",
+                                  "`fireSenseUtils::spreadProbCeiling`, also the upper bound of `maxAsymptote`. ",
+                                  "`maxAsymptote` is the spread-probability ceiling in a typical year. The year random ",
+                                  "effect (`yearSpreadSD`) is added on the logit of the final spread probability, after the ",
+                                  "link, so in a given year p can exceed `maxAsymptote` or fall below `lowerSpreadProb`; ",
+                                  "that is intended, and there is no absolute cap because `spreadCpp` does not need one. ",
+                                  "`maxAsymptote` is bounded because runaway fires are slow to simulate and wasted if the ",
+                                  "parameters are wrong.")),
     defineParameter("link", "character", default = "logistic3p",
                     desc = paste("The spread link. 'logistic3p', or 'logistic3pUpper': the same curve with",
                                  "Stukel's upper tail, one more parameter `upperTail1` that changes only how the",
@@ -190,12 +196,13 @@ defineModule(sim, list(
     defineParameter("objfunFireReps", "integer", default = 50L,
                     desc = paste("integer defining the number of replicates the objective function",
                                  "will attempt each fire.")),
-    defineParameter("rep", "integer", 1L, NA, NA,
+    defineParameter(".rep", "integer", 1L, NA, NA,
                     desc = paste("An optional integer indicating which replicate run this represents. ",
                                  "This is used to identify unique runs of `runDEoptim`, from a Cache perspective. ",
                                  "For example, if this module is run twice with all the same data, ",
                                  "Cache will think that the second run ",
-                                 "should recover the cache result, unless this `rep` is modified")),
+                                 "should recover the cache result, unless this `.rep` is modified. A SpaDES-aware parameter: ",
+                                 "`SpaDES.project::setupProject()` sets `.globals$.rep` from the experiment's `.rep`.")),
     defineParameter(".c", "numeric", 0, NA, NA,
                     desc = paste("the `c` argument passed to DEoptim.control. `iterStep` is hard-coded to 1, so",
                                  "DEoptim's adaptation restarts every generation, and `c` has no effect either way.")),
@@ -239,11 +246,11 @@ defineModule(sim, list(
                                  "Setting to 0 turns off tracing.")),
     defineParameter("upper", "numeric", default = NA,
                     desc = paste("see `?DEoptim`. Upper limits for the logistic function",
-                                 "parameters (lower bound, upper bound, slope, asymmetry)",
+                                 "parameters (maxAsymptote, then upperTail1 if `link` is 'logistic3pUpper')",
                                  "and the statistical model parameters (named in the order they",
-                                 "appear in the formula). Do not include `hillSlope1`: it is fixed",
-                                 "at 1, not fitted (see `estimateSpreadParams()`); supplying it",
-                                 "is an error.")),
+                                 "appear in the formula). Do not include `hillSlope1` or `inflectionPoint1`:",
+                                 "they are fixed at 1, not fitted (see `estimateSpreadParams()`); supplying",
+                                 "either is an error.")),
     defineParameter("useCache_DE", "logical", default = TRUE,
                     desc = "should `DEoptim` use `Cache`? to do multiple independent runs, use FALSE"),
     defineParameter("verbose", "numeric", default = 1,
@@ -253,16 +260,17 @@ defineModule(sim, list(
     defineParameter("visualizeDEoptim", "Path", default = asPath(figurePath(sim)),
                     desc = paste("Directory where `runDEoptim` saves parameter plots every `.plotInterval` generations.",
                                  "Reset to `figurePath(sim)` unless its last folder is the module name.")),
-    defineParameter("covFixedRange", "list", default = list(CMDsm = c(0, 100), CMD = c(0, 100), CMDsp = c(0, 100),
-                                                            cumMDC = c(0, 100)),
-                    desc = paste("Named list of `c(min, max)`: covariates rescaled with this FIXED range and not with the",
-                                 "range of this polygon's data. `CMDsm = c(0, 100)` makes the covariate CMDsm / 100 in every",
-                                 "polygon. With the data's range, 1 meant a CMDsm of 104 in one polygon and 297 in another,",
-                                 "so the coefficient could not be compared across polygons, and a polygon that never gets",
-                                 "dry stretched its small range over [0, 1]. Names not among the covariates are ignored.",
-                                 "`fireSense_spreadPredict` rescales with the stored `covMinMax_spread`, so it follows. CMD, CMDsp and",
-                                 "cumMDC (also mm) are the other candidates of fireSense_dataPrepFit's `spread = 'auto'`,",
-                                 "so an ELF that picks one of them gets the same fixed scale.")),
+    defineParameter("covFixedRange", "list", default = fireSenseUtils::climateCovRanges,
+                    desc = paste("Named list of `c(min, max)`: the FIXED range every climate covariate is rescaled with, not",
+                                 "the range of this polygon's data. Default `fireSenseUtils::climateCovRanges`, the one table of",
+                                 "climate ranges, which documents each variable's units and says its values are provisional.",
+                                 "`CMDsm = c(0, 100)` makes the covariate CMDsm / 100 in every polygon. With the data's range,",
+                                 "1 meant a CMDsm of 104 in one polygon and 297 in another, so the coefficient could not be",
+                                 "compared across polygons, and a polygon that never gets dry stretched its small range over",
+                                 "[0, 1]. A climate covariate with no entry stops the fit; there is no fallback to the data's",
+                                 "range. `youngAge`, the `nfLCC_*` groups and the `treedWetland` indicator are always `c(0, 1)`",
+                                 "(`fireSenseUtils::spreadIndicatorRanges()`). `fireSense_spreadPredict` rescales with the",
+                                 "stored `covMinMax_spread`, so it follows.")),
     defineParameter("yearSpreadSDBounds", "numeric", default = c(0, 1),
                     desc = paste("Bounds of `yearSpreadSD`, the sd of a per-year random effect on logit spread",
                                  "probability (`fireSenseUtils::.objfunSpreadFit()`), when `lower`/`upper` are not",
@@ -313,6 +321,10 @@ defineModule(sim, list(
                  desc = "template raster for study area"),
     expectsInput("spreadFirePoints", "sf",
                  desc = "list of `sf` points, one element per year, of fire ignition locations"),
+    expectsInput("studyAreaWithSpreadParams", "sf",
+                 desc = paste("Rows of the shared fit ledger, set by `fireSense_dataPrepFit`; `init` checks them for a",
+                              "fit of this polygon. Declared as an input so the event's cache key includes it,",
+                              "otherwise a cache hit restores an older copy over the current rows.")),
     expectsInput("studyArea", "sf",
                  desc = "Polygon being fit; its geometry and crs go in the ledger row. Defaults to NWT.",
                  sourceURL = "https://drive.google.com/open?id=1LUxoY2-pgkCmmNH5goagBp3IMpj6YrdU")
@@ -320,6 +332,11 @@ defineModule(sim, list(
   outputObjects = rbind(
     createsOutput("covMinMax_spread", "data.table",
                   desc = "`data.table` of covariates min and max"),
+    createsOutput("covCentre_spread", "list",
+                  desc = paste("Named list, the mean of each rescaled covariate over the fitting data",
+                               "(`fireSenseUtils::spreadCovCentre()`), subtracted from it in the fit; `NULL` unless the",
+                               "formula has an intercept. Stored in the ledger row as",
+                               "`fireSenseUtils::spreadFitCovCentreTxt`, so `fireSense_spreadPredict` centres alike.")),
     createsOutput("DE", "data.table",
                   desc = "list of `DEoptim` objects, one per generation, ordered by best objective value"),
     createsOutput("studyAreaWithSpreadParams", "sf",
@@ -448,7 +465,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         nonAnnualDTx1000 = mod$covsX1000$nonAnnualDTx1000,
         fireBufferedListDT = mod$covsX1000$fireBufferedListDT,
         historicalFires = mod$covsX1000$historicalFires,
-        covMinMax = sim$covMinMax_spread,
+        covMinMax = sim$covMinMax_spread, covCentre = sim$covCentre_spread,
         formulaToFit = sim$fireSense_spreadFormula,
         objfunFireReps = P(sim)$objfunFireReps,
         tests = P(sim)$DEoptimTests,
@@ -483,10 +500,10 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         ## generations with the lowest best value, which are copies of one (lucky) member. Read from `DE`:
         ## reordering `sim$DE` above drops its "finalRescore" attribute.
         best <- bestParamSets(DE, names(P(sim)$lower), n = 5L)
-        ## hillSlope1 is fixed at 1, not fitted, so it is not in names(P(sim)$lower); restore it here,
-        ## by position, so the ledger row predicts the same way as one with a fitted hillSlope1 (see
-        ## addHillSlope1ToLedger()).
-        paramsBest <- addHillSlope1ToLedger(best$params)
+        ## hillSlope1 and inflectionPoint1 are fixed at 1, not fitted, so they are not in
+        ## names(P(sim)$lower); restore them here, by position, so the ledger row predicts the same way
+        ## as one with them fitted (see addFixedParsToLedger()).
+        paramsBest <- addFixedParsToLedger(best$params)
         objFunValBest <- best$objFunVal
         numIterations <- length(sim$DE)
         
@@ -621,13 +638,16 @@ spreadFitPrep <- function(sim) {
                                          upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
                                          yearSpreadSDBounds = fsdBounds)
   }
-  ## hillSlope1 (the spread link's slope) is fixed at 1, not fitted -- it is not identifiable
-  ## together with the covariate coefficients (see estimateSpreadParams()). A supplied 'upper'/
-  ## 'lower' naming it would silently be fitted and then ignored downstream (fixHillSlope1()
-  ## overwrites it before the objective runs), so refuse instead of misleading the caller.
-  if ("hillSlope1" %in% c(names(P(sim)$upper), names(P(sim)$lower)))
-    stop("fireSense_spreadFit: 'hillSlope1' found in the supplied 'upper'/'lower'. hillSlope1 is ",
-         "fixed at 1, not fitted; remove it from 'upper' and 'lower'.")
+  ## hillSlope1 (the spread link's slope) and inflectionPoint1 (its Richards exponent) are fixed at 1,
+  ## not fitted (see estimateSpreadParams()). A supplied 'upper'/'lower' naming either would silently
+  ## be fitted and then ignored downstream (fireSenseUtils' fixLogisticPars() inserts the fixed values
+  ## before the objective runs), so refuse instead of misleading the caller.
+  fixedSupplied <- intersect(names(fireSenseUtils::fixedLogisticPars),
+                             c(names(P(sim)$upper), names(P(sim)$lower)))
+  if (length(fixedSupplied))
+    stop("fireSense_spreadFit: ", paste0("'", fixedSupplied, "'", collapse = ", "),
+         " found in the supplied 'upper'/'lower'. hillSlope1 and inflectionPoint1 are ",
+         "fixed at 1, not fitted; remove them from 'upper' and 'lower'.")
 
   ## sanity check parameters + inputs
   #cores can be NA for interactive debugging
@@ -673,6 +693,12 @@ spreadFitPrep <- function(sim) {
     fireLociList = sim$lociList,
     paramOrder = P(sim)$upper)
   
+  ## With an intercept the covariates are centred; the centre is found once, from the data the objective
+  ## uses, and every fit, threshold, validation and prediction of this fit uses it (NULL: no intercept).
+  sim$covCentre_spread <- fireSenseUtils::spreadCovCentre(
+    mod$covsX1000$annualDTx1000, mod$covsX1000$nonAnnualDTx1000, sim$fireSense_spreadFormula,
+    covMinMax = sim$covMinMax_spread, mutuallyExclusive = P(sim)[[mec]])
+
   namesWithGTZeroRows <- lapply(mod$covsX1000, function(x) names(x[sapply(x, function(y) NROW(y)) > 0]))
   annualDataNames <- grep("nonAnnual", names(namesWithGTZeroRows), invert = TRUE, value = TRUE)
   keepYearsNamed <- table(unname(unlist(namesWithGTZeroRows[annualDataNames]))) == length(annualDataNames)
@@ -705,9 +731,12 @@ fuelColumns <- function(nonAnnualList) {
 #' @param annualList list of `data.table`s of annual covariates, one per year.
 #' @param nonAnnualList list of `data.table`s of non-annual covariates, fuel biomass on the LINEAR scale.
 #' @param fuelCols names of the fuel biomass columns, from [fuelColumns()].
-#' @param fixedRange named list of `c(min, max)` that replace the data's range for those covariates.
-#' @return `data.table` with 2 rows (min, max) and one column per covariate.
-deriveCovMinMax <- function(annualList, nonAnnualList, fuelCols, fixedRange = list()) {
+#' @param fixedRange named list of `c(min, max)` that replace the data's range for those covariates;
+#'   default `fireSenseUtils::climateCovRanges`. Every annual covariate that is not a 0/1 indicator is
+#'   climate and must be in it, or this stops. Indicators are always `c(0, 1)`.
+#' @return `data.table` with 2 rows (min, max) and one column per covariate. Stops if a covariate that
+#'   is not given a fixed range has max <= min.
+deriveCovMinMax <- function(annualList, nonAnnualList, fuelCols, fixedRange = fireSenseUtils::climateCovRanges) {
 
   nonAnnRescales <- rbindlist(nonAnnualList)
   vals1 <- setdiff(colnames(nonAnnRescales), "pixelID")
@@ -733,12 +762,27 @@ deriveCovMinMax <- function(annualList, nonAnnualList, fuelCols, fixedRange = li
   vals2 <- setdiff(colnames(annRescales), c("buffer", "pixelID", "ids"))
   covMinMax2 <- annRescales[, lapply(.SD, range), .SDcols = vals2]
   covMinMax <- cbind(covMinMax1, covMinMax2)
+  ## 0/1 indicators (youngAge, nfLCC_*, treedWetland) are always c(0, 1): the data's range of a constant
+  ## one is 0 wide and rescaleKnown2() would divide by 0. An annual column that is not one is climate, and
+  ## has no fallback to the data's range: it needs an entry in `fixedRange`.
+  indicatorRange <- fireSenseUtils::spreadIndicatorRanges(names(covMinMax))
+  noRange <- setdiff(vals2, c(names(indicatorRange), names(fixedRange)))
+  if (length(noRange))
+    stop("fireSense_spreadFit: climate covariate(s) ", paste0("'", noRange, "'", collapse = ", "),
+         " have no fixed range. Add each to fireSenseUtils::climateCovRanges (or to the `covFixedRange` ",
+         "parameter); climate is never rescaled with the data's range.")
+  fixedRange <- c(indicatorRange, fixedRange[setdiff(names(fixedRange), names(indicatorRange))])
   ## a fixed range is the same in every polygon and every predicted year; the data's range is neither
   for (cn in intersect(names(fixedRange), names(covMinMax))) {
     stopifnot(length(fixedRange[[cn]]) == 2L, is.numeric(fixedRange[[cn]]), fixedRange[[cn]][2] > fixedRange[[cn]][1])
     ## an NA in the data must still reach spreadFitPrep()'s check, so a range that is NA is left NA
     if (!anyNA(covMinMax[[cn]])) set(covMinMax, NULL, cn, as.numeric(fixedRange[[cn]]))
   }
+  ## what is left has the data's range: a covariate that is constant cannot be rescaled (0 / 0)
+  flat <- names(covMinMax)[vapply(covMinMax, function(r) isTRUE(r[2] <= r[1]), logical(1))]
+  if (length(flat))
+    stop("fireSense_spreadFit: covariate(s) ", paste0("'", flat, "'", collapse = ", "),
+         " are constant in the data (max <= min), so they cannot be rescaled. Remove them from the formula.")
   covMinMax
 }
 
@@ -886,7 +930,7 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
       nonAnnualDTx1000 = covs$nonAnnualDTx1000,
       fireBufferedListDT = covs$fireBufferedListDT,
       historicalFires = covs$historicalFires,
-      covMinMax = sim$covMinMax_spread,
+      covMinMax = sim$covMinMax_spread, covCentre = sim$covCentre_spread,
       formulaToFit = sim$fireSense_spreadFormula,
       objfunFireReps = P(sim)$objfunFireReps,
       tests = P(sim)$DEoptimTests,
@@ -934,7 +978,9 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
                                spreadProbGates = deparse(fireSenseUtils::spreadProbGates),
                                spreadProbGateTest = deparse(fireSenseUtils::spreadProbGateTest),
                                objective = objectiveBodies()),
-            omitArgs = c("runawayEdgeFrac", "runawayEdgeMin"))
+            ## covCentre is NULL without an intercept: omitted then, so thresholds cached before it existed are found
+            omitArgs = c("runawayEdgeFrac", "runawayEdgeMin",
+                         fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread)))
   } else {
     P(sim)$SNLL_FS_thresh
   }
@@ -949,12 +995,14 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
 #' `droughtIndexPattern`, e.g. `CMD`, `CMD_sm`, `cumMDC` -- lower bound 0, since drought should not
 #' increase spread probability) and `youngAge` (upper bound 0, to prevent self-propagating fires).
 #' Every other term, including any other annual covariate, is symmetric. The two remaining logistic
-#' parameters get fixed bounds. `hillSlope1`, the logistic slope, is not among them: it is fixed at
-#' 1, not fitted, because it is not identifiable together with the covariate coefficients -- with
-#' the linear predictor `x = covariates %*% beta`, `hillSlope1` enters the link only as
-#' `hillSlope1 * x`, so scaling every coefficient by `k` and dividing `hillSlope1` by `k` leaves
-#' every prediction unchanged (`fireSenseUtils::fixHillSlope1()` reinserts it before the objective
-#' evaluates `par`).
+#' parameters get fixed bounds. `hillSlope1`, the logistic slope, and `inflectionPoint1`, its Richards
+#' exponent, are not among them: both are fixed at 1, not fitted. `hillSlope1` is not identifiable
+#' together with the covariate coefficients -- with the linear predictor `x = covariates %*% beta`, it
+#' enters the link only as `hillSlope1 * x`, so scaling every coefficient by `k` and dividing
+#' `hillSlope1` by `k` leaves every prediction unchanged. `inflectionPoint1` is not a location; its
+#' fitted values were bimodal and spanned the bounds at no cost in the objective, and the
+#' coefficients explained half of its variance (`fireSenseUtils::fixedLogisticPars`; `fixLogisticPars()`
+#' reinserts both before the objective evaluates `par`).
 #'
 #' @param fireSense_spreadFormula character; the spread formula.
 #' @param anyAnnualCovariates list of annual covariate `data.table`s; kept for call-site
@@ -963,9 +1011,10 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
 #' @param whichBound "upper" or "lower".
 #' @param upperAndLower numeric; absolute bound for covariate coefficients.
 #' @param upperTailBounds numeric; if not `NULL`, the bounds of `upperTail1`, which is added after
-#'   `inflectionPoint1` (link "logistic3pUpper").
-#' @return named numeric vector: `maxAsymptote`, `inflectionPoint1`, `upperTail1` (with
-#'   `upperTailBounds`), then formula terms. No `hillSlope1` -- it is fixed at 1, not fitted.
+#'   `maxAsymptote` (link "logistic3pUpper").
+#' @return named numeric vector: `maxAsymptote`, `upperTail1` (with `upperTailBounds`), then
+#'   `fireSenseUtils::spreadInterceptTxt` if the formula has an intercept (`~ 1 + ...`), then formula
+#'   terms. No `hillSlope1` or `inflectionPoint1` -- both are fixed at 1, not fitted.
 estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, whichBound,
                                  upperAndLower, fuelTerms = character(), upperAndLowerFuel = upperAndLower,
                                  upperTailBounds = NULL, yearSpreadSDBounds = NULL) {
@@ -988,16 +1037,22 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
   newParams[whYA] <- ifelse(whichBound == "upper", 0, -(upperAndLower))
 
   names(newParams) <- formulaTerms
+  ## The intercept (a formula with `1 +`) is first among the covariate coefficients. It is the level of
+  ## the linear predictor, so like the covariates it gets a wide symmetric box that does not bind.
+  if (fireSenseUtils::spreadInterceptTxt %in% fireSenseUtils::spreadDesignCols(fireSense_spreadFormula))
+    newParams <- c(stats::setNames(if (whichBound == "upper") upperAndLower else -upperAndLower,
+                                   fireSenseUtils::spreadInterceptTxt), newParams)
 
   if (whichBound == "upper") {
-    newParams <- c("maxAsymptote" = 0.276, "inflectionPoint1" = 4, newParams)
+    newParams <- c("maxAsymptote" = fireSenseUtils::spreadProbCeiling, newParams)
   } else {
-    newParams <- c("maxAsymptote" = 0.25, "inflectionPoint1" = 0.1, newParams)
+    newParams <- c("maxAsymptote" = 0.25, newParams)
   }
-  ## the objective takes the logistic parameters by position, so upperTail1 must be the 3rd
+  ## the objective takes the logistic parameters by position, so upperTail1 must be the 2nd
+  ## (the fixed hillSlope1 and inflectionPoint1 go between them)
   if (!is.null(upperTailBounds))
     newParams <- append(newParams, c(upperTail1 = if (whichBound == "upper") max(upperTailBounds)
-                                                  else min(upperTailBounds)), after = 2L)
+                                                  else min(upperTailBounds)), after = 1L)
   ## the per-year random effect's sd; the objective finds it by name and requires it LAST
   if (!is.null(yearSpreadSDBounds))
     newParams <- c(newParams, yearSpreadSD = if (whichBound == "upper") max(yearSpreadSDBounds)

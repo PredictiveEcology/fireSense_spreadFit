@@ -8,15 +8,15 @@ prepared <- function(params = list(), objects = list()) {
 }
 P1 <- function(sim) SpaDES.core::params(sim)[[moduleName]]
 
-test_that("default bounds are built from the formula and the annual covariates, with no hillSlope1", {
-  ## hillSlope1 (the spread link's slope) is fixed at 1, not fitted: it is not identifiable together
-  ## with the covariate coefficients (see NEWS and fireSenseUtils::fixHillSlope1()).
+test_that("default bounds are built from the formula and the annual covariates, with no hillSlope1 or inflectionPoint1", {
+  ## hillSlope1 and inflectionPoint1 are fixed at 1, not fitted (see NEWS and
+  ## fireSenseUtils::fixLogisticPars()).
   p <- P1(prepared())
-  expect_identical(p$upper, c(maxAsymptote = 0.276, inflectionPoint1 = 4,
+  expect_identical(p$upper, c(maxAsymptote = 0.276,
                               CMDsm = 50, youngAge = 0, class1 = 100, class2 = 100, nf = 50, yearSpreadSD = 1))
-  expect_identical(p$lower, c(maxAsymptote = 0.25, inflectionPoint1 = 0.1,
+  expect_identical(p$lower, c(maxAsymptote = 0.25,
                               CMDsm = 0, youngAge = -50, class1 = -100, class2 = -100, nf = -50, yearSpreadSD = 0))
-  expect_false("hillSlope1" %in% c(names(p$upper), names(p$lower)))
+  expect_false(any(c("hillSlope1", "inflectionPoint1") %in% c(names(p$upper), names(p$lower))))
 })
 
 test_that("upperAndLowerValFuel sets the fuel bounds, and only those", {
@@ -34,7 +34,7 @@ test_that("upperAndLowerVal sets the size of the default bounds", {
 })
 
 test_that("supplied bounds are kept; only the missing one is filled", {
-  up <- c(maxAsymptote = 0.3, inflectionPoint1 = 5,
+  up <- c(maxAsymptote = 0.3,
           CMDsm = 1, youngAge = 0, class1 = 2, class2 = 3, nf = 4)
   p <- P1(prepared(list(upper = up)))
   expect_identical(p$upper, up)
@@ -43,14 +43,19 @@ test_that("supplied bounds are kept; only the missing one is filled", {
   expect_identical(names(p$lower), names(up))
 })
 
-test_that("a supplied 'upper' or 'lower' naming hillSlope1 is refused", {
+test_that("a supplied 'upper' or 'lower' naming hillSlope1 or inflectionPoint1 is refused", {
   up <- c(maxAsymptote = 0.3, hillSlope1 = 3, inflectionPoint1 = 5,
           CMDsm = 1, youngAge = 0, class1 = 2, class2 = 3, nf = 4)
   expect_error(prepared(list(upper = up)),
-               "'hillSlope1' found in the supplied 'upper'/'lower'")
+               "'hillSlope1', 'inflectionPoint1' found in the supplied 'upper'/'lower'")
   lo <- c(maxAsymptote = 0.2, hillSlope1 = 0.5, inflectionPoint1 = 0.1,
           CMDsm = 0, youngAge = -1, class1 = -2, class2 = -3, nf = -4)
   expect_error(prepared(list(lower = lo)),
+               "'hillSlope1', 'inflectionPoint1' found in the supplied 'upper'/'lower'")
+  ## each one on its own is refused too, and named
+  expect_error(prepared(list(upper = up[names(up) != "hillSlope1"])),
+               "'inflectionPoint1' found in the supplied 'upper'/'lower'")
+  expect_error(prepared(list(lower = lo[names(lo) != "inflectionPoint1"])),
                "'hillSlope1' found in the supplied 'upper'/'lower'")
 })
 
@@ -63,8 +68,8 @@ test_that("yearSpreadSD is in both bounds, last, unless turned off", {
 })
 
 test_that("bounds whose names differ in order are refused", {
-  up <- c(inflectionPoint1 = 5, maxAsymptote = 0.3,
-          CMDsm = 1, youngAge = 0, class1 = 2, class2 = 3, nf = 4)
+  up <- c(CMDsm = 1, maxAsymptote = 0.3,
+          youngAge = 0, class1 = 2, class2 = 3, nf = 4)
   expect_error(prepared(list(upper = up)),
                "please ensure 'upper' and 'lower' params are named with an identical order")
 })
@@ -85,8 +90,8 @@ test_that("covMinMax_spread: fixed range for fuel, own range for cover and annua
                         CMDsm = c(0, 100), youngAge = c(0, 1)))
 })
 
-test_that("covFixedRange = list() goes back to the data's range for CMDsm", {
-  expect_identical(prepared(list(covFixedRange = list()))$covMinMax_spread$CMDsm, c(10, 40))
+test_that("covFixedRange = list() no longer falls back to the data's range for CMDsm: the fit stops", {
+  expect_error(prepared(list(covFixedRange = list())), "'CMDsm'.*climateCovRanges")
 })
 
 test_that("rescaleAll = FALSE leaves covMinMax_spread unset", {

@@ -27,8 +27,17 @@ test_that("inputs are the expected names and classes", {
       rasterToMatch                          = "SpatRaster",
       spreadFirePoints                       = "sf",
       spreadFitAdditionalColNames            = "character",
-      studyArea                              = "sf")
+      studyArea                              = "sf",
+      studyAreaWithSpreadParams              = "sf")
   )
+})
+
+## The init event reads the ledger rows dataPrepFit sets; an object that is only an output is
+## left out of the event's cache key, and a cache hit then restores a stale copy over it.
+test_that("studyAreaWithSpreadParams is both an input and an output", {
+  md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
+  expect_true("studyAreaWithSpreadParams" %in% md$inputObjects$objectName)
+  expect_true("studyAreaWithSpreadParams" %in% md$outputObjects$objectName)
 })
 
 test_that("outputs are the expected names and classes", {
@@ -36,7 +45,8 @@ test_that("outputs are the expected names and classes", {
   outputs <- stats::setNames(md$outputObjects$objectClass, md$outputObjects$objectName)
   expect_identical(
     outputs[order(names(outputs))],
-    c(covMinMax_spread          = "data.table",
+    c(covCentre_spread          = "list",
+      covMinMax_spread          = "data.table",
       DE                        = "data.table",
       fsSpreadFit_hists         = "ggplot",
       lociList                  = "list",
@@ -59,7 +69,7 @@ test_that("parameters are the expected names", {
            ".useCache", "cores", "covFixedRange", "DEoptimControl", "DEoptimTests", "doObjFunAssertions",
            "heldOutFold", "initialpop", "iterDEoptim", "iterThresh", "thresholdMargin", "libPathDEoptim",
            "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded",
-           "objFunCoresInternal", "objfunFireReps", "rep", "adWeight", "profileReps",
+           "objFunCoresInternal", "objfunFireReps", ".rep", "adWeight", "profileReps",
            "simulateMembers", "sizeLik", "sizeLikDf", "escapeSizeHa", "yearAreaWeight", "areaDistWeight", "penaliseRunaways", "runawayEdgeFrac", "runawayEdgeMin",
            "jumpTries", "jumpMeanDist", "upperTailBounds", "weighted", "yearSpreadSDBounds",
            "refitExisting", "rescaleAll", "SNLL_FS_thresh", "spreadFitFilename",

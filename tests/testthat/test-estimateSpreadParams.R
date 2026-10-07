@@ -1,26 +1,27 @@
 ## estimateSpreadParams(): the default DEoptim bounds.
 ##
-## hillSlope1 (the logistic slope) is fixed at 1, not fitted: it is not identifiable together with
-## the covariate coefficients (see NEWS and fireSenseUtils::fixHillSlope1()), so it is no longer
-## among the default bounds.
+## hillSlope1 (the logistic slope) and inflectionPoint1 (its Richards exponent) are fixed at 1, not
+## fitted (see NEWS and fireSenseUtils::fixLogisticPars()), so neither is among the default bounds.
 
 form <- "~ 0 + CMDsm + youngAge + class1 + nf"
 annual <- list(year2001 = data.table::data.table(pixelID = 1L, CMDsm = 1, youngAge = 0))
 
-test_that("upper bounds: +B for covariates, 0 for youngAge, fixed logistic bounds first, no hillSlope1", {
+test_that("upper bounds: +B for covariates, 0 for youngAge, maxAsymptote first, no hillSlope1 or inflectionPoint1", {
   expect_identical(
     estimateSpreadParams(form, annual, whichBound = "upper", upperAndLower = 9),
-    c(maxAsymptote = 0.276, inflectionPoint1 = 4,
+    c(maxAsymptote = fireSenseUtils::spreadProbCeiling,
       CMDsm = 9, youngAge = 0, class1 = 9, nf = 9))
-  expect_false("hillSlope1" %in% names(estimateSpreadParams(form, annual, "upper", upperAndLower = 9)))
+  expect_false(any(names(fireSenseUtils::fixedLogisticPars) %in%
+                     names(estimateSpreadParams(form, annual, "upper", upperAndLower = 9))))
+  expect_false("inflectionPoint1" %in% names(estimateSpreadParams(form, annual, "upper", upperAndLower = 9)))
 })
 
-test_that("lower bounds: -B for non-drought covariates and youngAge, 0 for drought-index terms, no hillSlope1", {
+test_that("lower bounds: -B for non-drought covariates and youngAge, 0 for drought-index terms, no hillSlope1 or inflectionPoint1", {
   expect_identical(
     estimateSpreadParams(form, annual, whichBound = "lower", upperAndLower = 9),
-    c(maxAsymptote = 0.25, inflectionPoint1 = 0.1,
+    c(maxAsymptote = 0.25,
       CMDsm = 0, youngAge = -9, class1 = -9, nf = -9))
-  expect_false("hillSlope1" %in% names(estimateSpreadParams(form, annual, "lower", upperAndLower = 9)))
+  expect_false("inflectionPoint1" %in% names(estimateSpreadParams(form, annual, "lower", upperAndLower = 9)))
 })
 
 test_that("the bound scales with upperAndLower and every lower bound is <= its upper bound", {
@@ -54,12 +55,12 @@ test_that("a term is bounded by name, not by annual-table membership", {
   expect_identical(unname(estimateSpreadParams(form, noYA, "lower", 9)["youngAge"]), -9)
   ## no drought or youngAge term in the formula at all
   expect_identical(estimateSpreadParams("~ 0 + class1", annual, "lower", 3),
-                   c(maxAsymptote = 0.25, inflectionPoint1 = 0.1, class1 = -3))
+                   c(maxAsymptote = 0.25, class1 = -3))
 })
 
 test_that("term order follows the formula", {
   expect_identical(names(estimateSpreadParams("~ 0 + nf + CMDsm", annual, "upper", 9)),
-                   c("maxAsymptote", "inflectionPoint1", "nf", "CMDsm"))
+                   c("maxAsymptote", "nf", "CMDsm"))
 })
 
 test_that("whichBound must be 'upper' or 'lower'", {
@@ -69,10 +70,10 @@ test_that("whichBound must be 'upper' or 'lower'", {
 
 test_that("the per-year random effect's sd is bounded last, after an upper-tail term", {
   ## fireSenseUtils::runDEoptim() finds yearSpreadSD by name and requires it last; the objective takes
-  ## the logistic parameters by position, so upperTail1 stays 3rd (no hillSlope1 ahead of it)
+  ## the logistic parameters by position, so upperTail1 is 2nd (the fixed hillSlope1 and inflectionPoint1 follow maxAsymptote)
   up <- estimateSpreadParams(form, annual, "upper", 9, upperTailBounds = c(-1, 1), yearSpreadSDBounds = c(0, 1))
   lo <- estimateSpreadParams(form, annual, "lower", 9, upperTailBounds = c(-1, 1), yearSpreadSDBounds = c(0, 1))
-  expect_identical(names(up)[3], "upperTail1")
+  expect_identical(names(up)[2], "upperTail1")
   expect_identical(names(up)[length(up)], "yearSpreadSD")
   expect_identical(unname(c(lo["yearSpreadSD"], up["yearSpreadSD"])), c(0, 1))
   expect_identical(names(up), names(lo))

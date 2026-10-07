@@ -18,7 +18,7 @@ test_that("parameter classes", {
       maxFireSpread = "numeric", mode = "character", mutuallyExclusiveCols = "list",
       nCoresNeeded = "integer", objFunCoresInternal = "integer",
       objfunFireReps = "integer", refitExisting = "logical",
-      rep = "integer", rescaleAll = "logical", SNLL_FS_thresh = "integer",
+      .rep = "integer", rescaleAll = "logical", SNLL_FS_thresh = "integer",
       spreadFitFilename = "character", spreadFitGoogleDriveFolder = "character",
       stopIfNoPreRunFit = "logical", strategy = "integer", trace = "numeric", upper = "numeric",
       upperAndLowerVal = "numeric", upperAndLowerValFuel = "numeric", useCache_DE = "logical",
@@ -72,13 +72,13 @@ test_that("numeric defaults", {
   expect_identical(def$iterThresh, 96L)
   expect_identical(def$objFunCoresInternal, 1L)
   expect_identical(def$cores, 1L)
-  expect_identical(def$rep, 1L)
+  expect_identical(def$.rep, 1L)
   expect_identical(def$trace, 1L)
   expect_identical(def$verbose, 1)
-  expect_identical(def$maxFireSpread, 0.28)
+  expect_identical(def$maxFireSpread, fireSenseUtils::spreadProbCeiling)
   expect_identical(def$upperAndLowerVal, 50)
   expect_identical(def$upperAndLowerValFuel, 100)
-  expect_identical(def$covFixedRange, list(CMDsm = c(0, 100), CMD = c(0, 100), CMDsp = c(0, 100), cumMDC = c(0, 100)))
+  expect_identical(def$covFixedRange, fireSenseUtils::climateCovRanges)
   expect_identical(def$.plotSize, list(height = 1600, width = 2000))
 })
 
