@@ -17,3 +17,13 @@ test_that("the plot event draws one histogram per coefficient, named as the run 
   expect_setequal(unique(as.character(sim$fsSpreadFit_hists$data$key)), names(lower))
   expect_identical(nrow(sim$fsSpreadFit_hists$data), length(lower) * nrow(sim$DE[[1]]$member$pop))
 })
+
+test_that("the plot event saves its figure in the fit's folder, not the scenario's output folder", {
+  skip_if_not_installed("ggplot2"); skip_if_not_installed("tidyr")
+  sim <- toySim(list(stopIfNoPreRunFit = FALSE, SNLL_FS_thresh = 250L, mode = c("fit", "visualize")))
+  mockFitAndLedger(sim)
+  mockInModule(sim, runSpreadWithoutDEoptim = function(...) NULL)
+  sim <- suppressWarnings(suppressMessages(SpaDES.core::spades(sim)))
+  expect_true(file.exists(file.path(toyFitDir(sim), "spreadFit_coeffs.png")))
+  expect_length(list.files(SpaDES.core::outputPath(sim), pattern = "[.]png$", recursive = TRUE), 0L)
+})

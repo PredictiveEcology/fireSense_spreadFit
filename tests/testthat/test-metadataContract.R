@@ -28,7 +28,7 @@ test_that("parameter classes", {
       adWeight = "character|numeric", yearAreaWeight = "numeric|character",
       areaDistWeight = "numeric|character", penaliseRunaways = "logical", runawayEdgeFrac = "numeric", runawayEdgeMin = "integer", jumpTries = "numeric", jumpMeanDist = "numeric",
       upperTailBounds = "numeric", yearSpreadSDBounds = "numeric",
-      verbose = "numeric", visualizeDEoptim = "Path"))
+      verbose = "numeric", visualizeDEoptim = "Path", fitOutputPath = "character"))
   )
 })
 

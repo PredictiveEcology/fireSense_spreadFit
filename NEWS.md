@@ -1,5 +1,7 @@
 # fireSense_spreadFit (development version)
 
+- A fit's figures, DEoptim plots and held-out results (`spreadFitHeldOut_*.rds`) are written next to the fit's ledger file, in `<inputPath>/fits/<.ELFind>_<ledger file name>` (`fireSenseUtils::fitOutputPath()`), not in `outputPath(sim)`, which in FireSense runs is the output folder of whichever scenario and replicate fitted first. A fit depends only on its polygon, fire years and model. New parameter `fitOutputPath` (default `NULL`) overrides the folder. `visualizeDEoptim` now defaults to `NULL`, the same folder, and a path set by the user is used as given (it was reset to the module's figure folder unless its last folder was the module name). The `plot` event draws through `Plots()` and titles its figure with `.ELFind`. Floor: `fireSenseUtils` (>= 0.2.3.9087, for `fitOutputPath()`).
+
 - `studyAreaWithSpreadParams` is now declared as an `expectsInput` (it stays a `createsOutput`). `init` reads the ledger rows `fireSense_dataPrepFit` sets, but as an output only it was not in the event's cache key, so a cache hit restored the rows from an older job (ELF 14.3: 720 iterations, no intercept) over the current ones and `fireSense_spreadPredict` failed on missing covariates.
 
 # fireSense_spreadFit 1.1.5

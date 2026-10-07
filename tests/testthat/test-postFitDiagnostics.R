@@ -115,7 +115,7 @@ test_that("crossValidate fits each half of the years and predicts the other half
   expect_null(rec$geoArgs)                             # the ledger is not touched
   ## the simList is discarded in batch runs stopped after crossValidate, so the result must also
   ## reach disk (fireSense_spreadFit.R crossValidate event)
-  heldOutPath <- file.path(SpaDES.core::outputPath(sim), moduleName, "spreadFitHeldOut_toyRun.rds")
+  heldOutPath <- file.path(toyFitDir(sim), "spreadFitHeldOut_toyRun.rds")
   expect_true(file.exists(heldOutPath))
   expect_equal(readRDS(heldOutPath), ho)
 })

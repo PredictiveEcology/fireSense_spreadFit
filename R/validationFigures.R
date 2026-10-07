@@ -23,10 +23,10 @@ spreadFitValidationFigures <- function(sim, par, covs, label) {
   if (!anyPlotting(P(sim)$.plots)) return(invisible(NULL))
   d <- do.call(spreadFitValidationData,
                c(list(par = par, seed = .elfSeed(sim$.ELFind)), spreadObjFunArgs(sim, covs)))
-  Plots(d, fn = plotSpreadFitValidation, types = P(sim)$.plots, path = figurePath(sim),
+  Plots(d, fn = plotSpreadFitValidation, types = P(sim)$.plots, path = spreadFitOutputPath(sim),
         filename = paste0("spreadFitObservedVsSimulated_", label),
         ggsaveArgs = list(width = 12, height = 9))
-  Plots(d, fn = plotSpreadFitResponse, types = P(sim)$.plots, path = figurePath(sim),
+  Plots(d, fn = plotSpreadFitResponse, types = P(sim)$.plots, path = spreadFitOutputPath(sim),
         filename = paste0("spreadFitResponseCurves_", label),
         ggsaveArgs = list(width = 12, height = 9))
   invisible(NULL)

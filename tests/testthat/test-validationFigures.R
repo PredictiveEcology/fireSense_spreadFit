@@ -47,16 +47,15 @@ test_that("after a fit, .plots = 'png' makes both figures from one simulation of
   expect_identical(v$args$escapeSizeHa, 50)
   expect_identical(v$args$jumpTries, 20)
   expect_identical(v$args$jumpMeanDist, 3)
-  ## two Plots() calls on that one table, png, under figurePath(sim)
+  ## two Plots() calls on that one table, png, in the fit folder
   expect_length(rec$plots, 2L)
   expect_identical(rec$plots[[1]]$data, v$d)
   expect_identical(rec$plots[[2]]$data, v$d)
   expect_identical(rec$plots[[1]]$fn, fireSenseUtils::plotSpreadFitValidation)
   expect_identical(rec$plots[[2]]$fn, fireSenseUtils::plotSpreadFitResponse)
   expect_identical(vapply(rec$plots, `[[`, "", "types"), c("png", "png"))
-  ## figurePath(sim) inside the module's event: <outputPath>/figures/<module>
-  expect_identical(vapply(rec$plots, `[[`, "", "path"),
-                   rep(file.path(SpaDES.core::outputPath(sim), "figures", moduleName), 2))
+  ## next to the fit's ledger file, not in the scenario's output folder
+  expect_identical(vapply(rec$plots, `[[`, "", "path"), rep(toyFitDir(sim), 2))
   expect_identical(vapply(rec$plots, `[[`, "", "filename"),
                    c("spreadFitObservedVsSimulated_toyRun", "spreadFitResponseCurves_toyRun"))
 })

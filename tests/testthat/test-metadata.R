@@ -75,7 +75,7 @@ test_that("parameters are the expected names", {
            "refitExisting", "rescaleAll", "SNLL_FS_thresh", "spreadFitFilename",
            "spreadFitGoogleDriveFolder", "stopIfNoPreRunFit", "strategy", "trace",
            "upper", "upperAndLowerVal", "upperAndLowerValFuel", "useCache_DE",
-           "verbose", "visualizeDEoptim"))
+           "verbose", "visualizeDEoptim", "fitOutputPath"))
   )
 })
 

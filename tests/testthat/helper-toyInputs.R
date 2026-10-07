@@ -91,6 +91,13 @@ toySim <- function(params = list(), objects = list()) {
                          objects = obj))
 }
 
+## Where a toy fit's figures and held-out results go: next to its ledger file, for ELF 9.9 and the
+## toy covariates' years (2001-2002).
+toyFitDir <- function(sim) {
+  file.path(SpaDES.core::inputPath(sim), "fits",
+            paste0("9.9_", tools::file_path_sans_ext(fireSenseUtils::spreadFitFilenameFor(2001:2002))))
+}
+
 ## Run only the named events of this module.
 runEvents <- function(sim, events) {
   suppressMessages(SpaDES.core::spades(sim, events = stats::setNames(list(events), toyModule)))

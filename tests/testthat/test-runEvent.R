@@ -173,10 +173,18 @@ test_that("stale spreadFitAdditionalColNames are replaced by fireSenseUtils' nam
   expect_identical(sim$spreadFitAdditionalColNames, fireSenseUtils::spreadFitAdditionalColNamesTxt)
 })
 
-test_that("visualizeDEoptim is pointed at the module's figure folder", {
-  out <- fitted(list(visualizeDEoptim = file.path(tempdir(), "elsewhere")))
-  expect_identical(basename(out$rec$deArgs$visualizeDEoptim), moduleName)
-  expect_identical(basename(m(out$sim)$visualizeDEoptim), moduleName)
+test_that("visualizeDEoptim defaults to the fit's folder, next to its ledger file", {
+  out <- fitted()
+  expect_identical(out$rec$deArgs$visualizeDEoptim, toyFitDir(out$sim))
+  expect_identical(m(out$sim)$visualizeDEoptim, toyFitDir(out$sim))
+})
+
+test_that("fitOutputPath moves the fit's folder, and a set visualizeDEoptim is kept", {
+  elsewhere <- file.path(tempdir(), "elsewhere")
+  out <- fitted(list(fitOutputPath = elsewhere))
+  expect_identical(out$rec$deArgs$visualizeDEoptim, elsewhere)
+  out <- fitted(list(visualizeDEoptim = file.path(tempdir(), "de")))
+  expect_identical(out$rec$deArgs$visualizeDEoptim, file.path(tempdir(), "de"))
 })
 
 test_that("with a ledger row for this polygon nothing is fitted or written", {

@@ -28,7 +28,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development",
                   "PredictiveEcology/clusters@development (>= 0.0.52)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9084)",
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9087)",
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
     defineParameter(".plots", "character|logical", default = NULL, ## TODO: use .plotInitialTime etc.
@@ -103,7 +103,7 @@ defineModule(sim, list(
                                  "adds the `debug` and `plot` events after the fit; 'validate' adds `crossValidate`,",
                                  "two more fits, each on half the years, predicting the other half",
                                  "(`sim$spreadFitHeldOut`). Validation never writes the ledger, but does write",
-                                 "`sim$spreadFitHeldOut` to `outputPath(sim)`, since a batch run typically stops",
+                                 "`sim$spreadFitHeldOut` to `fitOutputPath`, since a batch run typically stops",
                                  "after `crossValidate` and the simList is discarded. See `heldOutFold` to run a",
                                  "single fold as its own job instead of both folds together.")),
     defineParameter("heldOutFold", "integer", default = NA,
@@ -257,9 +257,15 @@ defineModule(sim, list(
                     desc = paste0("optional. With increasing number, more verbosity. Level 1 is ",
                                   "normal reproducible (e.g., Cache), level 2 includes objective function ",
                                   "e.g., print median of spreadProb during calculations")),
-    defineParameter("visualizeDEoptim", "Path", default = asPath(figurePath(sim)),
+    defineParameter("visualizeDEoptim", "Path", default = NULL,
                     desc = paste("Directory where `runDEoptim` saves parameter plots every `.plotInterval` generations.",
-                                 "Reset to `figurePath(sim)` unless its last folder is the module name.")),
+                                 "`NULL` (the default) means the fit's folder, `fitOutputPath`.")),
+    defineParameter("fitOutputPath", "character", default = NULL,
+                    desc = paste("Folder for this fit's figures, DEoptim plots and held-out results",
+                                 "(`spreadFitHeldOut_*.rds`). `NULL` (the default) puts them next to the fit's ledger",
+                                 "file, in `fireSenseUtils::fitOutputPath(inputPath(sim), .ELFind, <ledger file>)`, i.e.",
+                                 "`<inputPath>/fits/<.ELFind>_fireSenseParams_1985-2024_linearFuel_esc50`, so they do not",
+                                 "depend on the scenario or replicate that ran the fit.")),
     defineParameter("covFixedRange", "list", default = fireSenseUtils::climateCovRanges,
                     desc = paste("Named list of `c(min, max)`: the FIXED range every climate covariate is rescaled with, not",
                                  "the range of this polygon's data. Default `fireSenseUtils::climateCovRanges`, the one table of",
@@ -373,7 +379,7 @@ defineModule(sim, list(
                                "`sf` object, the same columns the `run` event writes, with all `simulateMembers`",
                                "members in `params`), `heldOutFold`, `fitYears`, `heldOutYears`, `formula` (`fireSense_spreadFormula`) and `link`, so",
                                "`fireSense_spreadPredict` can predict with the fold's fit. Also written to",
-                               "`file.path(outputPath(sim), currentModule(sim), \"spreadFitHeldOut_<.runName>.rds\")`",
+                               "`file.path(fitOutputPath, \"spreadFitHeldOut_<.runName>.rds\")`",
                                "(mode 'validate') or `\"...spreadFitHeldOut_<.runName>_fold<heldOutFold>.rds\"`",
                                "(`heldOutFold`)."))
   )
@@ -487,8 +493,8 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
     run = {
       if (isTRUE(Par$refitExisting) || !hasPreRunFitForThisPolygon(sim)) {
 
-        if (!identical(basename(Par$visualizeDEoptim), currentModule(sim))) {
-          params(sim)[[currentModule(sim)]][["visualizeDEoptim"]] <- figurePath(sim)
+        if (is.null(Par$visualizeDEoptim)) {
+          params(sim)[[currentModule(sim)]][["visualizeDEoptim"]] <- spreadFitOutputPath(sim)
         }
         DE <- fitSpread(sim, mod$covsX1000, mod$thresh, runName = sim$.runName)
         mod$fitDE <- DE # sim$DE is reordered below, which drops the attributes postFitDiagnostics reads
@@ -516,10 +522,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         saHere <- sim$studyAreaWithSpreadParams[, "geometry"]
         le <- function(x) {x}
         sim$studyAreaWithSpreadParams <- CacheGeo(cloudFolderID = Par$spreadFitGoogleDriveFolder,
-                                                  targetFile = ledgerWriteFile(
-                                                    Par$spreadFitFilename,
-                                                    P(sim, module = "fireSense_dataPrepFit")$fireYears,
-                                                    names(sim$fireSense_annualSpreadFitCovariates)),
+                                                  targetFile = spreadFitLedgerFile(sim),
                                                   domain = saHere,
                                                   destinationPath = inputPath(sim),
                                                   FUN = le(studyAreaFireSense),
@@ -536,11 +539,11 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
     crossValidate = {
       if (isTRUE(is.na(Par$heldOutFold))) {
         sim$spreadFitHeldOut <- crossValidateSpread(sim, mod$covsX1000)
-        heldOutPath <- file.path(outputPath(sim), currentModule(sim),
+        heldOutPath <- file.path(spreadFitOutputPath(sim),
                                  paste0("spreadFitHeldOut_", sim$.runName, ".rds"))
       } else {
         sim$spreadFitHeldOut <- crossValidateSpreadOneFold(sim, mod$covsX1000, Par$heldOutFold)
-        heldOutPath <- file.path(outputPath(sim), currentModule(sim),
+        heldOutPath <- file.path(spreadFitOutputPath(sim),
                                  paste0("spreadFitHeldOut_", sim$.runName, "_fold", Par$heldOutFold, ".rds"))
       }
       checkPath(dirname(heldOutPath), create = TRUE)
@@ -553,10 +556,9 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
       sim$fsSpreadFit_hists <- ggplot(tidyr::gather(DEpop_df), aes(value)) +
         geom_histogram(bins = 20) +
         facet_wrap(~key, scales = "free_x") +
-        ggtitle(paste("distributions of SpreadFit coefficients for", basename(outputPath(sim))))
+        ggtitle(paste("distributions of SpreadFit coefficients for", sim$.ELFind))
 
-      checkPath(file.path(outputPath(sim), currentModule(sim), "figures"), create = TRUE)
-      ggsave(file.path(outputPath(sim), currentModule(sim), "figures", "spreadFit_coeffs.png"), sim$fsSpreadFit_hists)
+      Plots(sim$fsSpreadFit_hists, filename = "spreadFit_coeffs", types = "png", path = spreadFitOutputPath(sim))
 
       sim$fsSpreadFit_hists ## show plot in session
     },
@@ -677,8 +679,10 @@ spreadFitPrep <- function(sim) {
     digNASFC <- .robustDigest(sim$fireSense_nonAnnualSpreadFitCovariates)
     histOuts <- histOfCovariates(annualList = sim$fireSense_annualSpreadFitCovariates,
                          nonAnnualList = nonAnnualLinear)
-    Plots(histOuts[["annual"]], filename = "Histograms of AnnualClimateLayers", useCache = "png")
-    Plots(histOuts[["nonAnnual"]], filename = "Histograms of FuelLayers", useCache = "png") 
+    Plots(histOuts[["annual"]], filename = "Histograms of AnnualClimateLayers", useCache = "png",
+          path = spreadFitOutputPath(sim))
+    Plots(histOuts[["nonAnnual"]], filename = "Histograms of FuelLayers", useCache = "png",
+          path = spreadFitOutputPath(sim))
   }
 
   IDvar <- grep("ID", names(sim$spreadFirePoints[[1]]), value = TRUE) |> setdiff("GID")

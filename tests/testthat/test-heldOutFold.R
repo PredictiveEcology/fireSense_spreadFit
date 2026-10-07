@@ -34,11 +34,11 @@ test_that("heldOutFold = 1 fits fold 2's years, scores only fold 1, writes a fol
   expect_identical(ho$sims$fold, 1L)
   expect_identical(vapply(rec$sims, `[[`, "", "years"), "year2001")   # predicts fold 1's held-out year
   expect_null(rec$geoArgs)                                           # the ledger is never touched
-  heldOutPath <- file.path(SpaDES.core::outputPath(sim), moduleName, "spreadFitHeldOut_toyRun_fold1.rds")
+  heldOutPath <- file.path(toyFitDir(sim), "spreadFitHeldOut_toyRun_fold1.rds")
   expect_true(file.exists(heldOutPath))
   expect_equal(readRDS(heldOutPath), ho)
   ## no full-fit file, and no mode-"validate" (both-fold) file
-  expect_false(file.exists(file.path(SpaDES.core::outputPath(sim), moduleName, "spreadFitHeldOut_toyRun.rds")))
+  expect_false(file.exists(file.path(toyFitDir(sim), "spreadFitHeldOut_toyRun.rds")))
 })
 
 test_that("heldOutFold = 2 fits fold 1's years, scores only fold 2, writes a fold-specific file", {
@@ -49,7 +49,7 @@ test_that("heldOutFold = 2 fits fold 1's years, scores only fold 2, writes a fol
   ho <- sim$spreadFitHeldOut
   expect_identical(ho$sims$fold, 2L)
   expect_identical(vapply(rec$sims, `[[`, "", "years"), "year2002")
-  heldOutPath <- file.path(SpaDES.core::outputPath(sim), moduleName, "spreadFitHeldOut_toyRun_fold2.rds")
+  heldOutPath <- file.path(toyFitDir(sim), "spreadFitHeldOut_toyRun_fold2.rds")
   expect_true(file.exists(heldOutPath))
   expect_equal(readRDS(heldOutPath), ho)
 })
@@ -80,7 +80,7 @@ test_that("the held-out object carries the fold's fit in the ledger row's struct
   expect_identical(fit$covMinMax_spread[[1]], run$covMinMax_spread[[1]])
   expect_identical(fold$formula, "~ 0 + CMDsm + youngAge + class1 + class2 + nf")
   expect_identical(fold$link, "logistic3p")
-  heldOutPath <- file.path(SpaDES.core::outputPath(out$sim), moduleName, "spreadFitHeldOut_toyRun_fold1.rds")
+  heldOutPath <- file.path(toyFitDir(out$sim), "spreadFitHeldOut_toyRun_fold1.rds")
   expect_identical(names(readRDS(heldOutPath)), c("sims", "score", "fit", "heldOutFold", "fitYears", "heldOutYears",
                                                    "formula", "link"))
   expect_identical(fold$heldOutFold, 1L)

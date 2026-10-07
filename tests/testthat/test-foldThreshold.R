@@ -42,6 +42,6 @@ test_that("a held-out fold's fit uses a threshold calibrated on the years it fit
 test_that("a fit whose final population is all fail values stops instead of scoring random parameters", {
   out <- foldRun(1L, popval = 1e6, runName = "toyFailedFit")
   expect_error(suppressMessages(SpaDES.core::spades(out$sim)), "fail value")
-  heldOutPath <- file.path(SpaDES.core::outputPath(out$sim), moduleName, "spreadFitHeldOut_toyFailedFit_fold1.rds")
+  heldOutPath <- file.path(toyFitDir(out$sim), "spreadFitHeldOut_toyFailedFit_fold1.rds")
   expect_false(file.exists(heldOutPath))
 })
