@@ -617,7 +617,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 50 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Bound given to each covariate coefficient (`upper` = this, `lower` = minus this) when `upper` or `lower` is not supplied. Bounds should be wide enough that they do not influence the fitted value; only the sign of drought-index and `youngAge` terms is constrained (see `estimateSpreadParams()`). A held-out experiment (7 ELFs x 2 folds) found estimates up to 25.7 and youngAge medians down to -23.0 with the previous default of 9. </td>
+   <td style="text-align:left;"> Bound given to each covariate coefficient (`upper` = this, `lower` = minus this) when `upper` or `lower` is not supplied. Bounds should be wide enough that they do not influence the fitted value; only the sign of drought-index, `youngAge` and fuel biomass terms is constrained (see `estimateSpreadParams()`). A held-out experiment (7 ELFs x 2 folds) found estimates up to 25.7 and youngAge medians down to -23.0 with the previous default of 9. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> upperAndLowerValFuel </td>
