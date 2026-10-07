@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.1.5"
-date: "Last updated: 2026-10-06"
+date: "Last updated: 2026-10-07"
 output:
   bookdown::html_document2:
     toc: true
@@ -417,7 +417,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> TRUE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> A simulated fire that burns any pixel of the outer edge of its own buffer is scored as a runaway (at least that big), not as a fire of the size it reached: in the size likelihood it has no density at the observed size, and in the Anderson-Darling and annual-area terms its size is the landscape's pixel count. Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size. Passed to `fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting. </td>
+   <td style="text-align:left;"> A simulated fire that burns its buffer's outer edge (see `runawayEdgeFrac`) is a runaway, censored in the size likelihood: it has no density at the observed size. The Anderson-Darling, annual-area and area-distribution terms score the size it burned. Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size in the likelihood too. Passed to `fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> runawayEdgeFrac </td>
