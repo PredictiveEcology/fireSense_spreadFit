@@ -157,6 +157,18 @@ test_that("fit mode: the trials run the fit's own objective (penaliseRunaways re
   expect_equal(as.numeric(off) - as.numeric(on), 2000)
 })
 
+test_that("fit mode: runawayBufferMultiple reaches the trials", {
+  withr::local_options(mc.cores = 2L)
+  ## forks do not share a recorder: the multiple shows in the score
+  local_mocked_bindings(.objfunSpreadFit = function(par, thresh, returnTerms = FALSE, runawayBufferMultiple = NULL, ...) {
+    a <- annualOf(par) + 1000 * (if (is.null(runawayBufferMultiple)) 0 else runawayBufferMultiple)
+    c(objective = 1000 + a, firstBlockSNLL = a, bailed = 0)
+  })
+  asBurned <- callIt("fit", iterThresh = 3L)
+  byBuffer <- callIt("fit", iterThresh = 3L, runawayBufferMultiple = 2)
+  expect_equal(as.numeric(byBuffer) - as.numeric(asBurned), 4000)   # margin 2 x 2000
+})
+
 ## The calibration draws from the logistic's active range: draws that saturate (fail the objective's
 ## spreadProb gates) are rejected, so the trials are ones the objective will score.
 ## Here only a > 0.97 passes (3% of the uniform draws), and the objective bails on the others.

@@ -68,7 +68,21 @@ test_that("the new terms and jumping are on by default", {
   for (a in list(rec$args, fitRec$deArgs)) {
     expect_identical(a$runawayEdgeFrac, 0.01)
     expect_identical(a$runawayEdgeMin, 3L)
+    expect_identical(a$runawayBufferMultiple, 2)
   }
+})
+
+test_that("runawayBufferMultiple = NA reaches the fit and the calibration as NULL (the size it burned)", {
+  rec <- new.env(); fitRec <- new.env()
+  sim <- toySim(list(stopIfNoPreRunFit = FALSE, SNLL_FS_thresh = NULL, runawayBufferMultiple = NA_real_))
+  mockFitAndLedger(sim, fitRec)
+  mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
+  sim <- suppressMessages(SpaDES.core::spades(sim))
+  expect_true(exists("args", rec) && "runawayBufferMultiple" %in% names(rec$args))
+  expect_null(rec$args$runawayBufferMultiple)
+  expect_true("runawayBufferMultiple" %in% names(fitRec$deArgs))
+  expect_null(fitRec$deArgs$runawayBufferMultiple)
+  expect_null(formals(runSpreadWithoutDEoptim)$runawayBufferMultiple)
 })
 
 test_that("penaliseRunaways = FALSE reaches the fit, the calibration and the objective", {
@@ -96,8 +110,9 @@ test_that("penaliseRunaways = FALSE reaches the fit, the calibration and the obj
     flammableRTM = land, annualDTx1000 = list(), nonAnnualDTx1000 = list(), fireBufferedListDT = list(),
     historicalFires = fires, covMinMax = NULL, objfunFireReps = 2L, maxFireSpread = 0.28,
     tests = "SNLL_FS", formulaToFit = "~ 0 + a", mode = "debug", seed = 1L, escapeSizeHa = 50,
-    penaliseRunaways = FALSE, runawayEdgeFrac = 0.5, runawayEdgeMin = 7L)))
+    penaliseRunaways = FALSE, runawayEdgeFrac = 0.5, runawayEdgeMin = 7L, runawayBufferMultiple = 3)))
   expect_true(length(seen) > 0)
+  expect_true(all(vapply(seen, function(a) identical(a$runawayBufferMultiple, 3), logical(1))))
   expect_true(all(vapply(seen, function(a) identical(a$runawayEdgeFrac, 0.5) && identical(a$runawayEdgeMin, 7L),
                          logical(1))))
   expect_true(all(vapply(seen, function(a) identical(a$penaliseRunaways, FALSE), logical(1))))
