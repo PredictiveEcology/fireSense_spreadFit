@@ -1,3 +1,5 @@
+# fireSense_spreadFit (development version)
+
 # fireSense_spreadFit 1.2.0
 
 This release makes fire-spread fits more reliable and easier to check. The fitting search now uses settings chosen from a comparison of options, stops once it has settled, and fixes parameters that could not be estimated well, so repeated fits agree more closely. Fires that would run away are scored by whether they reach the edge of their own area rather than being cut off at a fixed size, and several errors in how the fitting threshold was calibrated, which could make a fit depend on luck or fail outright, are fixed. Fuel biomass is fitted on its natural scale, with its own bounds, and each fit records how much spread varies from year to year.
