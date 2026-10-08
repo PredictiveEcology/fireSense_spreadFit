@@ -8,7 +8,8 @@
 #' @param sim a `simList`.
 #' @param covs the covariates as integers x 1000 (`mod$covsX1000`, or a subset of its years).
 #' @param thresh the objective's early-stop threshold, `mod$thresh`.
-#' @param runName character; labels the run and its cache entry.
+#' @param runName character; labels the run and its cache entry. Also names the fit's progress file,
+#'   `DEoptimProgress_<runName>.csv` in the module's output folder.
 #' @param diagnostics logical; `FALSE` skips the profile and the simulations.
 #' @return the `runDEoptim()` result. Stops if every member of the final population has the
 #'   objective's fail value: no parameter set ever passed `thresh`, so there is no fit.
@@ -23,6 +24,9 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
   }
   messageDF(best$bestCluster)
   fnName <- paste0("runDEoptim_", runName, "_", P(sim)$.rep)
+  ## one progress file per fit (the main fit, each fold), in the run's own output folder
+  progressFile <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
+                            paste0("DEoptimProgress_", runName, ".csv"))
   DE <- Cache(runDEoptim(landscape = sim$rasterToMatch,
                    annualDTx1000 = covs$annualDTx1000,
                    nonAnnualDTx1000 = covs$nonAnnualDTx1000,
@@ -60,6 +64,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    plotEvery = P(sim)$.plotInterval,
                    rep = P(sim)$.rep,
                    runName = runName,
+                   progressFile = progressFile,
                    sizeLik = P(sim)$sizeLik,
                    sizeLikDf = P(sim)$sizeLikDf,
                    weighted = P(sim)$weighted,
@@ -82,7 +87,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
         .cacheExtra = list(fnName, objectiveBodies()),
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
-        omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "runawayEdgeFrac", "runawayEdgeMin",
+        omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "progressFile", "runawayEdgeFrac", "runawayEdgeMin",
                      ## NULL without an intercept: omitted then, so fits cached before it existed are found
                      fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread)),
         useCache = P(sim)$useCache_DE
