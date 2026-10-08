@@ -6,7 +6,7 @@
 ## The calls need a full simList, so this checks the module's source instead of running
 ## it: parsed, not sourced, so no module machinery is needed.
 test_that("every runSpreadWithoutDEoptim() call passes the DEoptimTests parameter", {
-  exprs <- parse(testthat::test_path("..", "..", "fireSense_SpreadFit.R"), keep.source = FALSE)
+  exprs <- parse(testthat::test_path("..", "..", "fireSense_spreadFit.R"), keep.source = FALSE)
 
   calls <- list()
   walk <- function(x) {

@@ -5,5 +5,5 @@
 .DS_Store
 .quarto
 
-fireSense_SpreadFit_cache/
-fireSense_SpreadFit2.Rmd
+fireSense_spreadFit_cache/
+fireSense_spreadFit2.Rmd

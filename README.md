@@ -1,1 +1,1 @@
-fireSense_SpreadFit.md
+fireSense_spreadFit.md

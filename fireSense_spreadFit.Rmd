@@ -1,0 +1,146 @@
+---
+title: "fireSense_spreadFit Manual"
+subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'fireSense_spreadFit', path = '..')$version`"
+date: "Last updated: `r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    theme: sandstone
+    number_sections: false
+    df_print: paged
+    keep_md: yes
+editor_options:
+  chunk_output_type: console
+bibliography: citations/references_fireSense_spreadFit.bib
+link-citations: true
+always_allow_html: true
+---
+
+# fireSense_spreadFit Module
+
+<!-- the following are text references used in captions for LaTeX compatibility -->
+(ref:fireSense-spreadFit) *fireSense_spreadFit*
+
+```{r setup-fireSense-spreadFit, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
+
+dir.create("figures", showWarnings = FALSE)
+
+download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.png",
+              destfile = "figures/markdownBadge.png",
+              mode = "wb")
+```
+
+[![made-with-Markdown](figures/markdownBadge.png)](https://commonmark.org)
+
+<!-- if knitting to pdf remember to add the pandoc_args: ["--extract-media", "."] option to yml in order to get the badge images -->
+
+#### Authors:
+
+`r paste(as.character(SpaDES.core::moduleMetadata(module = "fireSense_spreadFit", path = '..')$authors), sep = ', ')`
+<!-- ideally separate authors with new lines, '\n' not working -->
+
+## Module Overview
+
+### Module summary
+
+Fit statistical models that can be used to parameterize the fire spread component of simulation models (e.g., fireSense [@Marchal:2017a; @Marchal:2017b; @Marchal:2019]).
+This module implement a Pattern Oriented Modelling (POM) approach to derive spread probabilities from final fire sizes. <!-- TODO add citation for POM -->
+Spread probabilities can vary between pixels, and thus reflect local heterogeneity in environmental conditions.
+
+The fit is a differential evolution search (`DEoptim`, run by `fireSenseUtils::runDEoptim()` on a cluster built by the `clusters` package).
+Each candidate parameter set is scored by simulating the historical fires and comparing simulated with observed fire sizes (`fireSenseUtils::.objfunSpreadFit()`).
+The 5 best parameter sets, and the covariate ranges used to rescale the covariates, are written as one row per polygon to a shared "fit ledger" on Google Drive (`spreadFitFilename` in `spreadFitGoogleDriveFolder`), keyed by `.ELFind`.
+If the ledger already holds a row for the polygon, the module does nothing unless `refitExisting = TRUE`.
+By default (`stopIfNoPreRunFit = TRUE`) the module stops rather than start a fit; set it to `FALSE` to fit.
+
+#### `refitExisting`
+
+`refitExisting = TRUE` forces a fit for this polygon even when the ledger already holds a row for it.
+Use it when the fit's INPUTS have changed -- new land cover, new vegetation parameters, a new objective
+function -- so the stored row is stale and the polygon must be fitted again.
+
+`refitExisting` **overrides** `stopIfNoPreRunFit`: with `refitExisting = TRUE`, `init` schedules the fit
+rather than stopping, whatever `stopIfNoPreRunFit` is set to. Setting `stopIfNoPreRunFit = FALSE` is only
+needed when the polygon has no ledger row.
+
+`refitExisting` is intended **for developers** who have access to **at least 40 cores**: it triggers a
+full DEoptim run (see `cores` and `nCoresNeeded`), which is not practical on a small machine.
+
+### Module inputs and parameters
+
+The covariate tables, fire buffers, fire points and formula are made by `fireSense_dataPrepFit`.
+`fireSense_spreadFormula` must be supplied; `.ELFind` defaults to `.runName`.
+
+Table \@ref(tab:moduleInputs-fireSense-spreadFit) shows the full list of module inputs.
+
+```{r moduleInputs-fireSense-spreadFit, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_inputs <- SpaDES.core::moduleInputs("fireSense_spreadFit", "..")
+knitr::kable(df_inputs,
+             caption = "List of (ref:fireSense-spreadFit) input objects and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-spreadFit))
+
+
+```{r moduleParams-fireSense-spreadFit, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_params <- SpaDES.core::moduleParams("fireSense_spreadFit", "..")
+knitr::kable(df_params, caption = "List of (ref:fireSense-spreadFit) parameters and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Events
+
+- `init`: schedules `spreadFitPrepare` and, if the polygon needs a fit, `estimateThreshold` then `run` (or `debug` when `mode` includes `"debug"`; `debug` and `plot` after `run` when it includes `"visualize"`);
+- `spreadFitPrepare`: sets default `lower`/`upper`, computes `covMinMax_spread` and `lociList`, converts covariates to integers (x 1000);
+- `estimateThreshold`: uses `SNLL_FS_thresh`, or calibrates it from `iterThresh` random parameter sets (cached, with a seed derived from `.ELFind`);
+- `run`: runs DEoptim (cached per generation) and writes the polygon's row to the ledger;
+- `debug`: evaluates the objective function without DEoptim;
+- `plot`: histograms of the final population;
+
+### Plotting
+
+With `.plots` set, histograms of the annual and non-annual covariates.
+During the fit, `runDEoptim()` saves parameter histograms and trace plots to `visualizeDEoptim` after each generation.
+
+### Saving
+
+The fit's row in the cloud ledger, and the DEoptim cache entries. Nothing else is saved.
+
+### Module outputs
+
+Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-spreadFit)).
+
+```{r moduleOutputs-fireSense-spreadFit, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_outputs <- SpaDES.core::moduleOutputs("fireSense_spreadFit", "..")
+knitr::kable(df_outputs, caption = "List of (ref:fireSense-spreadFit) outputs and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Links to other modules
+
+Inputs come from `fireSense_dataPrepFit`. `fireSense_spreadPredict` uses `studyAreaWithSpreadParams` (the ledger rows) to predict spread probabilities.
+
+### Usage
+
+```{r usage-fireSense-spreadFit, eval = FALSE}
+## in a project that also runs fireSense_dataPrepFit
+params <- list(fireSense_spreadFit = list(
+  stopIfNoPreRunFit = FALSE,          # allow a fit to start
+  cores = rep(c("hostA", "hostB"), each = 20), # host name repeated once per worker; or a number for localhost
+  nCoresNeeded = 40,                  # = DEoptim population size (NP)
+  iterDEoptim = 500,
+  mode = "fit"
+))
+objects <- list(.ELFind = "6.1.1")    # polygon id used as the ledger key
+```
+
+### Getting help
+
+- <https://github.com/PredictiveEcology/fireSense_spreadFit/issues>
+
+## References
+
+<!-- autogenerated from bibligraphy -->

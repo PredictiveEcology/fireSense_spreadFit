@@ -20,8 +20,8 @@ on:
       - development
     paths:
       - .github/workflows/render-module-rmd.yaml
-      - fireSense_SpreadFit.Rmd
-      - fireSense_SpreadFit.R
+      - fireSense_spreadFit.Rmd
+      - fireSense_spreadFit.R
   workflow_dispatch:
 
 jobs:
@@ -35,4 +35,4 @@ jobs:
       contents: write
     uses: PredictiveEcology/actions/.github/workflows/render-module-rmd.yaml@main
     with:
-      module: fireSense_SpreadFit
+      module: fireSense_spreadFit

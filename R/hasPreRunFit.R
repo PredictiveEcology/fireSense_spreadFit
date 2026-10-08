@@ -4,7 +4,7 @@
 #' area: neighbours' fits, this polygon's fit, or nothing at all. Its class
 #' therefore says nothing about *this* polygon. Deciding by class (`is(x, "sf")`)
 #' skipped the fit for every unfitted ELF -- `fireSense_dataPrepFit` assigns the
-#' object whenever the ledger loads -- and left `fireSense_SpreadPredict` to die on
+#' object whenever the ledger loads -- and left `fireSense_spreadPredict` to die on
 #' an empty parameter set (2026-09-07, every job of the 41-ELF batch).
 #'
 #' @param sim A `simList`. Uses `sim$.ELFind` as the polygon identity (the ledger

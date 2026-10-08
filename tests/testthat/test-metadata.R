@@ -27,8 +27,17 @@ test_that("inputs are the expected names and classes", {
       rasterToMatch                          = "SpatRaster",
       spreadFirePoints                       = "sf",
       spreadFitAdditionalColNames            = "character",
-      studyArea                              = "sf")
+      studyArea                              = "sf",
+      studyAreaWithSpreadParams              = "sf")
   )
+})
+
+## The init event reads the ledger rows dataPrepFit sets; an object that is only an output is
+## left out of the event's cache key, and a cache hit then restores a stale copy over it.
+test_that("studyAreaWithSpreadParams is both an input and an output", {
+  md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
+  expect_true("studyAreaWithSpreadParams" %in% md$inputObjects$objectName)
+  expect_true("studyAreaWithSpreadParams" %in% md$outputObjects$objectName)
 })
 
 test_that("outputs are the expected names and classes", {
@@ -36,11 +45,18 @@ test_that("outputs are the expected names and classes", {
   outputs <- stats::setNames(md$outputObjects$objectClass, md$outputObjects$objectName)
   expect_identical(
     outputs[order(names(outputs))],
-    c(covMinMax_spread          = "data.table",
+    c(covCentre_spread          = "list",
+      covMinMax_spread          = "data.table",
       DE                        = "data.table",
-      fireSense_SpreadFitted    = "fireSense_SpreadFit",
       fsSpreadFit_hists         = "ggplot",
       lociList                  = "list",
+      spreadFitConvergence      = "data.table",
+      spreadFitHeldOut          = "list",
+      spreadFitIdentifiability  = "data.table",
+      spreadFitLinkSaturation   = "data.table",
+      spreadFitProfile          = "data.table",
+      spreadFitRescore          = "data.table",
+      spreadFitSizes            = "data.table",
       studyAreaWithSpreadParams = "sf")
   )
 })
@@ -49,15 +65,33 @@ test_that("parameters are the expected names", {
   md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
   expect_identical(
     sort(md$parameters$paramName),
-    sort(c(".c", ".plots", ".plotSize", ".runInitialTime", ".runInterval",
-           ".saveInitialTime", ".saveInterval", ".useCache", "cacheId_DE",
-           "cloudFolderID_DE", "cores", "DEoptimTests", "doObjFunAssertions",
-           "initialpop", "iterDEoptim", "iterStep", "iterThresh", "libPathDEoptim",
-           "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "NP",
-           "objFunCoresInternal", "objfunFireReps", "onlyLoadDEOptim", "rep",
-           "rescaleAll", "SNLL_FS_thresh", "spreadFitFilename",
+    sort(c(".c", ".plotInterval", ".plots", ".plotSize", ".runInitialTime", ".studyAreaName",
+           ".useCache", "cores", "covFixedRange", "DEoptimControl", "DEoptimTests", "doObjFunAssertions",
+           "heldOutFold", "initialpop", "iterDEoptim", "iterThresh", "thresholdMargin", "libPathDEoptim",
+           "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded",
+           "objFunCoresInternal", "objfunFireReps", ".rep", "adWeight", "profileReps",
+           "simulateMembers", "sizeLik", "sizeLikDf", "escapeSizeHa", "yearAreaWeight", "areaDistWeight", "penaliseRunaways", "runawayEdgeFrac", "runawayEdgeMin",
+           "jumpTries", "jumpMeanDist", "upperTailBounds", "weighted", "yearSpreadSDBounds",
+           "refitExisting", "rescaleAll", "SNLL_FS_thresh", "spreadFitFilename",
            "spreadFitGoogleDriveFolder", "stopIfNoPreRunFit", "strategy", "trace",
-           "upper", "upperAndLowerVal", "urlDEOptimObject", "useCache_DE",
-           "useCloud_DE", "verbose", "visualizeDEoptim"))
+           "upper", "upperAndLowerVal", "upperAndLowerValFuel", "useCache_DE",
+           "verbose", "visualizeDEoptim"))
   )
+})
+
+test_that("the required clusters has the fixes a fit on the fleet needs", {
+  ## clusters 0.0.41 (2026-09-15): clusterSetup() no longer sends the cluster object to every worker (a fit
+  ## stalled for hours), works without reproducible attached or ~/.ssh/config, and picks tunnel ports below
+  ## the ephemeral range (a 110-worker build hung). With a lower floor, Require keeps an installed clusters
+  ## that has none of these (the fleet had 0.0.31).
+  ## clusters 0.0.42: DEoptimIterative2() runs DEoptim with c = 0. With c > 0, DEoptim's F adaptation turns
+  ## every trial vector into NaN once a call's first generation has no success.
+  md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
+  clustersReq <- grep("/clusters@", unlist(md$reqdPkgs), value = TRUE)
+  expect_length(clustersReq, 1L)
+  ## clusters 0.0.46: DEoptimIterative2() stops a fit when the population median has stopped improving, so
+  ## `iterDEoptim` (5000) is a ceiling, not the run length.
+  expect_true(package_version(sub(".*>=\\s*([0-9.]+).*", "\\1", clustersReq)) >= "0.0.46")
+  ## clusters 0.0.52: DEoptimIterative2(plotEvery), which `.plotInterval` reaches through runDEoptim()
+  expect_true(package_version(sub(".*>=\\s*([0-9.]+).*", "\\1", clustersReq)) >= "0.0.52")
 })
