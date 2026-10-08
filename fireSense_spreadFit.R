@@ -25,7 +25,7 @@ defineModule(sim, list(
                   "ggplot2", "scales", "kSamples", "munsell",
                   "logging", "magrittr", "parallel", "raster", "sf", "terra", "tidyr", "withr", ## TODO: remove magrittr
                   "PredictiveEcology/pemisc@development",
-                  "PredictiveEcology/reproducible@development",
+                  "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.52)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9084)",
