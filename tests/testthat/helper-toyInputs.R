@@ -41,7 +41,7 @@ toyPoints <- function(x, y, id, yr, ha) {
 ## A fresh copy every call: spreadFitPrep() changes some of its inputs by reference.
 toyObjects <- function() {
   list(
-    .runName = "toyRun", .ELFind = "9.9",
+    .ELFind = "9.9",
     rasterToMatch = toyRTM(), studyArea = toyStudyArea(),
     spreadFirePoints = list(
       year2001 = toyPoints(c(250, 550), c(950, 450), c(11L, 12L), 2001L, c(5, 12)), # cells 3 and 56
@@ -84,7 +84,7 @@ toySim <- function(params = list(), objects = list()) {
     base[!vapply(base, is.null, logical(1))]
   }
   obj <- override(toyObjects(), objects)
-  pars <- override(list(.useCache = FALSE, useCache_DE = FALSE, SNLL_FS_thresh = 500L), params)
+  pars <- override(list(.runName = "toyRun", .useCache = FALSE, useCache_DE = FALSE, SNLL_FS_thresh = 500L), params)
   suppressMessages(
     SpaDES.core::simInit(times = list(start = 0, end = 1), modules = toyModule,
                          paths = toyPaths(), params = stats::setNames(list(pars), toyModule),

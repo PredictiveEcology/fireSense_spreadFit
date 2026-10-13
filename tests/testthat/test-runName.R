@@ -3,23 +3,14 @@
 ## production fit had a NULL name: progress files were `DEoptimProgress_.csv` and clusters
 ## recorded worker memory under no name.
 
-test_that("the run name comes from the parameter when there is no object", {
-  sim <- toySim(list(.runName = "x"), list(.runName = NULL))
-  expect_null(sim$.runName)
-  expect_identical(runNameOf(sim), "x")
-})
-
-test_that("the object is used when the parameter is not set", {
-  expect_identical(runNameOf(toySim()), "toyRun")
-})
-
-test_that("the parameter wins over the object", {
-  expect_identical(runNameOf(toySim(list(.runName = "x"))), "x")
+test_that("an input object .runName is no longer read: the name is the parameter, NA when unset", {
+  sim <- toySim(list(.runName = NULL), list(.runName = "fromObject"))
+  expect_identical(SpaDES.core::P(sim, moduleName)$.runName, NA_character_)
 })
 
 test_that("a fit receives the parameter's name, and names its progress file with it", {
   rec <- new.env()
-  sim <- toySim(list(simulateMembers = 3L, stopIfNoPreRunFit = FALSE, .runName = "fromParam"), list(.runName = NULL))
+  sim <- toySim(list(simulateMembers = 3L, stopIfNoPreRunFit = FALSE, .runName = "fromParam"))
   mockFitAndLedger(sim, rec)
   mockInModule(sim,
     runDEoptim = function(...) {

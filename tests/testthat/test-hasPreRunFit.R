@@ -31,15 +31,11 @@ test_that("a plain data.frame ledger and a numeric polygonID both work", {
   expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = df, .ELFind = "4.2")))
 })
 
-test_that(".ELFind is the key; .runName is used only when .ELFind is absent", {
+test_that(".ELFind is the key", {
   l <- led("4.3")
-  expect_true(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l, .runName = "4.3")))
-  expect_true(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l, .ELFind = character(0),
-                                              .runName = "4.3")))
-  ## .ELFind wins over a matching .runName
-  expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l, .ELFind = "9.9",
-                                               .runName = "4.3")))
-  ## neither supplied
+  expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l, .ELFind = "9.9")))
+  expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l, .ELFind = character(0))))
+  ## not supplied
   expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l)))
   ## only the first element of a vector id is used
   expect_true(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l, .ELFind = c("4.3", "9.9"))))

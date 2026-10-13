@@ -6,8 +6,7 @@
 foldRun <- function(k, popval = NULL, runName = "toyRun") {
   rec <- new.env()
   rec$calibratedOn <- list(); rec$fitThresh <- list()
-  sim <- toySim(list(heldOutFold = k, SNLL_FS_thresh = NULL, simulateMembers = 3L),
-                objects = list(.runName = runName))
+  sim <- toySim(list(heldOutFold = k, SNLL_FS_thresh = NULL, simulateMembers = 3L, .runName = runName))
   mockFitAndLedger(sim, rec)
   mockInModule(sim,
     ## the calibrated threshold records, and depends on, the years it was calibrated on
