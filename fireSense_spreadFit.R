@@ -196,6 +196,10 @@ defineModule(sim, list(
     defineParameter("objfunFireReps", "integer", default = 50L,
                     desc = paste("integer defining the number of replicates the objective function",
                                  "will attempt each fire.")),
+    defineParameter(".runName", "character", NA_character_, NA, NA,
+                    desc = paste("A short name for this fit, e.g. \"4.3_NRV_370_1\". It labels the DEoptim run, its",
+                                 "progress file and its cache entries. When `NA`, the input object `.runName` is used,",
+                                 "for backwards compatibility.")),
     defineParameter(".rep", "integer", 1L, NA, NA,
                     desc = paste("An optional integer indicating which replicate run this represents. ",
                                  "This is used to identify unique runs of `runDEoptim`, from a Cache perspective. ",
@@ -291,7 +295,9 @@ defineModule(sim, list(
                                  "experiment found fuel estimates up to 54.5 (29 of 82 above 25) with the previous default of 60."))
   ),
   inputObjects = rbind(
-    expectsInput(".runName", "character", "Some descriptive, short name for this fitting, e.g., ELF14.1"),
+    expectsInput(".runName", "character",
+                 paste("Some descriptive, short name for this fitting, e.g., ELF14.1. The parameter `.runName`",
+                       "takes precedence when it is set.")),
     expectsInput(".ELFind", "character",
                  desc = paste("Identifier of the polygon being fit, e.g. '6.1.1'. This becomes the",
                               "`polygonID` of the row this module writes to the shared cloud fit",
@@ -490,7 +496,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         if (!identical(basename(Par$visualizeDEoptim), currentModule(sim))) {
           params(sim)[[currentModule(sim)]][["visualizeDEoptim"]] <- figurePath(sim)
         }
-        DE <- fitSpread(sim, mod$covsX1000, mod$thresh, runName = sim$.runName)
+        DE <- fitSpread(sim, mod$covsX1000, mod$thresh, runName = runNameOf(sim))
         mod$fitDE <- DE # sim$DE is reordered below, which drops the attributes postFitDiagnostics reads
         sim$DE <- DE
         objFunVal <- vapply(sim$DE, function(D) D$member$bestvalit, FUN.VALUE = numeric(1))
@@ -527,7 +533,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
                                                   studyAreaFireSense = sim$studyAreaWithSpreadParams,
                                                   action = "update")
         ## observed against simulated burning, and the response curves, for the best parameter set
-        spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], mod$covsX1000, sim$.runName)
+        spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], mod$covsX1000, runNameOf(sim))
       }
     },
     postFitDiagnostics = {
@@ -537,11 +543,11 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
       if (isTRUE(is.na(Par$heldOutFold))) {
         sim$spreadFitHeldOut <- crossValidateSpread(sim, mod$covsX1000)
         heldOutPath <- file.path(outputPath(sim), currentModule(sim),
-                                 paste0("spreadFitHeldOut_", sim$.runName, ".rds"))
+                                 paste0("spreadFitHeldOut_", runNameOf(sim), ".rds"))
       } else {
         sim$spreadFitHeldOut <- crossValidateSpreadOneFold(sim, mod$covsX1000, Par$heldOutFold)
         heldOutPath <- file.path(outputPath(sim), currentModule(sim),
-                                 paste0("spreadFitHeldOut_", sim$.runName, "_fold", Par$heldOutFold, ".rds"))
+                                 paste0("spreadFitHeldOut_", runNameOf(sim), "_fold", Par$heldOutFold, ".rds"))
       }
       checkPath(dirname(heldOutPath), create = TRUE)
       saveRDS(sim$spreadFitHeldOut, heldOutPath)
@@ -1103,9 +1109,9 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
     # on `.runName`. Keep that behaviour for pipelines that do not supply a polygon
     # id, but say so, because a `.runName` that encodes a whole scenario produces a
     # ledger key nothing else can match.
-    sim$.ELFind <- sim$.runName
+    sim$.ELFind <- runNameOf(sim)
     message(currentModule(sim), ": `.ELFind` not supplied; keying the shared fit ",
-            "ledger on `.runName` ('", sim$.runName, "'). Supply `.ELFind` if this ",
+            "ledger on `.runName` ('", runNameOf(sim), "'). Supply `.ELFind` if this ",
             "is not the polygon's identifier.")
   }
 

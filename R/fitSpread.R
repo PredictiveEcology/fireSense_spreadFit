@@ -163,7 +163,7 @@ cvFolds <- function(years) {
 #' The per-fold work shared by [crossValidateSpread()] (both folds, one job) and
 #' [crossValidateSpreadOneFold()] (one fold, one job -- the `heldOutFold` parameter). The fit's
 #' `runName` (and so its `Cache` key, see `fitSpread()`) is suffixed by `k`, so fold 1, fold 2 and
-#' a full fit (plain `sim$.runName`, no suffix) never share a cache entry.
+#' a full fit (plain `runNameOf(sim)`, no suffix) never share a cache entry.
 #'
 #' The SNLL threshold is calibrated on the fitted years (`estimateSNLLThresholdPostLargeFires()`), not
 #' taken from the full data: it bounds the SNLL of the two largest fire years, and a fold's two largest
@@ -183,13 +183,13 @@ fitAndScoreFold <- function(sim, covs, fold, k) {
   fitCovs[yearLists] <- lapply(covs[yearLists], function(x) x[years[fold != k]])
   heldCovs[yearLists] <- lapply(covs[yearLists], function(x) x[years[fold == k]])
   thresh <- estimateSNLLThresholdPostLargeFires(sim, fitCovs)
-  DE <- fitSpread(sim, fitCovs, thresh, runName = paste0(sim$.runName, "_cvFold", k), diagnostics = FALSE)
+  DE <- fitSpread(sim, fitCovs, thresh, runName = paste0(runNameOf(sim), "_cvFold", k), diagnostics = FALSE)
   best <- bestParamSets(DE, names(P(sim)$lower), n = max(1L, P(sim)$simulateMembers))
   s <- Cache(fireSenseUtils::simulateFireSizes, pop = best$params,
              fnArgs = spreadObjFunArgs(sim, heldCovs),
-             .functionName = paste0("simulateHeldOut_", sim$.runName, "_cvFold", k))
+             .functionName = paste0("simulateHeldOut_", runNameOf(sim), "_cvFold", k))
   ## the held-out years only: observed against simulated burning from the other fold's fit
-  spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], heldCovs, paste0(sim$.runName, "_cvFold", k, "_heldOut"))
+  spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], heldCovs, paste0(runNameOf(sim), "_cvFold", k, "_heldOut"))
   fit <- spreadFitLedgerRow(sim, length(DE), best$objFunVal, addFixedParsToLedger(best$params))
   list(sims = data.table(fold = k, s), fit = fit,
        fitYears = years[fold != k], heldOutYears = years[fold == k])

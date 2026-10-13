@@ -1,5 +1,6 @@
 # fireSense_spreadFit (development version)
 
+- The run name is read from the parameter `.runName` (how projects pass it, e.g. through `params$.globals`), falling back to the input object `.runName` when the parameter is `NA`. Before, only the object was read, so in a project that sets the parameter the name was `NULL`: progress files were `DEoptimProgress_.csv` and clusters recorded no name for worker speed or memory. The name is part of a fit's cache key (`runName` argument and `.cacheExtra`), so a fit cached under the empty name is refitted once, unless the ledger already holds it.
 - Every DEoptim fit (the main fit and each cross-validation fold) writes its per-generation progress to `DEoptimProgress_<runName>.csv` in the module's output folder (`file.path(outputPath(sim), currentModule(sim))`), with a `FINISHED` row at the end. No setting is needed, and the path is not in the fit's cache key. Needs fireSenseUtils with `runDEoptim(progressFile =)` (PredictiveEcology/fireSenseUtils, branch `feat/deoptim-progress-file`; the floor is the version that merges it).
 
 # fireSense_spreadFit 1.2.0
