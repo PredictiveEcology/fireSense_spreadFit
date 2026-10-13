@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9001"
-date: "Last updated: 2026-10-08"
+date: "Last updated: 2026-10-13"
 output:
   bookdown::html_document2:
     toc: true
@@ -81,15 +81,9 @@ Table \@ref(tab:moduleInputs-fireSense-spreadFit) shows the full list of module 
  </thead>
 <tbody>
   <tr>
-   <td style="text-align:left;"> .runName </td>
-   <td style="text-align:left;"> character </td>
-   <td style="text-align:left;"> Some descriptive, short name for this fitting, e.g., ELF14.1 </td>
-   <td style="text-align:left;"> NA </td>
-  </tr>
-  <tr>
    <td style="text-align:left;"> .ELFind </td>
    <td style="text-align:left;"> character </td>
-   <td style="text-align:left;"> Identifier of the polygon being fit, e.g. '6.1.1'. This becomes the `polygonID` of the row this module writes to the shared cloud fit ledger (`spreadFitFilename` in `spreadFitGoogleDriveFolder`), which `fireSense_dataPrepFit` matches against the polygon ids carried by `rasterToMatchELF`. It must therefore be the polygon's identity, not a run label: `.runName` encodes the whole scenario (climate period, GCM, SSP, rep) in some projects, and keying the ledger on it writes rows no other run can find and trips dataPrepFit's id match. Defaults to `.runName` for backwards compatibility. </td>
+   <td style="text-align:left;"> Identifier of the polygon being fit, e.g. '6.1.1'. This becomes the `polygonID` of the row this module writes to the shared cloud fit ledger (`spreadFitFilename` in `spreadFitGoogleDriveFolder`), which `fireSense_dataPrepFit` matches against the polygon ids carried by `rasterToMatchELF`. It must therefore be the polygon's identity, not a run label: `.runName` encodes the whole scenario (climate period, GCM, SSP, rep) in some projects, and keying the ledger on it writes rows no other run can find and trips dataPrepFit's id match. Defaults to the `.runName` parameter. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -466,6 +460,14 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> integer defining the number of replicates the objective function will attempt each fire. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> .runName </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> A short name for this fit, e.g. "4.3_NRV_370_1". It labels the DEoptim run, its progress file and cache entries. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .rep </td>
