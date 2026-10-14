@@ -1,5 +1,6 @@
 # fireSense_spreadFit (development version)
 
+- `SpaDES.core` is now in `reqdPkgs` (`scheduleEvent()`, `P()`, `Plots()` are used).
 - The run name is now only the parameter `.runName` (as in Biomass_core); the input object `.runName` is no longer read, so a pipeline that supplied it as an object must pass it as a parameter (`params$.globals` works). Before, a project that set the parameter got a `NULL` name: progress files were `DEoptimProgress_.csv` and clusters recorded no name for worker speed or memory. The name is part of a fit's cache key (`runName` argument and `.cacheExtra`), so a fit cached under the empty name is refitted once, unless the ledger already holds it.
 - Every DEoptim fit (the main fit and each cross-validation fold) writes its per-generation progress to `DEoptimProgress_<runName>.csv` in the module's output folder (`file.path(outputPath(sim), currentModule(sim))`), with a `FINISHED` row at the end. No setting is needed, and the path is not in the fit's cache key. Needs fireSenseUtils with `runDEoptim(progressFile =)` (PredictiveEcology/fireSenseUtils, branch `feat/deoptim-progress-file`; the floor is the version that merges it).
 
