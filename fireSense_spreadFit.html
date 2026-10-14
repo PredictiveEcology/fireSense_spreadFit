@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9001</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9002</span>
       </span>
     </div>
 
@@ -93,25 +93,13 @@ desc
 sourceURL
 </th>
 </tr></thead><tbody><tr><td style="text-align:left;">
-.runName
-</td>
-<td style="text-align:left;">
-character
-</td>
-<td style="text-align:left;">
-Some descriptive, short name for this fitting, e.g., ELF14.1
-</td>
-<td style="text-align:left;">
-NA
-</td>
-</tr><tr><td style="text-align:left;">
 .ELFind
 </td>
 <td style="text-align:left;">
 character
 </td>
 <td style="text-align:left;">
-Identifier of the polygon being fit, e.g. ‘6.1.1’. This becomes the <code>polygonID</code> of the row this module writes to the shared cloud fit ledger (<code>spreadFitFilename</code> in <code>spreadFitGoogleDriveFolder</code>), which <code>fireSense_dataPrepFit</code> matches against the polygon ids carried by <code>rasterToMatchELF</code>. It must therefore be the polygon’s identity, not a run label: <code>.runName</code> encodes the whole scenario (climate period, GCM, SSP, rep) in some projects, and keying the ledger on it writes rows no other run can find and trips dataPrepFit’s id match. Defaults to <code>.runName</code> for backwards compatibility.
+Identifier of the polygon being fit, e.g. ‘6.1.1’. This becomes the <code>polygonID</code> of the row this module writes to the shared cloud fit ledger (<code>spreadFitFilename</code> in <code>spreadFitGoogleDriveFolder</code>), which <code>fireSense_dataPrepFit</code> matches against the polygon ids carried by <code>rasterToMatchELF</code>. It must therefore be the polygon’s identity, not a run label: <code>.runName</code> encodes the whole scenario (climate period, GCM, SSP, rep) in some projects, and keying the ledger on it writes rows no other run can find and trips dataPrepFit’s id match. Defaults to the <code>.runName</code> parameter.
 </td>
 <td style="text-align:left;">
 NA
@@ -920,6 +908,24 @@ NA
 </td>
 <td style="text-align:left;">
 integer defining the number of replicates the objective function will attempt each fire.
+</td>
+</tr><tr><td style="text-align:left;">
+.runName
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+A short name for this fit, e.g. “4.3_NRV_370_1”. It labels the DEoptim run, its progress file and cache entries.
 </td>
 </tr><tr><td style="text-align:left;">
 .rep
