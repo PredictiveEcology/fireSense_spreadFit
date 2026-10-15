@@ -93,4 +93,6 @@ test_that("the required clusters has the fixes a fit on the fleet needs", {
   expect_true(package_version(sub(".*>=\\s*([0-9.]+).*", "\\1", clustersReq)) >= "0.0.46")
   ## clusters 0.0.52: DEoptimIterative2(plotEvery), which `.plotInterval` reaches through runDEoptim()
   expect_true(package_version(sub(".*>=\\s*([0-9.]+).*", "\\1", clustersReq)) >= "0.0.52")
+  ## clusters 0.0.78: the defaults projects now rely on (clusters#53)
+  expect_true(package_version(sub(".*>=\\s*([0-9.]+).*", "\\1", clustersReq)) >= "0.0.78")
 })

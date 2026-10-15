@@ -26,9 +26,9 @@ defineModule(sim, list(
                   "logging", "magrittr", "parallel", "raster", "sf", "terra", "tidyr", "withr", ## TODO: remove magrittr
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
-                  "PredictiveEcology/clusters@development (>= 0.0.52)",
+                  "PredictiveEcology/clusters@development (>= 0.0.78)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9089)",
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9094)",
                   "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -131,8 +131,10 @@ defineModule(sim, list(
     defineParameter("nCoresNeeded", "integer", default = NULL,
                     desc = paste("How many workers to request for the DEoptim cluster. This IS the population",
                                  "size: `clusters::clusterSetup()` sets NP to the workers it builds. `NULL`",
-                                 "leaves `fireSenseUtils::runDEoptim()`'s default of 10 per estimated",
-                                 "parameter. A generation costs the slowest of NP evaluations and that barely",
+                                 "takes `fireSenseUtils::deoptimPopulationSize()` of the number of parameters: 30 for 4-7,",
+                                 "40 for 8-12, 50 for 13-15 (40 was a good middle in tests of 10 per parameter against",
+                                 "other sizes, with little gain above it; current ledgers have 10-12 parameters).",
+                                 "A generation costs the slowest of NP evaluations and that barely",
                                  "falls as NP falls, so a smaller NP buys throughput by allowing more fits at",
                                  "once rather than by shortening generations (measured 2026-09-16).")),
     defineParameter("simulateMembers", "integer", default = 10L,
@@ -218,7 +220,7 @@ defineModule(sim, list(
                                  "The default `p = 0.1` is for `strategy = 6`.")),
     defineParameter("rescaleAll", "logical", TRUE, NA, NA,
                     desc = "rescale covariates for `DEOptim`"),
-    defineParameter("spreadFitGoogleDriveFolder", "character", "https://drive.google.com/drive/folders/1X9-mRjyLMNpgkP_cfqhbr_AQEPOsVCHf",
+    defineParameter("spreadFitGoogleDriveFolder", "character", fireSenseUtils::spreadFitLedgerFolder(),
                     NA, NA, "Google Drive folder url holding the shared fit ledger (`spreadFitFilename`)."),
     defineParameter("spreadFitFilename", "character", "latest",
                     NA, NA, paste("File name of the shared fit ledger: an `sf` object with one row of fitted parameters",

@@ -114,7 +114,7 @@ test_that("defaults that are 'not set'", {
 test_that("the ledger's location", {
   expect_identical(def$spreadFitFilename, "latest")
   expect_identical(def$spreadFitGoogleDriveFolder,
-                   "https://drive.google.com/drive/folders/1X9-mRjyLMNpgkP_cfqhbr_AQEPOsVCHf")
+                   fireSenseUtils::spreadFitLedgerFolder())
 })
 
 test_that("the ledger's list-columns, which prediction reads by name", {
