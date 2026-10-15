@@ -1,6 +1,6 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9004"
+subtitle: "v.1.2.0.9005"
 date: "Last updated: 2026-10-15"
 output:
   bookdown::html_document2:
@@ -226,12 +226,20 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> Currently either `'SNLL_FS'` or `'adTest'` or a length 2 character vector of both. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. </td>
   </tr>
   <tr>
+   <td style="text-align:left;"> doFit </td>
+   <td style="text-align:left;"> logical </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Whether to fit this polygon. NA (default): do whatever is needed -- use the ledger's fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it when the fit's INPUTS changed -- new land cover, vegetation parameters, objective). FALSE: never fit -- use the ledger's fit, and stop with an error if it holds none. </td>
+  </tr>
+  <tr>
    <td style="text-align:left;"> doObjFunAssertions </td>
    <td style="text-align:left;"> logical </td>
-   <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Passed to `fireSenseUtils::.objfunSpreadFit()`; TRUE runs diagnostics but is slower; FALSE for operational runs </td>
+   <td style="text-align:left;"> Passed to `fireSenseUtils::.objfunSpreadFit()` and to the threshold calibration; TRUE runs diagnostics but is slower; FALSE for operational runs. The default follows `options(fireSenseUtils.assertions = )`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> initialpop </td>
@@ -311,7 +319,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA (default): unchanged behaviour, governed by `mode`. `1` or `2`: run ONLY that cross-validation fold, as its own job. `init` then schedules `spreadFitPrepare`, `estimateThreshold` and `crossValidate` -- never `run`, so the full fit and the ledger write never happen, and the ledger (`stopIfNoPreRunFit`/`refitExisting`) is not consulted. `crossValidate` fits on the OTHER fold's years and scores this fold's held-out years (`cvFolds()` in `R/fitSpread.R`), and writes `spreadFitHeldOut_&lt;.runName&gt;_fold&lt;heldOutFold&gt;.rds` instead of `spreadFitHeldOut_&lt;.runName&gt;.rds`. A run script stops after `crossValidate`: `events = list(.stopAfter = list(fireSense_spreadFit = "crossValidate"))`. Any other value is an error. </td>
+   <td style="text-align:left;"> NA (default): unchanged behaviour, governed by `mode`. `1` or `2`: run ONLY that cross-validation fold, as its own job. `init` then schedules `spreadFitPrepare`, `estimateThreshold` and `crossValidate` -- never `run`, so the full fit and the ledger write never happen, and the ledger (`doFit`) is not consulted. `crossValidate` fits on the OTHER fold's years and scores this fold's held-out years (`cvFolds()` in `R/fitSpread.R`), and writes `spreadFitHeldOut_&lt;.runName&gt;_fold&lt;heldOutFold&gt;.rds` instead of `spreadFitHeldOut_&lt;.runName&gt;.rds`. A run script stops after `crossValidate`: `events = list(.stopAfter = list(fireSense_spreadFit = "crossValidate"))`. Any other value is an error. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> profileReps </td>
@@ -532,18 +540,18 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> refitExisting </td>
    <td style="text-align:left;"> logical </td>
-   <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> FOR DEVELOPERS ONLY: a re-fit is a full DEoptim run and is only practical with access to at least 40 cores. Fit this polygon even when the ledger already holds parameters for it. A ledger row normally means the fit is done, and the run event skips it. Set this when the fit's INPUTS have changed -- new land cover, new vegetation parameters, a new objective -- so the stored row is stale and the polygon must be fitted again. When TRUE it OVERRIDES `stopIfNoPreRunFit`: `init` schedules the fit instead of stopping. </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> DEPRECATED, use `doFit`. TRUE is `doFit = TRUE`; NA (unset) and FALSE do nothing. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> stopIfNoPreRunFit </td>
    <td style="text-align:left;"> logical </td>
-   <td style="text-align:left;"> TRUE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> If TRUE, `init` stops with an error when this polygon would have to be fitted, instead of fitting it. Ignored when `refitExisting` is TRUE. </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> DEPRECATED, use `doFit`. TRUE is `doFit = FALSE`; NA (unset) and FALSE (allow a fit) are `doFit = NA`. Ignored when `refitExisting` is TRUE. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> trace </td>
