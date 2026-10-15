@@ -14,7 +14,7 @@ test_that("default bounds are built from the formula and the annual covariates, 
   p <- P1(prepared())
   expect_identical(p$upper, c(maxAsymptote = 0.276,
                               CMDsm = 50, youngAge = 0, class1 = 100, class2 = 100, nf = 50, yearSpreadSD = 1))
-  expect_identical(p$lower, c(maxAsymptote = 0.25,
+  expect_identical(p$lower, c(maxAsymptote = fireSenseUtils::spreadProbFloor,
                               CMDsm = 0, youngAge = -50, class1 = 0, class2 = 0, nf = -50, yearSpreadSD = 0))
   expect_false(any(c("hillSlope1", "inflectionPoint1") %in% c(names(p$upper), names(p$lower))))
 })

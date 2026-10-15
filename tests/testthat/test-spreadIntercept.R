@@ -30,7 +30,7 @@ test_that("estimateSpreadParams(): an intercept is bounded +/- upperAndLower, fi
   up <- estimateSpreadParams("~ 1 + CMDsm + youngAge + nf", annual, "upper", upperAndLower = 9)
   lo <- estimateSpreadParams("~ 1 + CMDsm + youngAge + nf", annual, "lower", upperAndLower = 9)
   expect_identical(up, c(maxAsymptote = 0.276, `(Intercept)` = 9, CMDsm = 9, youngAge = 0, nf = 9))
-  expect_identical(lo, c(maxAsymptote = 0.25, `(Intercept)` = -9, CMDsm = 0, youngAge = -9, nf = -9))
+  expect_identical(lo, c(maxAsymptote = fireSenseUtils::spreadProbFloor, `(Intercept)` = -9, CMDsm = 0, youngAge = -9, nf = -9))
   ## with upperTail1 it still comes right after the logistic parameters, and yearSpreadSD stays last
   up2 <- estimateSpreadParams("~ 1 + nf", annual, "upper", 9, upperTailBounds = c(-1, 1), yearSpreadSDBounds = c(0, 1))
   expect_identical(names(up2), c("maxAsymptote", "upperTail1", "(Intercept)", "nf", "yearSpreadSD"))

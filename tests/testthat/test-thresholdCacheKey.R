@@ -34,3 +34,21 @@ test_that("the threshold calibration passes runawayEdgeFrac and runawayEdgeMin a
   expect_match(code, "runawayEdgeMin = P(sim)$runawayEdgeMin", fixed = TRUE)
   expect_match(code, "omitArgs\\s*=\\s*c\\(\"runawayEdgeFrac\",\\s*\"runawayEdgeMin\"[,)]")  # deparse may wrap the line
 })
+
+## runawayBufferMultiple changes what a runaway scores, so it is in both keys; NA (NULL to the objective)
+## is omitted, so fits and thresholds cached before the parameter existed keep their keys.
+test_that("the fit and the calibration pass runawayBufferMultiple, omitted from their keys only when NULL", {
+  fit <- paste(readLines(testthat::test_path("..", "..", "R", "fitSpread.R")), collapse = "\n")
+  exprs <- parse(testthat::test_path("..", "..", "fireSense_spreadFit.R"), keep.source = FALSE)
+  def <- Filter(function(x) is.call(x) && identical(x[[1]], as.name("<-")) &&
+                  identical(x[[2]], as.name("estimateSNLLThresholdPostLargeFires")), exprs)
+  thr <- paste(deparse(def[[1]][[3]]), collapse = "\n")
+  for (code in list(fit, thr)) {
+    expect_match(code, "runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)", fixed = TRUE)
+    expect_match(code, "runawayBufferMultiple = runawayMultiple,", fixed = TRUE)
+    expect_match(code, "omitNullArgs\\([^)]*runawayBufferMultiple = runawayMultiple\\)")
+    expect_false(grepl("omitArgs\\s*=\\s*c\\([^)]*\"runawayBufferMultiple\"", code))
+  }
+  expect_null(runawayBufferMultipleOrNULL(NA_real_))
+  expect_identical(runawayBufferMultipleOrNULL(2), 2)
+})

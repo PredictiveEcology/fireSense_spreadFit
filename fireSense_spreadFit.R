@@ -181,10 +181,20 @@ defineModule(sim, list(
     defineParameter("penaliseRunaways", "logical", default = TRUE,
                     desc = paste("A simulated fire that burns its buffer's outer edge (see `runawayEdgeFrac`) is a",
                                  "runaway, censored in the size likelihood: it has no density at the observed size.",
-                                 "The Anderson-Darling, annual-area and area-distribution terms score the size it",
-                                 "burned. Fires are not capped at a size; spread is bounded by the buffers. FALSE",
-                                 "scores the simulated size in the likelihood too. Passed to",
+                                 "The Anderson-Darling, annual-area and area-distribution terms count it as",
+                                 "`runawayBufferMultiple` times its own buffer's size (NA: the size it burned). Fires are",
+                                 "not capped at a size; spread is bounded by the buffers. FALSE scores the simulated",
+                                 "size in the likelihood too. Passed to",
                                  "`fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting.")),
+    defineParameter("runawayBufferMultiple", "numeric", default = 2,
+                    desc = paste("With `penaliseRunaways`, a runaway counts in the size-based terms of the objective",
+                                 "(Anderson-Darling, annual area, area-weighted size distribution) as this multiple of",
+                                 "the size of its own fire's buffer: a fire that reaches the edge of its buffer would",
+                                 "have kept burning. A full-landscape hindcast of ELF 5.4 showed fits that matched the",
+                                 "observed area inside the buffers ran away on the whole landscape (fires of 3-6 Mha,",
+                                 "median 2-12 times the observed area). NA scores the size it burned before it was",
+                                 "stopped, the old behaviour. Passed to `fireSenseUtils::runDEoptim()` and the threshold",
+                                 "calibration.")),
     defineParameter("runawayEdgeFrac", "numeric", default = fireSenseUtils::fireSenseRunawayEdgeFrac,
                     desc = paste("A simulated fire is a runaway when it burns at least",
                                  "`max(runawayEdgeMin, ceiling(runawayEdgeFrac * n))` of the `n` pixels of the edge ring of",
@@ -481,6 +491,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         yearAreaWeight = P(sim)$yearAreaWeight, areaDistWeight = P(sim)$areaDistWeight,
         penaliseRunaways = P(sim)$penaliseRunaways,
         runawayEdgeFrac = P(sim)$runawayEdgeFrac, runawayEdgeMin = P(sim)$runawayEdgeMin,
+        runawayBufferMultiple = runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple),
         thresholdMargin = P(sim)$thresholdMargin,
         maxFireSpread = P(sim)$maxFireSpread)
     },
@@ -923,6 +934,7 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
   thresh <- if (is.null(Par$SNLL_FS_thresh) || is.na(Par$SNLL_FS_thresh)) {
     message("Estimating threshold for inside .objFunSpreadFit -- This can be supplied via SNLL_FS_thresh parameter")
 
+    runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)
     # Took 50 minutes using 10 cores for Taiga studyArea
     runSpreadWithoutDEoptim(
       iterThres = P(sim)$iterThresh,
@@ -953,6 +965,7 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
       yearAreaWeight = P(sim)$yearAreaWeight, areaDistWeight = P(sim)$areaDistWeight,
       penaliseRunaways = P(sim)$penaliseRunaways,
       runawayEdgeFrac = P(sim)$runawayEdgeFrac, runawayEdgeMin = P(sim)$runawayEdgeMin,
+      runawayBufferMultiple = runawayMultiple,
       thresholdMargin = P(sim)$thresholdMargin,
       maxFireSpread = P(sim)$maxFireSpread) |>
       ## Nothing is omitted from the key, because both of the arguments that used to
@@ -983,9 +996,11 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
                                spreadProbGates = deparse(fireSenseUtils::spreadProbGates),
                                spreadProbGateTest = deparse(fireSenseUtils::spreadProbGateTest),
                                objective = objectiveBodies()),
-            ## covCentre is NULL without an intercept: omitted then, so thresholds cached before it existed are found
+            ## covCentre is NULL without an intercept, runawayBufferMultiple with NA: omitted then, so
+            ## thresholds cached before they existed are found
             omitArgs = c("runawayEdgeFrac", "runawayEdgeMin",
-                         fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread)))
+                         fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread,
+                                                      runawayBufferMultiple = runawayMultiple)))
   } else {
     P(sim)$SNLL_FS_thresh
   }
@@ -1023,7 +1038,8 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
 #' @param fuelTerms,upperAndLowerFuel character names of the fuel biomass terms, and their upper bound (lower is 0).
 #' @param upperTailBounds numeric; if not `NULL`, the bounds of `upperTail1`, which is added after
 #'   `maxAsymptote` (link "logistic3pUpper").
-#' @return named numeric vector: `maxAsymptote`, `upperTail1` (with `upperTailBounds`), then
+#' @return named numeric vector: `maxAsymptote` (bounded by `fireSenseUtils::spreadProbFloor` and
+#'   `fireSenseUtils::spreadProbCeiling`), `upperTail1` (with `upperTailBounds`), then
 #'   `fireSenseUtils::spreadInterceptTxt` if the formula has an intercept (`~ 1 + ...`), then formula
 #'   terms. No `hillSlope1` or `inflectionPoint1` -- both are fixed at 1, not fitted.
 estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, whichBound,
@@ -1058,7 +1074,7 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
   if (whichBound == "upper") {
     newParams <- c("maxAsymptote" = fireSenseUtils::spreadProbCeiling, newParams)
   } else {
-    newParams <- c("maxAsymptote" = 0.25, newParams)
+    newParams <- c("maxAsymptote" = fireSenseUtils::spreadProbFloor, newParams)
   }
   ## the objective takes the logistic parameters by position, so upperTail1 must be the 2nd
   ## (the fixed hillSlope1 and inflectionPoint1 go between them)
