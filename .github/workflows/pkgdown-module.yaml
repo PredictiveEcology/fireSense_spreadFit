@@ -26,4 +26,7 @@ jobs:
       contents: write
     uses: PredictiveEcology/actions/.github/workflows/pkgdown-module.yaml@main
     with:
+      ## a PR with a `Depends-on:` line installs that unmerged PR as its post-merge version and waits until its checks are green
+      depends-on-virtual-bump: true
+      depends-on-gate: true
       module: fireSense_spreadFit
