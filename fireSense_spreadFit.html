@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9006</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9007</span>
       </span>
     </div>
 
@@ -389,13 +389,31 @@ NA
 Currently either <code>'SNLL_FS'</code> or <code>'adTest'</code> or a length 2 character vector of both. Passed to <code>tests</code> in <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>.
 </td>
 </tr><tr><td style="text-align:left;">
+doFit
+</td>
+<td style="text-align:left;">
+logical
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Whether to fit this polygon. NA (default): do whatever is needed – use the ledger’s fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it when the fit’s INPUTS changed – new land cover, vegetation parameters, objective). FALSE: never fit – use the ledger’s fit, and stop with an error if it holds none.
+</td>
+</tr><tr><td style="text-align:left;">
 doObjFunAssertions
 </td>
 <td style="text-align:left;">
 logical
 </td>
 <td style="text-align:left;">
-TRUE
+FALSE
 </td>
 <td style="text-align:left;">
 NA
@@ -404,7 +422,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>; TRUE runs diagnostics but is slower; FALSE for operational runs
+Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code> and to the threshold calibration; TRUE runs diagnostics but is slower; FALSE for operational runs. The default follows <code>options(fireSenseUtils.assertions = )</code>.
 </td>
 </tr><tr><td style="text-align:left;">
 initialpop
@@ -583,7 +601,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-NA (default): unchanged behaviour, governed by <code>mode</code>. <code>1</code> or <code>2</code>: run ONLY that cross-validation fold, as its own job. <code>init</code> then schedules <code>spreadFitPrepare</code>, <code>estimateThreshold</code> and <code>crossValidate</code> – never <code>run</code>, so the full fit and the ledger write never happen, and the ledger (<code>stopIfNoPreRunFit</code>/<code>refitExisting</code>) is not consulted. <code>crossValidate</code> fits on the OTHER fold’s years and scores this fold’s held-out years (<code>cvFolds()</code> in <code>R/fitSpread.R</code>), and writes <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;_fold&amp;lt;heldOutFold&amp;gt;.rds</code> instead of <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;.rds</code>. A run script stops after <code>crossValidate</code>: <code>events = list(.stopAfter = list(fireSense_spreadFit = "crossValidate"))</code>. Any other value is an error.
+NA (default): unchanged behaviour, governed by <code>mode</code>. <code>1</code> or <code>2</code>: run ONLY that cross-validation fold, as its own job. <code>init</code> then schedules <code>spreadFitPrepare</code>, <code>estimateThreshold</code> and <code>crossValidate</code> – never <code>run</code>, so the full fit and the ledger write never happen, and the ledger (<code>doFit</code>) is not consulted. <code>crossValidate</code> fits on the OTHER fold’s years and scores this fold’s held-out years (<code>cvFolds()</code> in <code>R/fitSpread.R</code>), and writes <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;_fold&amp;lt;heldOutFold&amp;gt;.rds</code> instead of <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;.rds</code>. A run script stops after <code>crossValidate</code>: <code>events = list(.stopAfter = list(fireSense_spreadFit = "crossValidate"))</code>. Any other value is an error.
 </td>
 </tr><tr><td style="text-align:left;">
 profileReps
@@ -1076,16 +1094,16 @@ refitExisting
 logical
 </td>
 <td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
-FOR DEVELOPERS ONLY: a re-fit is a full DEoptim run and is only practical with access to at least 40 cores. Fit this polygon even when the ledger already holds parameters for it. A ledger row normally means the fit is done, and the run event skips it. Set this when the fit’s INPUTS have changed – new land cover, new vegetation parameters, a new objective – so the stored row is stale and the polygon must be fitted again. When TRUE it OVERRIDES <code>stopIfNoPreRunFit</code>: <code>init</code> schedules the fit instead of stopping.
+NA
+</td>
+<td style="text-align:left;">
+DEPRECATED, use <code>doFit</code>. TRUE is <code>doFit = TRUE</code>; NA (unset) and FALSE do nothing.
 </td>
 </tr><tr><td style="text-align:left;">
 stopIfNoPreRunFit
@@ -1094,16 +1112,16 @@ stopIfNoPreRunFit
 logical
 </td>
 <td style="text-align:left;">
-TRUE
-</td>
-<td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
-If TRUE, <code>init</code> stops with an error when this polygon would have to be fitted, instead of fitting it. Ignored when <code>refitExisting</code> is TRUE.
+NA
+</td>
+<td style="text-align:left;">
+DEPRECATED, use <code>doFit</code>. TRUE is <code>doFit = FALSE</code>; NA (unset) and FALSE (allow a fit) are <code>doFit = NA</code>. Ignored when <code>refitExisting</code> is TRUE.
 </td>
 </tr><tr><td style="text-align:left;">
 trace

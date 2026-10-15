@@ -20,7 +20,7 @@ times the best trial that did not saturate."><!-- mathjax --><script src="https:
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9006</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9007</span>
       </span>
     </div>
 
@@ -98,6 +98,7 @@ times the best trial that did not saturate.</p>
 <span>  penaliseRunaways <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  runawayEdgeFrac <span class="op">=</span> <span class="fu">fireSenseUtils</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseSharedDefaults.html" class="external-link">fireSenseRunawayEdgeFrac</a></span>,</span>
 <span>  runawayEdgeMin <span class="op">=</span> <span class="fu">fireSenseUtils</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseSharedDefaults.html" class="external-link">fireSenseRunawayEdgeMin</a></span>,</span>
+<span>  runawayBufferMultiple <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  thresholdMargin <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  maxDrawsPerTrial <span class="op">=</span> <span class="fl">100</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -187,7 +188,7 @@ and <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadProbGates.html" 
 <dd><p>passed to <code>.objfunSpreadFit()</code>: fit escaped fires only (NULL: any fire over 1 pixel).</p></dd>
 
 
-<dt id="arg-sizelik-sizelikdf-adweight-link-jumptries-jumpmeandist-yearareaweight-areadistweight-penaliserunaways-runawayedgefrac-runawayedgemin">sizeLik, sizeLikDf, adWeight, link, jumpTries, jumpMeanDist, yearAreaWeight, areaDistWeight, penaliseRunaways, runawayEdgeFrac, runawayEdgeMin<a class="anchor" aria-label="anchor" href="#arg-sizelik-sizelikdf-adweight-link-jumptries-jumpmeandist-yearareaweight-areadistweight-penaliserunaways-runawayedgefrac-runawayedgemin"></a></dt>
+<dt id="arg-sizelik-sizelikdf-adweight-link-jumptries-jumpmeandist-yearareaweight-areadistweight-penaliserunaways-runawayedgefrac-runawayedgemin-runawaybuffermultiple">sizeLik, sizeLikDf, adWeight, link, jumpTries, jumpMeanDist, yearAreaWeight, areaDistWeight, penaliseRunaways, runawayEdgeFrac, runawayEdgeMin, runawayBufferMultiple<a class="anchor" aria-label="anchor" href="#arg-sizelik-sizelikdf-adweight-link-jumptries-jumpmeandist-yearareaweight-areadistweight-penaliserunaways-runawayedgefrac-runawayedgemin-runawaybuffermultiple"></a></dt>
 <dd><p>passed to
 <code>.objfunSpreadFit()</code>, so the threshold is calibrated on the objective the fit uses. The defaults are
 that function's.</p></dd>
