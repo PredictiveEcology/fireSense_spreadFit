@@ -11,7 +11,7 @@ test_that("parameter classes", {
   expect_identical(
     cls[sort(names(cls), method = "radix")],
     (function(x) x[sort(names(x), method = "radix")])(c(.c = "numeric", .plotInterval = "numeric", .plots = "character|logical", .plotSize = "list", .runInitialTime = "numeric", .runName = "character",
-      .studyAreaName = "character", .useCache = "logical|character",
+      .studyAreaName = "character", .useCache = "logical|character", .neverCache = "character",
       cores = "integer", DEoptimControl = "list", DEoptimTests = "character",
       doObjFunAssertions = "logical", heldOutFold = "integer", initialpop = "numeric", iterDEoptim = "integer",
       iterThresh = "integer", thresholdMargin = "numeric", libPathDEoptim = "character", lower = "numeric",
@@ -114,7 +114,7 @@ test_that("defaults that are 'not set'", {
 test_that("the ledger's location", {
   expect_identical(def$spreadFitFilename, "latest")
   expect_identical(def$spreadFitGoogleDriveFolder,
-                   "https://drive.google.com/drive/folders/1X9-mRjyLMNpgkP_cfqhbr_AQEPOsVCHf")
+                   fireSenseUtils::spreadFitLedgerFolder())
 })
 
 test_that("the ledger's list-columns, which prediction reads by name", {

@@ -65,7 +65,7 @@ test_that("parameters are the expected names", {
   expect_identical(
     sort(md$parameters$paramName),
     sort(c(".c", ".plotInterval", ".plots", ".plotSize", ".runInitialTime", ".runName", ".studyAreaName",
-           ".useCache", "cores", "covFixedRange", "DEoptimControl", "DEoptimTests", "doObjFunAssertions",
+           ".useCache", ".neverCache", "cores", "covFixedRange", "DEoptimControl", "DEoptimTests", "doObjFunAssertions",
            "heldOutFold", "initialpop", "iterDEoptim", "iterThresh", "thresholdMargin", "libPathDEoptim",
            "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded",
            "objFunCoresInternal", "objfunFireReps", ".rep", "adWeight", "profileReps",
@@ -93,4 +93,6 @@ test_that("the required clusters has the fixes a fit on the fleet needs", {
   expect_true(package_version(sub(".*>=\\s*([0-9.]+).*", "\\1", clustersReq)) >= "0.0.46")
   ## clusters 0.0.52: DEoptimIterative2(plotEvery), which `.plotInterval` reaches through runDEoptim()
   expect_true(package_version(sub(".*>=\\s*([0-9.]+).*", "\\1", clustersReq)) >= "0.0.52")
+  ## clusters 0.0.78: the defaults projects now rely on (clusters#53)
+  expect_true(package_version(sub(".*>=\\s*([0-9.]+).*", "\\1", clustersReq)) >= "0.0.78")
 })
