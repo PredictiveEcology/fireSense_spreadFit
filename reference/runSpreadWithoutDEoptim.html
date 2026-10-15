@@ -73,7 +73,7 @@ times the best trial that did not saturate.</p>
 <span>  <span class="va">nonAnnualDTx1000</span>,</span>
 <span>  <span class="va">fireBufferedListDT</span>,</span>
 <span>  mutuallyExclusive <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>youngAge <span class="op">=</span> <span class="st">"vegPC"</span><span class="op">)</span>,</span>
-<span>  doObjFunAssertions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"fireSenseUtils.assertions"</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  <span class="va">doObjFunAssertions</span>,</span>
 <span>  <span class="va">historicalFires</span>,</span>
 <span>  <span class="va">covMinMax</span>,</span>
 <span>  covCentre <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -133,7 +133,8 @@ by <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/covsX1000AndSetDF.html"
 
 
 <dt id="arg-doobjfunassertions">doObjFunAssertions<a class="anchor" aria-label="anchor" href="#arg-doobjfunassertions"></a></dt>
-<dd><p>logical; passed to <code>doAssertions</code>.</p></dd>
+<dd><p>logical, no default: the module passes its parameter of that name, so one
+place (<code>options(fireSenseUtils.assertions = )</code>) sets it. Passed to <code>doAssertions</code>.</p></dd>
 
 
 <dt id="arg-covminmax">covMinMax<a class="anchor" aria-label="anchor" href="#arg-covminmax"></a></dt>
