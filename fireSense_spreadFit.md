@@ -1,6 +1,6 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9005"
+subtitle: "v.1.2.0.9006"
 date: "Last updated: 2026-10-15"
 output:
   bookdown::html_document2:
@@ -415,7 +415,15 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> TRUE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> A simulated fire that burns its buffer's outer edge (see `runawayEdgeFrac`) is a runaway, censored in the size likelihood: it has no density at the observed size. The Anderson-Darling, annual-area and area-distribution terms score the size it burned. Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size in the likelihood too. Passed to `fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting. </td>
+   <td style="text-align:left;"> A simulated fire that burns its buffer's outer edge (see `runawayEdgeFrac`) is a runaway, censored in the size likelihood: it has no density at the observed size. The Anderson-Darling, annual-area and area-distribution terms count it as `runawayBufferMultiple` times its own buffer's size (NA: the size it burned). Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size in the likelihood too. Passed to `fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> runawayBufferMultiple </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> 2 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> With `penaliseRunaways`, a runaway counts in the size-based terms of the objective (Anderson-Darling, annual area, area-weighted size distribution) as this multiple of the size of its own fire's buffer: a fire that reaches the edge of its buffer would have kept burning. A full-landscape hindcast of ELF 5.4 showed fits that matched the observed area inside the buffers ran away on the whole landscape (fires of 3-6 Mha, median 2-12 times the observed area). NA scores the size it burned before it was stopped, the old behaviour. Passed to `fireSenseUtils::runDEoptim()` and the threshold calibration. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> runawayEdgeFrac </td>
