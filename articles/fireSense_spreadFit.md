@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9003"
-date: "Last updated: 2026-10-14"
+subtitle: "v.1.2.0.9004"
+date: "Last updated: 2026-10-15"
 output:
   bookdown::html_document2:
     toc: true
@@ -339,7 +339,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;">  </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> How many workers to request for the DEoptim cluster. This IS the population size: `clusters::clusterSetup()` sets NP to the workers it builds. `NULL` leaves `fireSenseUtils::runDEoptim()`'s default of 10 per estimated parameter. A generation costs the slowest of NP evaluations and that barely falls as NP falls, so a smaller NP buys throughput by allowing more fits at once rather than by shortening generations (measured 2026-09-16). </td>
+   <td style="text-align:left;"> How many workers to request for the DEoptim cluster. This IS the population size: `clusters::clusterSetup()` sets NP to the workers it builds. `NULL` takes `fireSenseUtils::deoptimPopulationSize()` of the number of parameters: 30 for 4-7, 40 for 8-12, 50 for 13-15 (40 was a good middle in tests of 10 per parameter against other sizes, with little gain above it; current ledgers have 10-12 parameters). A generation costs the slowest of NP evaluations and that barely falls as NP falls, so a smaller NP buys throughput by allowing more fits at once rather than by shortening generations (measured 2026-09-16). </td>
   </tr>
   <tr>
    <td style="text-align:left;"> simulateMembers </td>
