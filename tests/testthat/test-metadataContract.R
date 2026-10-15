@@ -11,7 +11,7 @@ test_that("parameter classes", {
   expect_identical(
     cls[sort(names(cls), method = "radix")],
     (function(x) x[sort(names(x), method = "radix")])(c(.c = "numeric", .plotInterval = "numeric", .plots = "character|logical", .plotSize = "list", .runInitialTime = "numeric", .runName = "character",
-      .studyAreaName = "character", .useCache = "logical|character", .neverCache = "character",
+      .studyAreaName = "character", .useCache = "logical|character",
       cores = "integer", DEoptimControl = "list", DEoptimTests = "character",
       doObjFunAssertions = "logical", heldOutFold = "integer", initialpop = "numeric", iterDEoptim = "integer",
       iterThresh = "integer", thresholdMargin = "numeric", libPathDEoptim = "character", lower = "numeric",

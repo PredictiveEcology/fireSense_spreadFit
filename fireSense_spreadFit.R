@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/clusters@development (>= 0.0.78)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9094)",
-                  "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9037)",
+                  "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
     defineParameter(".plots", "character|logical", default = NULL, ## TODO: use .plotInitialTime etc.
@@ -48,10 +48,6 @@ defineModule(sim, list(
                     desc = paste("Should this entire module be run",
                                  "with caching activated? This is generally intended for data-type",
                                  "modules, where stochasticity and time are not relevant.")),
-    defineParameter(".neverCache", "character", "run", NA, NA,
-                    paste("Events that are never cached, whatever `.useCache` says (read by SpaDES.core, 3.2.1.9037 or later):",
-                          "`run` fits the model and writes the shared ledger through `CacheGeo()`, so the ledger, not an event cache,",
-                          "decides whether a fit is redone.")),
     defineParameter("cores", "integer", default = 1L,
                     desc = paste("Passed to `cores` in `fireSenseUtils::runDEoptim()`: a number of local cores, or a",
                                  "character vector of machine names, one element per core wanted on that machine.")),
