@@ -28,7 +28,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.78)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9097)",
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9098)",
                   "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -54,8 +54,16 @@ defineModule(sim, list(
     defineParameter("DEoptimTests", "character", default = c("adTest", "SNLL_FS"),
                     desc = paste("Currently either `'SNLL_FS'` or `'adTest'` or a length 2 character vector of both.",
                                  "Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`.")),
-    defineParameter("doObjFunAssertions", "logical", default = TRUE,
-                    desc = "Passed to `fireSenseUtils::.objfunSpreadFit()`; TRUE runs diagnostics but is slower; FALSE for operational runs"),
+    defineParameter("doFit", "logical", default = NA,
+                    desc = paste("Whether to fit this polygon. NA (default): do whatever is needed -- use the ledger's",
+                                 "fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any",
+                                 "ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it",
+                                 "when the fit's INPUTS changed -- new land cover, vegetation parameters, objective). FALSE:",
+                                 "never fit -- use the ledger's fit, and stop with an error if it holds none.")),
+    defineParameter("doObjFunAssertions", "logical", default = getOption("fireSenseUtils.assertions", FALSE),
+                    desc = paste("Passed to `fireSenseUtils::.objfunSpreadFit()` and to the threshold calibration; TRUE runs",
+                                 "diagnostics but is slower; FALSE for operational runs. The default follows",
+                                 "`options(fireSenseUtils.assertions = )`.")),
     defineParameter("initialpop", "numeric", default = NULL,
                     desc = paste("A numeric matrix of dimensions `NCOL = length(lower)`",
                                  "and `NROW = NP`. This will be passed into DEoptim",
@@ -112,7 +120,7 @@ defineModule(sim, list(
                                  "that cross-validation fold, as its own job. `init` then schedules",
                                  "`spreadFitPrepare`, `estimateThreshold` and `crossValidate` -- never `run`, so",
                                  "the full fit and the ledger write never happen, and the ledger",
-                                 "(`stopIfNoPreRunFit`/`refitExisting`) is not consulted. `crossValidate` fits on",
+                                 "(`doFit`) is not consulted. `crossValidate` fits on",
                                  "the OTHER fold's years and scores this fold's held-out years (`cvFolds()` in",
                                  "`R/fitSpread.R`), and writes",
                                  "`spreadFitHeldOut_<.runName>_fold<heldOutFold>.rds` instead of",
@@ -233,17 +241,11 @@ defineModule(sim, list(
                                  "in a settings study (see NEWS).")),
     defineParameter("SNLL_FS_thresh", "integer", default = NULL,
                     desc = "Threshold multiplier used in objective function SNLL fire size test."),
-    defineParameter("refitExisting", "logical", FALSE, NA, NA,
-                    paste("FOR DEVELOPERS ONLY: a re-fit is a full DEoptim run and is only practical with",
-                          "access to at least 40 cores. Fit this polygon even when the ledger already holds",
-                          "parameters for it. A ledger row normally means the fit is done, and the run event",
-                          "skips it. Set this when the fit's INPUTS have changed -- new land cover, new",
-                          "vegetation parameters, a new objective -- so the stored row is stale and the",
-                          "polygon must be fitted again. When TRUE it OVERRIDES `stopIfNoPreRunFit`: `init`",
-                          "schedules the fit instead of stopping.")),
-    defineParameter("stopIfNoPreRunFit", "logical", default = TRUE,
-                    desc = paste("If TRUE, `init` stops with an error when this polygon would have to be",
-                                 "fitted, instead of fitting it. Ignored when `refitExisting` is TRUE.")),
+    defineParameter("refitExisting", "logical", NA, NA, NA,
+                    paste("DEPRECATED, use `doFit`. TRUE is `doFit = TRUE`; NA (unset) and FALSE do nothing.")),
+    defineParameter("stopIfNoPreRunFit", "logical", default = NA,
+                    desc = paste("DEPRECATED, use `doFit`. TRUE is `doFit = FALSE`; NA (unset) and FALSE (allow a fit)",
+                                 "are `doFit = NA`. Ignored when `refitExisting` is TRUE.")),
     
     defineParameter("trace", "numeric", default = 1L,
                     desc = paste("non-negative integer. If > 0, tracing information on",
@@ -387,7 +389,7 @@ defineModule(sim, list(
 #' Event dispatcher for fireSense_spreadFit
 #'
 #' `init` schedules `spreadFitPrepare`, and, unless the ledger already holds a fit for this polygon
-#' (or `refitExisting` is TRUE), `estimateThreshold` then `run` (or `debug` when `mode` has "debug").
+#' (or `doFit` is TRUE), `estimateThreshold` then `run` (or `debug` when `mode` has "debug").
 #' When `heldOutFold` is 1 or 2, `init` instead schedules only `spreadFitPrepare`,
 #' `estimateThreshold` and `crossValidate` (that one fold): never `run`, so the full fit and the
 #' ledger write never happen.
@@ -419,7 +421,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         # fits on the OTHER fold's years and scores this fold's held-out years
         # (R/fitSpread.R crossValidateSpreadOneFold()). It never runs the full fit or writes
         # the ledger, so it does not consult the ledger (hasPreRunFitForThisPolygon()) or
-        # `stopIfNoPreRunFit`: those decide whether to run the full fit, which this job never does.
+        # `doFit`: those decide whether to run the full fit, which this job never does.
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "estimateThreshold")
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "crossValidate")
@@ -430,12 +432,9 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
 
       # Fit unless the ledger already holds parameters for THIS polygon. The object
       # may exist and be a data.frame while holding only neighbours' rows, or none.
-      # `refitExisting` overrides that: the stored row is stale when the inputs have changed.
-      if (isTRUE(Par$refitExisting) || !hasPreRunFitForThisPolygon(sim)) {
-        # `refitExisting` is an explicit request to fit, so it overrides `stopIfNoPreRunFit`.
-        if (isTRUE(Par$stopIfNoPreRunFit) && !isTRUE(Par$refitExisting))
-          stop("There is no pre-run SpreadFit (sim$studyAreaWithSpreadParams), ",
-               "but parameter `stopIfNoPreRunFit` is `TRUE`")
+      # `doFit` overrides that: TRUE refits (the stored row is stale when the inputs have changed),
+      # FALSE stops when there is no row.
+      if (mustFitThisPolygon(sim, message = TRUE)) {
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "estimateThreshold")
         if ("debug" %in% P(sim)$mode) {
@@ -490,7 +489,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
       mod$thresh <- estimateSNLLThresholdPostLargeFires(sim, mod$covsX1000)
     },
     run = {
-      if (isTRUE(Par$refitExisting) || !hasPreRunFitForThisPolygon(sim)) {
+      if (mustFitThisPolygon(sim)) {
 
         if (!identical(basename(Par$visualizeDEoptim), currentModule(sim))) {
           params(sim)[[currentModule(sim)]][["visualizeDEoptim"]] <- figurePath(sim)

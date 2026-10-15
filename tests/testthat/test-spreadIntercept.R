@@ -19,7 +19,7 @@ toyObjectsI <- function(formula) {
 
 ## a fit on toy inputs, with the formula as given; `rec` records what leaves the machine
 fittedI <- function(formula, params = list(), rec = new.env()) {
-  sim <- toySim(c(list(stopIfNoPreRunFit = FALSE), params), toyObjectsI(formula))
+  sim <- toySim(c(list(), params), toyObjectsI(formula))
   mockFitAndLedger(sim, rec)
   sim <- suppressMessages(SpaDES.core::spades(sim))
   list(sim = sim, rec = rec)
@@ -42,7 +42,7 @@ test_that("estimateSpreadParams(): an intercept is bounded +/- upperAndLower, fi
 
 test_that("spreadFitPrepare: with an intercept the default bounds include it; the centre is the data's mean", {
   p <- SpaDES.core::params(runEvents(runEvents(
-    toySim(list(stopIfNoPreRunFit = FALSE), toyObjectsI(formIcpt)), "init"),
+    toySim(list(), toyObjectsI(formIcpt)), "init"),
     "spreadFitPrepare"))[[moduleName]]
   expect_identical(names(p$upper)[1:2], c("maxAsymptote", icptName))
   expect_identical(unname(c(p$lower[[icptName]], p$upper[[icptName]])), c(-50, 50))
@@ -89,7 +89,7 @@ test_that("off, there is no centre, no ledger column, and the fit's cache key om
 ## what Cache(omitArgs =) the fit and the threshold calibration are given
 omitArgsOf <- function(formula, params = list()) {
   rec <- new.env()
-  sim <- toySim(c(list(stopIfNoPreRunFit = FALSE), params), toyObjectsI(formula))
+  sim <- toySim(c(list(), params), toyObjectsI(formula))
   mockFitAndLedger(sim, rec)
   mockInModule(sim,
     runSpreadWithoutDEoptim = function(...) { rec$rswd <- list(...); 777 },
@@ -128,7 +128,7 @@ test_that("runSpreadWithoutDEoptim() hands covCentre to the objective and to the
 test_that("the held-out simulation and the fold's ledger row use the fit's centre", {
   run <- function(formula) {
     rec <- new.env(); rec$fnArgs <- list()
-    sim <- toySim(list(heldOutFold = 1L, simulateMembers = 2L, stopIfNoPreRunFit = TRUE),
+    sim <- toySim(list(heldOutFold = 1L, simulateMembers = 2L, doFit = FALSE),
                   toyObjectsI(formula))
     mockFitAndLedger(sim, rec)
     mockInModule(sim, Cache = function(FUN, pop, fnArgs, ...) {

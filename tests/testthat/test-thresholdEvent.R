@@ -12,7 +12,7 @@ recordingRSWD <- function(rec, value) {
 
 test_that("without SNLL_FS_thresh the threshold is calibrated, seeded by the polygon id", {
   rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(list(stopIfNoPreRunFit = FALSE, SNLL_FS_thresh = NULL, iterThresh = 6L, objfunFireReps = 8L))
+  sim <- toySim(list(SNLL_FS_thresh = NULL, iterThresh = 6L, objfunFireReps = 8L))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
   sim <- suppressMessages(SpaDES.core::spades(sim))
@@ -29,7 +29,7 @@ test_that("without SNLL_FS_thresh the threshold is calibrated, seeded by the pol
 
 test_that("a supplied SNLL_FS_thresh is used as is: no calibration", {
   rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(list(stopIfNoPreRunFit = FALSE, SNLL_FS_thresh = 250L))
+  sim <- toySim(list(SNLL_FS_thresh = 250L))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
   sim <- suppressMessages(SpaDES.core::spades(sim))
@@ -39,7 +39,7 @@ test_that("a supplied SNLL_FS_thresh is used as is: no calibration", {
 
 test_that("debug mode evaluates the objective function instead of fitting", {
   rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(list(stopIfNoPreRunFit = FALSE, mode = "debug", iterThresh = 3L, DEoptimTests = c("SNLL_FS", "adTest")))
+  sim <- toySim(list(mode = "debug", iterThresh = 3L, DEoptimTests = c("SNLL_FS", "adTest")))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, NULL))
   sim <- suppressMessages(SpaDES.core::spades(sim))
@@ -52,4 +52,19 @@ test_that("debug mode evaluates the objective function instead of fitting", {
   expect_identical(rec$args$covMinMax, sim$covMinMax_spread)
   done <- SpaDES.core::completed(sim)
   expect_identical(tail(done$eventType, 1), "debug")
+})
+
+test_that("one option, fireSenseUtils.assertions, sets the objective's diagnostics for fit and threshold", {
+  ## off by default (they are slow); the threshold calibration takes the module parameter, not its own default
+  expect_identical(formals(runSpreadWithoutDEoptim)$doObjFunAssertions, quote(expr = ))   # no default of its own
+  for (opt in c(FALSE, TRUE)) {
+    withr::local_options(fireSenseUtils.assertions = opt)
+    rec <- new.env(); fitRec <- new.env()
+    sim <- toySim(list(SNLL_FS_thresh = NULL, iterThresh = 3L, objfunFireReps = 2L))
+    expect_identical(SpaDES.core::P(sim, "doObjFunAssertions", moduleName), opt)
+    mockFitAndLedger(sim, fitRec)
+    mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
+    suppressMessages(SpaDES.core::spades(sim))
+    expect_identical(rec$args$doObjFunAssertions, opt)
+  }
 })

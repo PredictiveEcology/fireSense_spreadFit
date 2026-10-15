@@ -22,7 +22,7 @@ toyDEWithDiagnostics <- function(nPar) {
 
 fittedWith <- function(params = list(), DEfun = toyDEWithDiagnostics) {
   rec <- new.env()
-  sim <- toySim(c(list(stopIfNoPreRunFit = FALSE), params))
+  sim <- toySim(c(list(), params))
   mockFitAndLedger(sim, rec)
   mockInModule(sim, runDEoptim = function(...) {
     rec$deArgs <- list(...)
@@ -85,7 +85,7 @@ test_that("without the diagnostics' attributes, only what can be computed is mad
 test_that("crossValidate fits each half of the years and predicts the other half, without the ledger", {
   rec <- new.env()
   rec$fits <- list(); rec$sims <- list()
-  sim <- toySim(list(stopIfNoPreRunFit = FALSE, mode = "validate", simulateMembers = 3L),
+  sim <- toySim(list(mode = "validate", simulateMembers = 3L),
                 list(studyAreaWithSpreadParams = toyLedger("9.9")))
   mockFitAndLedger(sim, rec)
   mockInModule(sim,

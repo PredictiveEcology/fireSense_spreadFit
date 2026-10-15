@@ -3,7 +3,7 @@
 ## test-runEvent.R; this file checks what the event leaves in the simList.
 
 prepared <- function(params = list(), objects = list()) {
-  sim <- toySim(c(list(stopIfNoPreRunFit = FALSE), params), objects)
+  sim <- toySim(c(list(), params), objects)
   runEvents(runEvents(sim, "init"), "spreadFitPrepare")
 }
 P1 <- function(sim) SpaDES.core::params(sim)[[moduleName]]

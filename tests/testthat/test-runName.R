@@ -10,7 +10,7 @@ test_that("an input object .runName is no longer read: the name is the parameter
 
 test_that("a fit receives the parameter's name, and names its progress file with it", {
   rec <- new.env()
-  sim <- toySim(list(simulateMembers = 3L, stopIfNoPreRunFit = FALSE, .runName = "fromParam"))
+  sim <- toySim(list(simulateMembers = 3L, .runName = "fromParam"))
   mockFitAndLedger(sim, rec)
   mockInModule(sim,
     runDEoptim = function(...) {

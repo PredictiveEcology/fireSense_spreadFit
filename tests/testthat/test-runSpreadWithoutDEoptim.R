@@ -26,7 +26,8 @@ callIt <- function(mode, ..., iterThresh = 4L, seed = 42L, gate = gateRule) {
       iterThresh = iterThresh, lower = lower, upper = upper, fireSense_spreadFormula = "~ 0 + a + b",
       flammableRTM = "theLandscape", annualDTx1000 = list(), nonAnnualDTx1000 = list(),
       fireBufferedListDT = list(), historicalFires = fires, covMinMax = NULL, objfunFireReps = 7L,
-      maxFireSpread = 0.28, tests = "SNLL_FS", formulaToFit = "~ 0 + a + b", mode = mode, seed = seed, ...)),
+      maxFireSpread = 0.28, tests = "SNLL_FS", formulaToFit = "~ 0 + a + b", mode = mode, seed = seed,
+      doObjFunAssertions = FALSE, ...)),
     message = function(m) { msgs <<- c(msgs, conditionMessage(m)); invokeRestart("muffleMessage") })
   if (!is.null(out)) attr(out, "messages") <- msgs
   out
@@ -108,7 +109,8 @@ test_that("drawn parameter sets are named, so a trailing yearSpreadSD bound is r
       iterThresh = 4L, lower = lowerYSD, upper = upperYSD, fireSense_spreadFormula = "~ 0 + a + b",
       flammableRTM = "theLandscape", annualDTx1000 = list(), nonAnnualDTx1000 = list(),
       fireBufferedListDT = list(), historicalFires = fires, covMinMax = NULL, objfunFireReps = 7L,
-      maxFireSpread = 0.28, tests = "SNLL_FS", formulaToFit = "~ 0 + a + b", mode = "debug", seed = 42L)))
+      maxFireSpread = 0.28, tests = "SNLL_FS", formulaToFit = "~ 0 + a + b", mode = "debug", seed = 42L,
+      doObjFunAssertions = FALSE)))
   expect_identical(names(rec$calls[[1]]$par), c("a", "b", "yearSpreadSD"))
 })
 

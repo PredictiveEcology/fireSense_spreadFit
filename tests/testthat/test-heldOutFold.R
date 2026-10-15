@@ -5,7 +5,7 @@
 heldOutFoldRun <- function(k, params = list()) {
   rec <- new.env()
   rec$fits <- list(); rec$sims <- list()
-  sim <- toySim(c(list(heldOutFold = k, simulateMembers = 3L, stopIfNoPreRunFit = TRUE), params))
+  sim <- toySim(c(list(heldOutFold = k, simulateMembers = 3L, doFit = FALSE), params))
   mockFitAndLedger(sim, rec)
   mockInModule(sim,
     runDEoptim = function(...) {
@@ -63,7 +63,7 @@ test_that("heldOutFold never schedules or runs the full fit ('run') or writes th
 test_that("the held-out object carries the fold's fit in the ledger row's structure", {
   out <- heldOutFoldRun(1L)
   fold <- out$sim$spreadFitHeldOut
-  runSim <- toySim(list(stopIfNoPreRunFit = FALSE))      # the `run` event's ledger row
+  runSim <- toySim(list())      # the `run` event's ledger row
   mockFitAndLedger(runSim)
   run <- suppressMessages(SpaDES.core::spades(runSim))$studyAreaWithSpreadParams
   fit <- fold$fit
