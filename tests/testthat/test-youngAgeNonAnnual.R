@@ -22,7 +22,7 @@ youngAgeNonAnnualObjects <- function() {
 
 test_that("the default mutuallyExclusiveCols does not include youngAge itself", {
   objs <- youngAgeNonAnnualObjects()
-  sim <- toySim(list(stopIfNoPreRunFit = FALSE), objs)
+  sim <- toySim(list(), objs)
   sim <- runEvents(runEvents(sim, "init"), "spreadFitPrepare")
   mec <- P1(sim)$mutuallyExclusiveCols
   expect_false("youngAge" %in% mec$youngAge)
@@ -32,7 +32,7 @@ test_that("the default mutuallyExclusiveCols does not include youngAge itself", 
 
 test_that("after exclusivity, youngAge stays 1 on young pixels (objective's covariate path)", {
   objs <- youngAgeNonAnnualObjects()
-  sim <- toySim(list(stopIfNoPreRunFit = FALSE), objs)
+  sim <- toySim(list(), objs)
   rec <- mockFitAndLedger(sim)
   sim <- suppressMessages(SpaDES.core::spades(sim))
   a <- rec$deArgs

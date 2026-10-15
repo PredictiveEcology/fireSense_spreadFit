@@ -26,7 +26,7 @@ mockValidation <- function(sim, rec) {
 
 fitWithPlots <- function(params = list()) {
   rec <- new.env()
-  sim <- toySim(c(list(stopIfNoPreRunFit = FALSE, profileReps = 0L, simulateMembers = 0L), params))
+  sim <- toySim(c(list(profileReps = 0L, simulateMembers = 0L), params))
   mockFitAndLedger(sim, rec)
   mockValidation(sim, rec)
   list(sim = suppressMessages(SpaDES.core::spades(sim)), rec = rec)

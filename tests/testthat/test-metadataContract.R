@@ -13,7 +13,7 @@ test_that("parameter classes", {
     (function(x) x[sort(names(x), method = "radix")])(c(.c = "numeric", .plotInterval = "numeric", .plots = "character|logical", .plotSize = "list", .runInitialTime = "numeric", .runName = "character",
       .studyAreaName = "character", .useCache = "logical|character",
       cores = "integer", DEoptimControl = "list", DEoptimTests = "character",
-      doObjFunAssertions = "logical", heldOutFold = "integer", initialpop = "numeric", iterDEoptim = "integer",
+      doFit = "logical", doObjFunAssertions = "logical", heldOutFold = "integer", initialpop = "numeric", iterDEoptim = "integer",
       iterThresh = "integer", thresholdMargin = "numeric", libPathDEoptim = "character", lower = "numeric",
       maxFireSpread = "numeric", mode = "character", mutuallyExclusiveCols = "list",
       nCoresNeeded = "integer", objFunCoresInternal = "integer",
@@ -52,12 +52,15 @@ test_that("DEoptim defaults are the tuning study's best and a production fit's s
 })
 
 test_that("defaults that decide whether and how a fit runs", {
-  expect_identical(def$stopIfNoPreRunFit, TRUE)
-  expect_identical(def$refitExisting, FALSE)
+  expect_identical(def$doFit, NA)                 # fit if the ledger has no fit, else use the ledger's
+  ## the deprecated aliases are "not set" unless a user sets them
+  expect_identical(def$stopIfNoPreRunFit, NA)
+  expect_identical(def$refitExisting, NA)
   expect_identical(def$mode, "fit")
   expect_identical(def$DEoptimTests, c("adTest", "SNLL_FS"))
   expect_identical(def$rescaleAll, TRUE)
-  expect_identical(def$doObjFunAssertions, TRUE)
+  ## diagnostics inside the objective are slow: off unless options(fireSenseUtils.assertions = TRUE)
+  expect_identical(def$doObjFunAssertions, getOption("fireSenseUtils.assertions", FALSE))
   expect_identical(def$useCache_DE, TRUE)
   expect_identical(def$.useCache, "init")
   expect_identical(def$mutuallyExclusiveCols, list(youngAge = c("class", "nonForest")))

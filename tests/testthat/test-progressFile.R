@@ -4,7 +4,7 @@
 
 progressFileRun <- function(params = list(), preRun = !is.null(params$heldOutFold)) {
   rec <- new.env()
-  sim <- toySim(c(list(simulateMembers = 3L, stopIfNoPreRunFit = preRun), params))
+  sim <- toySim(c(list(simulateMembers = 3L, doFit = if (preRun) FALSE else NA), params))
   mockFitAndLedger(sim, rec)
   mockInModule(sim,
     runDEoptim = function(...) {

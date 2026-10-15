@@ -17,7 +17,7 @@ settings <- list(weighted = "sqrt", sizeLik = "t", sizeLikDf = 7, adWeight = 2,
 
 test_that("the calibration and the fit get the same objective settings", {
   rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(c(list(stopIfNoPreRunFit = FALSE, SNLL_FS_thresh = NULL), settings))
+  sim <- toySim(c(list(SNLL_FS_thresh = NULL), settings))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
   sim <- suppressMessages(SpaDES.core::spades(sim))
@@ -43,7 +43,7 @@ test_that("runSpreadWithoutDEoptim() hands the settings to the objective", {
     iterThresh = 3L, lower = c(a = 0), upper = c(a = 1), fireSense_spreadFormula = "~ 0 + a",
     flammableRTM = land, annualDTx1000 = list(), nonAnnualDTx1000 = list(), fireBufferedListDT = list(),
     historicalFires = fires, covMinMax = NULL, objfunFireReps = 2L, maxFireSpread = 0.28,
-    tests = "SNLL_FS", formulaToFit = "~ 0 + a", mode = "debug", seed = 1L, escapeSizeHa = 50,
+    tests = "SNLL_FS", formulaToFit = "~ 0 + a", mode = "debug", seed = 1L, escapeSizeHa = 50, doObjFunAssertions = FALSE,
     link = "logistic3pUpper"), settings))))
   expect_length(seen, 3L)
   for (nm in names(settings))
@@ -53,7 +53,7 @@ test_that("runSpreadWithoutDEoptim() hands the settings to the objective", {
 
 test_that("the new terms and jumping are on by default", {
   rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(list(stopIfNoPreRunFit = FALSE, SNLL_FS_thresh = NULL))
+  sim <- toySim(list(SNLL_FS_thresh = NULL))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
   sim <- suppressMessages(SpaDES.core::spades(sim))
@@ -76,7 +76,7 @@ test_that("penaliseRunaways = FALSE reaches the fit, the calibration and the obj
   ## second TRUE call here would hit that test's cached threshold and never reach the mock
   for (value in list(FALSE)) {
     rec <- new.env(); fitRec <- new.env()
-    sim <- toySim(list(stopIfNoPreRunFit = FALSE, SNLL_FS_thresh = NULL, penaliseRunaways = value))
+    sim <- toySim(list(SNLL_FS_thresh = NULL, penaliseRunaways = value))
     mockFitAndLedger(sim, fitRec)
     mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
     sim <- suppressMessages(SpaDES.core::spades(sim))
@@ -95,7 +95,7 @@ test_that("penaliseRunaways = FALSE reaches the fit, the calibration and the obj
     iterThresh = 3L, lower = c(a = 0), upper = c(a = 1), fireSense_spreadFormula = "~ 0 + a",
     flammableRTM = land, annualDTx1000 = list(), nonAnnualDTx1000 = list(), fireBufferedListDT = list(),
     historicalFires = fires, covMinMax = NULL, objfunFireReps = 2L, maxFireSpread = 0.28,
-    tests = "SNLL_FS", formulaToFit = "~ 0 + a", mode = "debug", seed = 1L, escapeSizeHa = 50,
+    tests = "SNLL_FS", formulaToFit = "~ 0 + a", mode = "debug", seed = 1L, escapeSizeHa = 50, doObjFunAssertions = FALSE,
     penaliseRunaways = FALSE, runawayEdgeFrac = 0.5, runawayEdgeMin = 7L)))
   expect_true(length(seen) > 0)
   expect_true(all(vapply(seen, function(a) identical(a$runawayEdgeFrac, 0.5) && identical(a$runawayEdgeMin, 7L),
