@@ -22,4 +22,7 @@ jobs:
     ## itself is all it needs.
     uses: PredictiveEcology/actions/.github/workflows/testthat-module.yaml@main
     with:
+      ## a PR with a `Depends-on:` line installs that unmerged PR as its post-merge version and waits until its checks are green
+      depends-on-virtual-bump: true
+      depends-on-gate: true
       module: fireSense_spreadFit

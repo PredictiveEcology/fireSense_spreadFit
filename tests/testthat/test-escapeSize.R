@@ -49,7 +49,7 @@ test_that("the threshold calibration hands escapeSizeHa to the objective", {
     iterThresh = 3L, lower = c(a = 0), upper = c(a = 1), fireSense_spreadFormula = "~ 0 + a",
     flammableRTM = land, annualDTx1000 = list(), nonAnnualDTx1000 = list(), fireBufferedListDT = list(),
     historicalFires = fires, covMinMax = NULL, objfunFireReps = 2L, maxFireSpread = 0.28,
-    tests = "SNLL_FS", formulaToFit = "~ 0 + a", mode = "debug", seed = 1L, escapeSizeHa = 50)))
+    tests = "SNLL_FS", formulaToFit = "~ 0 + a", mode = "debug", seed = 1L, escapeSizeHa = 50, doObjFunAssertions = FALSE)))
   expect_length(seen, 3L)
   expect_true(all(vapply(seen, function(a) identical(a$escapeSizeHa, 50), logical(1))))
 })

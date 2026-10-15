@@ -19,7 +19,7 @@ toyObjectsI <- function(formula) {
 
 ## a fit on toy inputs, with the formula as given; `rec` records what leaves the machine
 fittedI <- function(formula, params = list(), rec = new.env()) {
-  sim <- toySim(c(list(stopIfNoPreRunFit = FALSE), params), toyObjectsI(formula))
+  sim <- toySim(c(list(), params), toyObjectsI(formula))
   mockFitAndLedger(sim, rec)
   sim <- suppressMessages(SpaDES.core::spades(sim))
   list(sim = sim, rec = rec)
@@ -30,7 +30,7 @@ test_that("estimateSpreadParams(): an intercept is bounded +/- upperAndLower, fi
   up <- estimateSpreadParams("~ 1 + CMDsm + youngAge + nf", annual, "upper", upperAndLower = 9)
   lo <- estimateSpreadParams("~ 1 + CMDsm + youngAge + nf", annual, "lower", upperAndLower = 9)
   expect_identical(up, c(maxAsymptote = 0.276, `(Intercept)` = 9, CMDsm = 9, youngAge = 0, nf = 9))
-  expect_identical(lo, c(maxAsymptote = 0.25, `(Intercept)` = -9, CMDsm = 0, youngAge = -9, nf = -9))
+  expect_identical(lo, c(maxAsymptote = fireSenseUtils::spreadProbFloor, `(Intercept)` = -9, CMDsm = 0, youngAge = -9, nf = -9))
   ## with upperTail1 it still comes right after the logistic parameters, and yearSpreadSD stays last
   up2 <- estimateSpreadParams("~ 1 + nf", annual, "upper", 9, upperTailBounds = c(-1, 1), yearSpreadSDBounds = c(0, 1))
   expect_identical(names(up2), c("maxAsymptote", "upperTail1", "(Intercept)", "nf", "yearSpreadSD"))
@@ -42,7 +42,7 @@ test_that("estimateSpreadParams(): an intercept is bounded +/- upperAndLower, fi
 
 test_that("spreadFitPrepare: with an intercept the default bounds include it; the centre is the data's mean", {
   p <- SpaDES.core::params(runEvents(runEvents(
-    toySim(list(stopIfNoPreRunFit = FALSE), toyObjectsI(formIcpt)), "init"),
+    toySim(list(), toyObjectsI(formIcpt)), "init"),
     "spreadFitPrepare"))[[moduleName]]
   expect_identical(names(p$upper)[1:2], c("maxAsymptote", icptName))
   expect_identical(unname(c(p$lower[[icptName]], p$upper[[icptName]])), c(-50, 50))
@@ -89,7 +89,7 @@ test_that("off, there is no centre, no ledger column, and the fit's cache key om
 ## what Cache(omitArgs =) the fit and the threshold calibration are given
 omitArgsOf <- function(formula, params = list()) {
   rec <- new.env()
-  sim <- toySim(c(list(stopIfNoPreRunFit = FALSE), params), toyObjectsI(formula))
+  sim <- toySim(c(list(), params), toyObjectsI(formula))
   mockFitAndLedger(sim, rec)
   mockInModule(sim,
     runSpreadWithoutDEoptim = function(...) { rec$rswd <- list(...); 777 },
@@ -128,7 +128,7 @@ test_that("runSpreadWithoutDEoptim() hands covCentre to the objective and to the
 test_that("the held-out simulation and the fold's ledger row use the fit's centre", {
   run <- function(formula) {
     rec <- new.env(); rec$fnArgs <- list()
-    sim <- toySim(list(heldOutFold = 1L, simulateMembers = 2L, stopIfNoPreRunFit = TRUE),
+    sim <- toySim(list(heldOutFold = 1L, simulateMembers = 2L, doFit = FALSE),
                   toyObjectsI(formula))
     mockFitAndLedger(sim, rec)
     mockInModule(sim, Cache = function(FUN, pop, fnArgs, ...) {

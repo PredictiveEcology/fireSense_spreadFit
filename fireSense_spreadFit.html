@@ -2994,8 +2994,8 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">fireSense_spreadFit Manual</h1>
-<h3 class="subtitle">v.1.1.5</h3>
-<h4 class="date">Last updated: 2026-10-06</h4>
+<h3 class="subtitle">v.1.2.0.9005</h3>
+<h4 class="date">Last updated: 2026-10-15</h4>
 
 </div>
 
@@ -3021,18 +3021,17 @@ Spread probabilities can vary between pixels, and thus reflect local heterogenei
 <p>The fit is a differential evolution search (<code>DEoptim</code>, run by <code>fireSenseUtils::runDEoptim()</code> on a cluster built by the <code>clusters</code> package).
 Each candidate parameter set is scored by simulating the historical fires and comparing simulated with observed fire sizes (<code>fireSenseUtils::.objfunSpreadFit()</code>).
 The 5 best parameter sets, and the covariate ranges used to rescale the covariates, are written as one row per polygon to a shared “fit ledger” on Google Drive (<code>spreadFitFilename</code> in <code>spreadFitGoogleDriveFolder</code>), keyed by <code>.ELFind</code>.
-If the ledger already holds a row for the polygon, the module does nothing unless <code>refitExisting = TRUE</code>.
-By default (<code>stopIfNoPreRunFit = TRUE</code>) the module stops rather than start a fit; set it to <code>FALSE</code> to fit.</p>
-<div id="refitexisting" class="section level4">
-<h4><code>refitExisting</code></h4>
-<p><code>refitExisting = TRUE</code> forces a fit for this polygon even when the ledger already holds a row for it.
+If the ledger already holds a row for the polygon, the module uses it; otherwise it fits.
+The parameter <code>doFit</code> changes that: <code>NA</code> (default) does whatever is needed, as just described; <code>TRUE</code> always fits; <code>FALSE</code> never fits and stops with an error if the ledger has no row for the polygon.</p>
+<div id="dofit" class="section level4">
+<h4><code>doFit</code></h4>
+<p><code>doFit = TRUE</code> forces a fit for this polygon even when the ledger already holds a row for it.
 Use it when the fit’s INPUTS have changed – new land cover, new vegetation parameters, a new objective
-function – so the stored row is stale and the polygon must be fitted again.</p>
-<p><code>refitExisting</code> <strong>overrides</strong> <code>stopIfNoPreRunFit</code>: with <code>refitExisting = TRUE</code>, <code>init</code> schedules the fit
-rather than stopping, whatever <code>stopIfNoPreRunFit</code> is set to. Setting <code>stopIfNoPreRunFit = FALSE</code> is only
-needed when the polygon has no ledger row.</p>
-<p><code>refitExisting</code> is intended <strong>for developers</strong> who have access to <strong>at least 40 cores</strong>: it triggers a
+function – so the stored row is stale and the polygon must be fitted again.
+It is intended <strong>for developers</strong> who have access to <strong>at least 40 cores</strong>: it triggers a
 full DEoptim run (see <code>cores</code> and <code>nCoresNeeded</code>), which is not practical on a small machine.</p>
+<p><code>refitExisting</code> and <code>stopIfNoPreRunFit</code> are deprecated: <code>refitExisting = TRUE</code> is <code>doFit = TRUE</code> and
+<code>stopIfNoPreRunFit = TRUE</code> is <code>doFit = FALSE</code>. Setting either prints a message naming <code>doFit</code>.</p>
 </div>
 </div>
 <div id="module-inputs-and-parameters" class="section level3">
@@ -3063,27 +3062,13 @@ sourceURL
 <tbody>
 <tr>
 <td style="text-align:left;">
-.runName
-</td>
-<td style="text-align:left;">
-character
-</td>
-<td style="text-align:left;">
-Some descriptive, short name for this fitting, e.g., ELF14.1
-</td>
-<td style="text-align:left;">
-NA
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 .ELFind
 </td>
 <td style="text-align:left;">
 character
 </td>
 <td style="text-align:left;">
-Identifier of the polygon being fit, e.g. ‘6.1.1’. This becomes the <code>polygonID</code> of the row this module writes to the shared cloud fit ledger (<code>spreadFitFilename</code> in <code>spreadFitGoogleDriveFolder</code>), which <code>fireSense_dataPrepFit</code> matches against the polygon ids carried by <code>rasterToMatchELF</code>. It must therefore be the polygon’s identity, not a run label: <code>.runName</code> encodes the whole scenario (climate period, GCM, SSP, rep) in some projects, and keying the ledger on it writes rows no other run can find and trips dataPrepFit’s id match. Defaults to <code>.runName</code> for backwards compatibility.
+Identifier of the polygon being fit, e.g. ‘6.1.1’. This becomes the <code>polygonID</code> of the row this module writes to the shared cloud fit ledger (<code>spreadFitFilename</code> in <code>spreadFitGoogleDriveFolder</code>), which <code>fireSense_dataPrepFit</code> matches against the polygon ids carried by <code>rasterToMatchELF</code>. It must therefore be the polygon’s identity, not a run label: <code>.runName</code> encodes the whole scenario (climate period, GCM, SSP, rep) in some projects, and keying the ledger on it writes rows no other run can find and trips dataPrepFit’s id match. Defaults to the <code>.runName</code> parameter.
 </td>
 <td style="text-align:left;">
 NA
@@ -3420,13 +3405,33 @@ Currently either <code>&#39;SNLL_FS&#39;</code> or <code>&#39;adTest&#39;</code>
 </tr>
 <tr>
 <td style="text-align:left;">
+doFit
+</td>
+<td style="text-align:left;">
+logical
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Whether to fit this polygon. NA (default): do whatever is needed – use the ledger’s fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it when the fit’s INPUTS changed – new land cover, vegetation parameters, objective). FALSE: never fit – use the ledger’s fit, and stop with an error if it holds none.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 doObjFunAssertions
 </td>
 <td style="text-align:left;">
 logical
 </td>
 <td style="text-align:left;">
-TRUE
+FALSE
 </td>
 <td style="text-align:left;">
 NA
@@ -3435,7 +3440,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Passed to <code>fireSenseUtils::.objfunSpreadFit()</code>; TRUE runs diagnostics but is slower; FALSE for operational runs
+Passed to <code>fireSenseUtils::.objfunSpreadFit()</code> and to the threshold calibration; TRUE runs diagnostics but is slower; FALSE for operational runs. The default follows <code>options(fireSenseUtils.assertions = )</code>.
 </td>
 </tr>
 <tr>
@@ -3634,7 +3639,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-NA (default): unchanged behaviour, governed by <code>mode</code>. <code>1</code> or <code>2</code>: run ONLY that cross-validation fold, as its own job. <code>init</code> then schedules <code>spreadFitPrepare</code>, <code>estimateThreshold</code> and <code>crossValidate</code> – never <code>run</code>, so the full fit and the ledger write never happen, and the ledger (<code>stopIfNoPreRunFit</code>/<code>refitExisting</code>) is not consulted. <code>crossValidate</code> fits on the OTHER fold’s years and scores this fold’s held-out years (<code>cvFolds()</code> in <code>R/fitSpread.R</code>), and writes <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;_fold&amp;lt;heldOutFold&amp;gt;.rds</code> instead of <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;.rds</code>. A run script stops after <code>crossValidate</code>: <code>events = list(.stopAfter = list(fireSense_spreadFit = &quot;crossValidate&quot;))</code>. Any other value is an error.
+NA (default): unchanged behaviour, governed by <code>mode</code>. <code>1</code> or <code>2</code>: run ONLY that cross-validation fold, as its own job. <code>init</code> then schedules <code>spreadFitPrepare</code>, <code>estimateThreshold</code> and <code>crossValidate</code> – never <code>run</code>, so the full fit and the ledger write never happen, and the ledger (<code>doFit</code>) is not consulted. <code>crossValidate</code> fits on the OTHER fold’s years and scores this fold’s held-out years (<code>cvFolds()</code> in <code>R/fitSpread.R</code>), and writes <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;_fold&amp;lt;heldOutFold&amp;gt;.rds</code> instead of <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;.rds</code>. A run script stops after <code>crossValidate</code>: <code>events = list(.stopAfter = list(fireSense_spreadFit = &quot;crossValidate&quot;))</code>. Any other value is an error.
 </td>
 </tr>
 <tr>
@@ -3693,7 +3698,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-How many workers to request for the DEoptim cluster. This IS the population size: <code>clusters::clusterSetup()</code> sets NP to the workers it builds. <code>NULL</code> leaves <code>fireSenseUtils::runDEoptim()</code>’s default of 10 per estimated parameter. A generation costs the slowest of NP evaluations and that barely falls as NP falls, so a smaller NP buys throughput by allowing more fits at once rather than by shortening generations (measured 2026-09-16).
+How many workers to request for the DEoptim cluster. This IS the population size: <code>clusters::clusterSetup()</code> sets NP to the workers it builds. <code>NULL</code> takes <code>fireSenseUtils::deoptimPopulationSize()</code> of the number of parameters: 30 for 4-7, 40 for 8-12, 50 for 13-15 (40 was a good middle in tests of 10 per parameter against other sizes, with little gain above it; current ledgers have 10-12 parameters). A generation costs the slowest of NP evaluations and that barely falls as NP falls, so a smaller NP buys throughput by allowing more fits at once rather than by shortening generations (measured 2026-09-16).
 </td>
 </tr>
 <tr>
@@ -3873,7 +3878,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-A simulated fire that burns any pixel of the outer edge of its own buffer is scored as a runaway (at least that big), not as a fire of the size it reached: in the size likelihood it has no density at the observed size, and in the Anderson-Darling and annual-area terms its size is the landscape’s pixel count. Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size. Passed to <code>fireSenseUtils::runDEoptim()</code>; the threshold calibration uses the same setting.
+A simulated fire that burns its buffer’s outer edge (see <code>runawayEdgeFrac</code>) is a runaway, censored in the size likelihood: it has no density at the observed size. The Anderson-Darling, annual-area and area-distribution terms score the size it burned. Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size in the likelihood too. Passed to <code>fireSenseUtils::runDEoptim()</code>; the threshold calibration uses the same setting.
 </td>
 </tr>
 <tr>
@@ -3994,6 +3999,26 @@ NA
 </td>
 <td style="text-align:left;">
 integer defining the number of replicates the objective function will attempt each fire.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+.runName
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+A short name for this fit, e.g. “4.3_NRV_370_1”. It labels the DEoptim run, its progress file and cache entries.
 </td>
 </tr>
 <tr>
@@ -4163,16 +4188,16 @@ refitExisting
 logical
 </td>
 <td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
-FOR DEVELOPERS ONLY: a re-fit is a full DEoptim run and is only practical with access to at least 40 cores. Fit this polygon even when the ledger already holds parameters for it. A ledger row normally means the fit is done, and the run event skips it. Set this when the fit’s INPUTS have changed – new land cover, new vegetation parameters, a new objective – so the stored row is stale and the polygon must be fitted again. When TRUE it OVERRIDES <code>stopIfNoPreRunFit</code>: <code>init</code> schedules the fit instead of stopping.
+NA
+</td>
+<td style="text-align:left;">
+DEPRECATED, use <code>doFit</code>. TRUE is <code>doFit = TRUE</code>; NA (unset) and FALSE do nothing.
 </td>
 </tr>
 <tr>
@@ -4183,16 +4208,16 @@ stopIfNoPreRunFit
 logical
 </td>
 <td style="text-align:left;">
-TRUE
-</td>
-<td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
-If TRUE, <code>init</code> stops with an error when this polygon would have to be fitted, instead of fitting it. Ignored when <code>refitExisting</code> is TRUE.
+NA
+</td>
+<td style="text-align:left;">
+DEPRECATED, use <code>doFit</code>. TRUE is <code>doFit = FALSE</code>; NA (unset) and FALSE (allow a fit) are <code>doFit = NA</code>. Ignored when <code>refitExisting</code> is TRUE.
 </td>
 </tr>
 <tr>
@@ -4372,7 +4397,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Bound given to each covariate coefficient (<code>upper</code> = this, <code>lower</code> = minus this) when <code>upper</code> or <code>lower</code> is not supplied. Bounds should be wide enough that they do not influence the fitted value; only the sign of drought-index and <code>youngAge</code> terms is constrained (see <code>estimateSpreadParams()</code>). A held-out experiment (7 ELFs x 2 folds) found estimates up to 25.7 and youngAge medians down to -23.0 with the previous default of 9.
+Bound given to each covariate coefficient (<code>upper</code> = this, <code>lower</code> = minus this) when <code>upper</code> or <code>lower</code> is not supplied. Bounds should be wide enough that they do not influence the fitted value; only the sign of drought-index, <code>youngAge</code> and fuel biomass terms is constrained (see <code>estimateSpreadParams()</code>). A held-out experiment (7 ELFs x 2 folds) found estimates up to 25.7 and youngAge medians down to -23.0 with the previous default of 9.
 </td>
 </tr>
 <tr>
@@ -4593,7 +4618,6 @@ mode ‘validate’, or <code>heldOutFold</code> in <code>1:2</code>: <code>sims
 <h3>Usage</h3>
 <pre class="r"><code>## in a project that also runs fireSense_dataPrepFit
 params &lt;- list(fireSense_spreadFit = list(
-  stopIfNoPreRunFit = FALSE,          # allow a fit to start
   cores = rep(c(&quot;hostA&quot;, &quot;hostB&quot;), each = 20), # host name repeated once per worker; or a number for localhost
   nCoresNeeded = 40,                  # = DEoptim population size (NP)
   iterDEoptim = 500,

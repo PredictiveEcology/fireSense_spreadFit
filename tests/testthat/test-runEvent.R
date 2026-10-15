@@ -5,7 +5,7 @@
 m <- function(sim) SpaDES.core::params(sim)[[moduleName]]
 
 fitted <- function(params = list(), objects = list(), rec = new.env()) {
-  sim <- toySim(c(list(stopIfNoPreRunFit = FALSE), params), objects)
+  sim <- toySim(c(list(), params), objects)
   mockFitAndLedger(sim, rec)
   sim <- suppressMessages(SpaDES.core::spades(sim))
   list(sim = sim, rec = rec)
@@ -181,7 +181,7 @@ test_that("visualizeDEoptim is pointed at the module's figure folder", {
 
 test_that("with a ledger row for this polygon nothing is fitted or written", {
   rec <- new.env()
-  sim <- toySim(list(stopIfNoPreRunFit = FALSE), list(studyAreaWithSpreadParams = toyLedger("9.9")))
+  sim <- toySim(list(), list(studyAreaWithSpreadParams = toyLedger("9.9")))
   mockFitAndLedger(sim, rec)
   sim <- suppressMessages(SpaDES.core::spades(sim))
   expect_null(rec$deArgs)
@@ -190,13 +190,31 @@ test_that("with a ledger row for this polygon nothing is fitted or written", {
   expect_identical(sim$studyAreaWithSpreadParams$polygonID, "9.9")
 })
 
-test_that("refitExisting fits and writes although the ledger has this polygon", {
+test_that("doFit = TRUE fits and writes although the ledger has this polygon", {
   rec <- new.env()
-  sim <- toySim(list(stopIfNoPreRunFit = FALSE, refitExisting = TRUE),
+  sim <- toySim(list(doFit = TRUE),
                 list(studyAreaWithSpreadParams = toyLedger("9.9")))
   mockFitAndLedger(sim, rec)
   sim <- suppressMessages(SpaDES.core::spades(sim))
   expect_identical(rec$deArgs$itermax, 5000L)
   expect_identical(rec$geoArgs$studyAreaFireSense$polygonID, "9.9")
   expect_equal(sim$studyAreaWithSpreadParams$params[[1]]$maxAsymptote, c(7, 6, 5, 4, 3))
+})
+
+test_that("doFit = NA (the default) fits and writes when the ledger lacks this polygon", {
+  rec <- new.env()
+  sim <- toySim(list(doFit = NA))
+  mockFitAndLedger(sim, rec)
+  sim <- suppressMessages(SpaDES.core::spades(sim))
+  expect_identical(rec$deArgs$itermax, 5000L)
+  expect_identical(rec$geoArgs$studyAreaFireSense$polygonID, "9.9")
+})
+
+test_that("doFit = FALSE with a ledger row for this polygon fits and writes nothing", {
+  rec <- new.env()
+  sim <- toySim(list(doFit = FALSE), list(studyAreaWithSpreadParams = toyLedger("9.9")))
+  mockFitAndLedger(sim, rec)
+  sim <- suppressMessages(SpaDES.core::spades(sim))
+  expect_null(rec$deArgs)
+  expect_null(rec$geoArgs)
 })

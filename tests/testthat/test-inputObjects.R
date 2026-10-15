@@ -6,10 +6,10 @@ test_that("fireSense_spreadFormula is mandatory", {
                "fireSense_spreadFormula must be supplied")
 })
 
-test_that(".ELFind falls back to .runName, and says so", {
+test_that(".ELFind falls back to the .runName parameter, and says so", {
   msgs <- testthat::capture_messages(
     sim <- SpaDES.core::simInit(times = list(start = 0, end = 1), modules = moduleName, paths = toyPaths(),
-                                params = stats::setNames(list(list(.useCache = FALSE)), moduleName),
+                                params = stats::setNames(list(list(.useCache = FALSE, .runName = "toyRun")), moduleName),
                                 objects = within(toyObjects(), rm(.ELFind))))
   expect_identical(sim$.ELFind, "toyRun")
   expect_match(paste(msgs, collapse = ""), "`.ELFind` not supplied; keying the shared fit ledger on `.runName` \\('toyRun'\\)")
@@ -18,7 +18,6 @@ test_that(".ELFind falls back to .runName, and says so", {
 test_that("a supplied .ELFind is kept", {
   sim <- toySim()
   expect_identical(sim$.ELFind, "9.9")
-  expect_identical(sim$.runName, "toyRun")
 })
 
 test_that("spreadFitAdditionalColNames defaults to the ledger's list-columns", {

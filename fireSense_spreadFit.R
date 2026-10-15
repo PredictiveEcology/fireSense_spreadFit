@@ -15,7 +15,7 @@ defineModule(sim, list(
     person("Alex M.", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(fireSense_spreadFit = "1.1.5"),
+  version = list(fireSense_spreadFit = "1.2.0.9006"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = NA_character_, # e.g., "year",
   citation = list("citation.bib"),
@@ -25,10 +25,11 @@ defineModule(sim, list(
                   "ggplot2", "scales", "kSamples", "munsell",
                   "logging", "magrittr", "parallel", "raster", "sf", "terra", "tidyr", "withr", ## TODO: remove magrittr
                   "PredictiveEcology/pemisc@development",
-                  "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/clusters@development (>= 0.0.52)",
+                  "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
+                  "PredictiveEcology/clusters@development (>= 0.0.78)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9085)",
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9098)",
+                  "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
     defineParameter(".plots", "character|logical", default = NULL, ## TODO: use .plotInitialTime etc.
@@ -53,8 +54,16 @@ defineModule(sim, list(
     defineParameter("DEoptimTests", "character", default = c("adTest", "SNLL_FS"),
                     desc = paste("Currently either `'SNLL_FS'` or `'adTest'` or a length 2 character vector of both.",
                                  "Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`.")),
-    defineParameter("doObjFunAssertions", "logical", default = TRUE,
-                    desc = "Passed to `fireSenseUtils::.objfunSpreadFit()`; TRUE runs diagnostics but is slower; FALSE for operational runs"),
+    defineParameter("doFit", "logical", default = NA,
+                    desc = paste("Whether to fit this polygon. NA (default): do whatever is needed -- use the ledger's",
+                                 "fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any",
+                                 "ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it",
+                                 "when the fit's INPUTS changed -- new land cover, vegetation parameters, objective). FALSE:",
+                                 "never fit -- use the ledger's fit, and stop with an error if it holds none.")),
+    defineParameter("doObjFunAssertions", "logical", default = getOption("fireSenseUtils.assertions", FALSE),
+                    desc = paste("Passed to `fireSenseUtils::.objfunSpreadFit()` and to the threshold calibration; TRUE runs",
+                                 "diagnostics but is slower; FALSE for operational runs. The default follows",
+                                 "`options(fireSenseUtils.assertions = )`.")),
     defineParameter("initialpop", "numeric", default = NULL,
                     desc = paste("A numeric matrix of dimensions `NCOL = length(lower)`",
                                  "and `NROW = NP`. This will be passed into DEoptim",
@@ -111,7 +120,7 @@ defineModule(sim, list(
                                  "that cross-validation fold, as its own job. `init` then schedules",
                                  "`spreadFitPrepare`, `estimateThreshold` and `crossValidate` -- never `run`, so",
                                  "the full fit and the ledger write never happen, and the ledger",
-                                 "(`stopIfNoPreRunFit`/`refitExisting`) is not consulted. `crossValidate` fits on",
+                                 "(`doFit`) is not consulted. `crossValidate` fits on",
                                  "the OTHER fold's years and scores this fold's held-out years (`cvFolds()` in",
                                  "`R/fitSpread.R`), and writes",
                                  "`spreadFitHeldOut_<.runName>_fold<heldOutFold>.rds` instead of",
@@ -130,8 +139,10 @@ defineModule(sim, list(
     defineParameter("nCoresNeeded", "integer", default = NULL,
                     desc = paste("How many workers to request for the DEoptim cluster. This IS the population",
                                  "size: `clusters::clusterSetup()` sets NP to the workers it builds. `NULL`",
-                                 "leaves `fireSenseUtils::runDEoptim()`'s default of 10 per estimated",
-                                 "parameter. A generation costs the slowest of NP evaluations and that barely",
+                                 "takes `fireSenseUtils::deoptimPopulationSize()` of the number of parameters: 30 for 4-7,",
+                                 "40 for 8-12, 50 for 13-15 (40 was a good middle in tests of 10 per parameter against",
+                                 "other sizes, with little gain above it; current ledgers have 10-12 parameters).",
+                                 "A generation costs the slowest of NP evaluations and that barely",
                                  "falls as NP falls, so a smaller NP buys throughput by allowing more fits at",
                                  "once rather than by shortening generations (measured 2026-09-16).")),
     defineParameter("simulateMembers", "integer", default = 10L,
@@ -206,6 +217,9 @@ defineModule(sim, list(
     defineParameter("objfunFireReps", "integer", default = 50L,
                     desc = paste("integer defining the number of replicates the objective function",
                                  "will attempt each fire.")),
+    defineParameter(".runName", "character", NA_character_, NA, NA,
+                    desc = paste("A short name for this fit, e.g. \"4.3_NRV_370_1\". It labels the DEoptim run, its",
+                                 "progress file and cache entries.")),
     defineParameter(".rep", "integer", 1L, NA, NA,
                     desc = paste("An optional integer indicating which replicate run this represents. ",
                                  "This is used to identify unique runs of `runDEoptim`, from a Cache perspective. ",
@@ -224,7 +238,7 @@ defineModule(sim, list(
                                  "The default `p = 0.1` is for `strategy = 6`.")),
     defineParameter("rescaleAll", "logical", TRUE, NA, NA,
                     desc = "rescale covariates for `DEOptim`"),
-    defineParameter("spreadFitGoogleDriveFolder", "character", "https://drive.google.com/drive/folders/1X9-mRjyLMNpgkP_cfqhbr_AQEPOsVCHf",
+    defineParameter("spreadFitGoogleDriveFolder", "character", fireSenseUtils::spreadFitLedgerFolder(),
                     NA, NA, "Google Drive folder url holding the shared fit ledger (`spreadFitFilename`)."),
     defineParameter("spreadFitFilename", "character", "latest",
                     NA, NA, paste("File name of the shared fit ledger: an `sf` object with one row of fitted parameters",
@@ -237,17 +251,11 @@ defineModule(sim, list(
                                  "in a settings study (see NEWS).")),
     defineParameter("SNLL_FS_thresh", "integer", default = NULL,
                     desc = "Threshold multiplier used in objective function SNLL fire size test."),
-    defineParameter("refitExisting", "logical", FALSE, NA, NA,
-                    paste("FOR DEVELOPERS ONLY: a re-fit is a full DEoptim run and is only practical with",
-                          "access to at least 40 cores. Fit this polygon even when the ledger already holds",
-                          "parameters for it. A ledger row normally means the fit is done, and the run event",
-                          "skips it. Set this when the fit's INPUTS have changed -- new land cover, new",
-                          "vegetation parameters, a new objective -- so the stored row is stale and the",
-                          "polygon must be fitted again. When TRUE it OVERRIDES `stopIfNoPreRunFit`: `init`",
-                          "schedules the fit instead of stopping.")),
-    defineParameter("stopIfNoPreRunFit", "logical", default = TRUE,
-                    desc = paste("If TRUE, `init` stops with an error when this polygon would have to be",
-                                 "fitted, instead of fitting it. Ignored when `refitExisting` is TRUE.")),
+    defineParameter("refitExisting", "logical", NA, NA, NA,
+                    paste("DEPRECATED, use `doFit`. TRUE is `doFit = TRUE`; NA (unset) and FALSE do nothing.")),
+    defineParameter("stopIfNoPreRunFit", "logical", default = NA,
+                    desc = paste("DEPRECATED, use `doFit`. TRUE is `doFit = FALSE`; NA (unset) and FALSE (allow a fit)",
+                                 "are `doFit = NA`. Ignored when `refitExisting` is TRUE.")),
     
     defineParameter("trace", "numeric", default = 1L,
                     desc = paste("non-negative integer. If > 0, tracing information on",
@@ -301,7 +309,6 @@ defineModule(sim, list(
                                  "experiment found fuel estimates up to 54.5 (29 of 82 above 25) with the previous default of 60."))
   ),
   inputObjects = rbind(
-    expectsInput(".runName", "character", "Some descriptive, short name for this fitting, e.g., ELF14.1"),
     expectsInput(".ELFind", "character",
                  desc = paste("Identifier of the polygon being fit, e.g. '6.1.1'. This becomes the",
                               "`polygonID` of the row this module writes to the shared cloud fit",
@@ -311,7 +318,7 @@ defineModule(sim, list(
                               "a run label: `.runName` encodes the whole scenario (climate period,",
                               "GCM, SSP, rep) in some projects, and keying the ledger on it writes",
                               "rows no other run can find and trips dataPrepFit's id match.",
-                              "Defaults to `.runName` for backwards compatibility.")),
+                              "Defaults to the `.runName` parameter.")),
     expectsInput("fireBufferedListDT", "list",
                  desc = "list of data.tables with fire id, pixelID, and buffer status"),
     expectsInput("fireSense_annualSpreadFitCovariates", "data.table",
@@ -392,7 +399,7 @@ defineModule(sim, list(
 #' Event dispatcher for fireSense_spreadFit
 #'
 #' `init` schedules `spreadFitPrepare`, and, unless the ledger already holds a fit for this polygon
-#' (or `refitExisting` is TRUE), `estimateThreshold` then `run` (or `debug` when `mode` has "debug").
+#' (or `doFit` is TRUE), `estimateThreshold` then `run` (or `debug` when `mode` has "debug").
 #' When `heldOutFold` is 1 or 2, `init` instead schedules only `spreadFitPrepare`,
 #' `estimateThreshold` and `crossValidate` (that one fold): never `run`, so the full fit and the
 #' ledger write never happen.
@@ -424,7 +431,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         # fits on the OTHER fold's years and scores this fold's held-out years
         # (R/fitSpread.R crossValidateSpreadOneFold()). It never runs the full fit or writes
         # the ledger, so it does not consult the ledger (hasPreRunFitForThisPolygon()) or
-        # `stopIfNoPreRunFit`: those decide whether to run the full fit, which this job never does.
+        # `doFit`: those decide whether to run the full fit, which this job never does.
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "estimateThreshold")
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "crossValidate")
@@ -435,12 +442,9 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
 
       # Fit unless the ledger already holds parameters for THIS polygon. The object
       # may exist and be a data.frame while holding only neighbours' rows, or none.
-      # `refitExisting` overrides that: the stored row is stale when the inputs have changed.
-      if (isTRUE(Par$refitExisting) || !hasPreRunFitForThisPolygon(sim)) {
-        # `refitExisting` is an explicit request to fit, so it overrides `stopIfNoPreRunFit`.
-        if (isTRUE(Par$stopIfNoPreRunFit) && !isTRUE(Par$refitExisting))
-          stop("There is no pre-run SpreadFit (sim$studyAreaWithSpreadParams), ",
-               "but parameter `stopIfNoPreRunFit` is `TRUE`")
+      # `doFit` overrides that: TRUE refits (the stored row is stale when the inputs have changed),
+      # FALSE stops when there is no row.
+      if (mustFitThisPolygon(sim, message = TRUE)) {
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "estimateThreshold")
         if ("debug" %in% P(sim)$mode) {
@@ -496,12 +500,12 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
       mod$thresh <- estimateSNLLThresholdPostLargeFires(sim, mod$covsX1000)
     },
     run = {
-      if (isTRUE(Par$refitExisting) || !hasPreRunFitForThisPolygon(sim)) {
+      if (mustFitThisPolygon(sim)) {
 
         if (!identical(basename(Par$visualizeDEoptim), currentModule(sim))) {
           params(sim)[[currentModule(sim)]][["visualizeDEoptim"]] <- figurePath(sim)
         }
-        DE <- fitSpread(sim, mod$covsX1000, mod$thresh, runName = sim$.runName)
+        DE <- fitSpread(sim, mod$covsX1000, mod$thresh, runName = P(sim)$.runName)
         mod$fitDE <- DE # sim$DE is reordered below, which drops the attributes postFitDiagnostics reads
         sim$DE <- DE
         objFunVal <- vapply(sim$DE, function(D) D$member$bestvalit, FUN.VALUE = numeric(1))
@@ -538,7 +542,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
                                                   studyAreaFireSense = sim$studyAreaWithSpreadParams,
                                                   action = "update")
         ## observed against simulated burning, and the response curves, for the best parameter set
-        spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], mod$covsX1000, sim$.runName)
+        spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], mod$covsX1000, P(sim)$.runName)
       }
     },
     postFitDiagnostics = {
@@ -548,11 +552,11 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
       if (isTRUE(is.na(Par$heldOutFold))) {
         sim$spreadFitHeldOut <- crossValidateSpread(sim, mod$covsX1000)
         heldOutPath <- file.path(outputPath(sim), currentModule(sim),
-                                 paste0("spreadFitHeldOut_", sim$.runName, ".rds"))
+                                 paste0("spreadFitHeldOut_", P(sim)$.runName, ".rds"))
       } else {
         sim$spreadFitHeldOut <- crossValidateSpreadOneFold(sim, mod$covsX1000, Par$heldOutFold)
         heldOutPath <- file.path(outputPath(sim), currentModule(sim),
-                                 paste0("spreadFitHeldOut_", sim$.runName, "_fold", Par$heldOutFold, ".rds"))
+                                 paste0("spreadFitHeldOut_", P(sim)$.runName, "_fold", Par$heldOutFold, ".rds"))
       }
       checkPath(dirname(heldOutPath), create = TRUE)
       saveRDS(sim$spreadFitHeldOut, heldOutPath)
@@ -905,7 +909,7 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 #' re-drew the threshold and invalidated every cached generation for that ELF. Keyed on the ELF, a
 #' miss costs only the threshold estimate.
 #'
-#' @param elf character; `sim$.ELFind` (which falls back to `sim$.runName`).
+#' @param elf character; `sim$.ELFind` (which falls back to the `.runName` parameter).
 #' @return a single integer in `1:1e6`.
 .elfSeed <- function(elf) {
   stopifnot(is.character(elf), length(elf) == 1L, nzchar(elf))
@@ -1001,7 +1005,7 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
     P(sim)$SNLL_FS_thresh
   }
   ## after Cache(), so a cached NA is converted too
-  noEarlyStopThreshold(thresh, runName = sim$.runName, nTrials = P(sim)$iterThresh)
+  noEarlyStopThreshold(thresh, runName = P(sim)$.runName, nTrials = P(sim)$iterThresh)
 }
 
 #' Default `upper` or `lower` bounds for DEoptim
@@ -1034,7 +1038,8 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
 #' @param fuelTerms,upperAndLowerFuel character names of the fuel biomass terms, and their upper bound (lower is 0).
 #' @param upperTailBounds numeric; if not `NULL`, the bounds of `upperTail1`, which is added after
 #'   `maxAsymptote` (link "logistic3pUpper").
-#' @return named numeric vector: `maxAsymptote`, `upperTail1` (with `upperTailBounds`), then
+#' @return named numeric vector: `maxAsymptote` (bounded by `fireSenseUtils::spreadProbFloor` and
+#'   `fireSenseUtils::spreadProbCeiling`), `upperTail1` (with `upperTailBounds`), then
 #'   `fireSenseUtils::spreadInterceptTxt` if the formula has an intercept (`~ 1 + ...`), then formula
 #'   terms. No `hillSlope1` or `inflectionPoint1` -- both are fixed at 1, not fitted.
 estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, whichBound,
@@ -1069,7 +1074,7 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
   if (whichBound == "upper") {
     newParams <- c("maxAsymptote" = fireSenseUtils::spreadProbCeiling, newParams)
   } else {
-    newParams <- c("maxAsymptote" = 0.25, newParams)
+    newParams <- c("maxAsymptote" = fireSenseUtils::spreadProbFloor, newParams)
   }
   ## the objective takes the logistic parameters by position, so upperTail1 must be the 2nd
   ## (the fixed hillSlope1 and inflectionPoint1 go between them)
@@ -1118,9 +1123,9 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
     # on `.runName`. Keep that behaviour for pipelines that do not supply a polygon
     # id, but say so, because a `.runName` that encodes a whole scenario produces a
     # ledger key nothing else can match.
-    sim$.ELFind <- sim$.runName
+    sim$.ELFind <- P(sim)$.runName
     message(currentModule(sim), ": `.ELFind` not supplied; keying the shared fit ",
-            "ledger on `.runName` ('", sim$.runName, "'). Supply `.ELFind` if this ",
+            "ledger on `.runName` ('", P(sim)$.runName, "'). Supply `.ELFind` if this ",
             "is not the polygon's identifier.")
   }
 

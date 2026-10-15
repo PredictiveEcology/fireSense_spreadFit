@@ -18,7 +18,8 @@
 #' @param annualDTx1000,nonAnnualDTx1000,fireBufferedListDT,historicalFires elements of the list made
 #'   by `fireSenseUtils::covsX1000AndSetDF()`.
 #' @param mutuallyExclusive named list of mutually exclusive covariates.
-#' @param doObjFunAssertions logical; passed to `doAssertions`.
+#' @param doObjFunAssertions logical, no default: the module passes its parameter of that name, so one
+#'   place (`options(fireSenseUtils.assertions = )`) sets it. Passed to `doAssertions`.
 #' @param covMinMax `data.table` of covariate min and max, or NULL for no rescaling.
 #' @param covCentre named list of covariate centres (`fireSenseUtils::spreadCovCentre()`) subtracted from the
 #'   rescaled covariates, as in the fit; `NULL` (no intercept) centres nothing. Passed to `.objfunSpreadFit()`
@@ -40,7 +41,7 @@
 runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFormula, flammableRTM,
                                     annualDTx1000, nonAnnualDTx1000, fireBufferedListDT,
                                     mutuallyExclusive = list("youngAge" = "vegPC"),
-                                    doObjFunAssertions = getOption("fireSenseUtils.assertions", TRUE),
+                                    doObjFunAssertions,
                                     historicalFires, covMinMax, covCentre = NULL, objfunFireReps, maxFireSpread,
                                     weighted = TRUE, tests = c("snll_fs", "adtest"),
                                     formulaToFit,

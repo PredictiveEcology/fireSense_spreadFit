@@ -8,7 +8,8 @@
 #' @param sim a `simList`.
 #' @param covs the covariates as integers x 1000 (`mod$covsX1000`, or a subset of its years).
 #' @param thresh the objective's early-stop threshold, `mod$thresh`.
-#' @param runName character; labels the run and its cache entry.
+#' @param runName character; labels the run and its cache entry. Also names the fit's progress file,
+#'   `DEoptimProgress_<runName>.csv` in the module's output folder.
 #' @param diagnostics logical; `FALSE` skips the profile and the simulations.
 #' @return the `runDEoptim()` result. Stops if every member of the final population has the
 #'   objective's fail value: no parameter set ever passed `thresh`, so there is no fit.
@@ -24,6 +25,9 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
   messageDF(best$bestCluster)
   fnName <- paste0("runDEoptim_", runName, "_", P(sim)$.rep)
   runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)
+  ## one progress file per fit (the main fit, each fold), in the run's own output folder
+  progressFile <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
+                            paste0("DEoptimProgress_", runName, ".csv"))
   DE <- Cache(runDEoptim(landscape = sim$rasterToMatch,
                    annualDTx1000 = covs$annualDTx1000,
                    nonAnnualDTx1000 = covs$nonAnnualDTx1000,
@@ -61,6 +65,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    plotEvery = P(sim)$.plotInterval,
                    rep = P(sim)$.rep,
                    runName = runName,
+                   progressFile = progressFile,
                    sizeLik = P(sim)$sizeLik,
                    sizeLikDf = P(sim)$sizeLikDf,
                    weighted = P(sim)$weighted,
@@ -84,7 +89,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
         .cacheExtra = list(fnName, objectiveBodies()),
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
-        omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "runawayEdgeFrac", "runawayEdgeMin",
+        omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "progressFile", "runawayEdgeFrac", "runawayEdgeMin",
                      ## NULL without an intercept (or with runawayBufferMultiple NA): omitted then, so fits
                      ## cached before it existed are found
                      fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread,
@@ -166,7 +171,7 @@ cvFolds <- function(years) {
 #' The per-fold work shared by [crossValidateSpread()] (both folds, one job) and
 #' [crossValidateSpreadOneFold()] (one fold, one job -- the `heldOutFold` parameter). The fit's
 #' `runName` (and so its `Cache` key, see `fitSpread()`) is suffixed by `k`, so fold 1, fold 2 and
-#' a full fit (plain `sim$.runName`, no suffix) never share a cache entry.
+#' a full fit (plain `P(sim)$.runName`, no suffix) never share a cache entry.
 #'
 #' The SNLL threshold is calibrated on the fitted years (`estimateSNLLThresholdPostLargeFires()`), not
 #' taken from the full data: it bounds the SNLL of the two largest fire years, and a fold's two largest
@@ -186,13 +191,13 @@ fitAndScoreFold <- function(sim, covs, fold, k) {
   fitCovs[yearLists] <- lapply(covs[yearLists], function(x) x[years[fold != k]])
   heldCovs[yearLists] <- lapply(covs[yearLists], function(x) x[years[fold == k]])
   thresh <- estimateSNLLThresholdPostLargeFires(sim, fitCovs)
-  DE <- fitSpread(sim, fitCovs, thresh, runName = paste0(sim$.runName, "_cvFold", k), diagnostics = FALSE)
+  DE <- fitSpread(sim, fitCovs, thresh, runName = paste0(P(sim)$.runName, "_cvFold", k), diagnostics = FALSE)
   best <- bestParamSets(DE, names(P(sim)$lower), n = max(1L, P(sim)$simulateMembers))
   s <- Cache(fireSenseUtils::simulateFireSizes, pop = best$params,
              fnArgs = spreadObjFunArgs(sim, heldCovs),
-             .functionName = paste0("simulateHeldOut_", sim$.runName, "_cvFold", k))
+             .functionName = paste0("simulateHeldOut_", P(sim)$.runName, "_cvFold", k))
   ## the held-out years only: observed against simulated burning from the other fold's fit
-  spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], heldCovs, paste0(sim$.runName, "_cvFold", k, "_heldOut"))
+  spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], heldCovs, paste0(P(sim)$.runName, "_cvFold", k, "_heldOut"))
   fit <- spreadFitLedgerRow(sim, length(DE), best$objFunVal, addFixedParsToLedger(best$params))
   list(sims = data.table(fold = k, s), fit = fit,
        fitYears = years[fold != k], heldOutYears = years[fold == k])

@@ -19,9 +19,17 @@ test_that("upper bounds: +B for covariates, 0 for youngAge, maxAsymptote first, 
 test_that("lower bounds: -B for non-drought covariates and youngAge, 0 for drought-index terms, no hillSlope1 or inflectionPoint1", {
   expect_identical(
     estimateSpreadParams(form, annual, whichBound = "lower", upperAndLower = 9),
-    c(maxAsymptote = 0.25,
+    c(maxAsymptote = fireSenseUtils::spreadProbFloor,
       CMDsm = 0, youngAge = -9, class1 = -9, nf = -9))
   expect_false("inflectionPoint1" %in% names(estimateSpreadParams(form, annual, "lower", upperAndLower = 9)))
+})
+
+test_that("the lower bound of maxAsymptote is below the 8-neighbour runaway threshold, so a fit is not pinned at it", {
+  ## spreadCpp(directions = 8) percolates (fires grow without limit) at p of about 0.245-0.25; a lower
+  ## bound at or above it forces every fit to near-critical spread
+  lo <- estimateSpreadParams(form, annual, "lower", upperAndLower = 9)
+  expect_identical(unname(lo["maxAsymptote"]), fireSenseUtils::spreadProbFloor)
+  expect_lt(lo[["maxAsymptote"]], 0.245)
 })
 
 test_that("the bound scales with upperAndLower and every lower bound is <= its upper bound", {
@@ -55,7 +63,7 @@ test_that("a term is bounded by name, not by annual-table membership", {
   expect_identical(unname(estimateSpreadParams(form, noYA, "lower", 9)["youngAge"]), -9)
   ## no drought or youngAge term in the formula at all
   expect_identical(estimateSpreadParams("~ 0 + class1", annual, "lower", 3),
-                   c(maxAsymptote = 0.25, class1 = -3))
+                   c(maxAsymptote = fireSenseUtils::spreadProbFloor, class1 = -3))
 })
 
 test_that("term order follows the formula", {
