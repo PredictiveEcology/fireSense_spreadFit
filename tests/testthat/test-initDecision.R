@@ -1,7 +1,7 @@
 ## What `init` decides: fit, skip, or stop. Toy inputs; no event after `init` is run here.
 
 fitEvents <- c("spreadFitPrepare", "spreadFitPrepare", "estimateThreshold", "run", "postFitDiagnostics")
-noFitMsg <- "There is no pre-run SpreadFit .* polygon 9\\.9.*doFit"
+noFitMsg <- "no usable pre-run fit in the ledger for polygon 9\\.9.*doFit"
 
 ## the messages `init` sends (runEvents() hides them)
 initMessages <- function(params = list(), objects = list()) {
