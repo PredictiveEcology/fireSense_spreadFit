@@ -28,6 +28,8 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
   ## one progress file per fit (the main fit, each fold), in the run's own output folder
   progressFile <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
                             paste0("DEoptimProgress_", runName, ".csv"))
+  ## the early-stop rule in full (parameter, else options, else clusters' defaults), so it is in the fit's key
+  convergence <- clusters::deoptimConvergence(P(sim)$convergence)
   DE <- Cache(runDEoptim(landscape = sim$rasterToMatch,
                    annualDTx1000 = covs$annualDTx1000,
                    nonAnnualDTx1000 = covs$nonAnnualDTx1000,
@@ -66,6 +68,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    rep = P(sim)$.rep,
                    runName = runName,
                    progressFile = progressFile,
+                   convergence = convergence,
                    sizeLik = P(sim)$sizeLik,
                    sizeLikDf = P(sim)$sizeLikDf,
                    weighted = P(sim)$weighted,
