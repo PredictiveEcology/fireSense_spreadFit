@@ -66,9 +66,18 @@ test_that("a trial's first block is read from the objective's returnTerms fields
 
 test_that("a crashed trial, or an objective without the fields, counts as failed", {
   testthat::local_mocked_bindings(.objfunSpreadFit = function(...) stop("boom"))
-  expect_identical(trialFirstBlock(c(a = 1)), list(annual = NA_real_, saturated = NA))
+  expect_identical(trialFirstBlock(c(a = 1)), list(annual = NA_real_, saturated = NA, error = "boom"))
   testthat::local_mocked_bindings(.objfunSpreadFit = function(...) 1234)
-  expect_identical(trialFirstBlock(c(a = 1)), list(annual = NA_real_, saturated = NA))
+  expect_match(trialFirstBlock(c(a = 1))$error, "firstBlockSNLL")
+})
+
+test_that("when every trial errored the calibration stops with the first error, it does not return NA", {
+  errored <- list(trialFirstBlock = list(annual = NA_real_, saturated = NA, error = "no covariates"),
+                  other = list(annual = NA_real_, saturated = NA, error = "second"))
+  expect_error(stopIfAllTrialsErrored(errored), "every calibration trial failed.*no covariates")
+  ## one usable trial, or trials that merely bailed (no error), are not an error
+  expect_null(stopIfAllTrialsErrored(c(list(list(annual = 80, saturated = FALSE)), errored)))
+  expect_null(stopIfAllTrialsErrored(list(list(annual = 1e6, saturated = TRUE))))
 })
 
 test_that("no printed output is parsed anywhere in the sources", {

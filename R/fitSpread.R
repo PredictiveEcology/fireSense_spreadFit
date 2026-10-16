@@ -108,7 +108,10 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
 ## The spread objective's bodies, for the Cache keys of the fit and the threshold calibration
 objectiveBodies <- function()
   list(objfunSpreadFit = deparse(fireSenseUtils::.objfunSpreadFit),
-       objFunInner = deparse(utils::getFromNamespace("objFunInner", "fireSenseUtils")))
+       objFunInner = deparse(utils::getFromNamespace("objFunInner", "fireSenseUtils")),
+       spreadProbFromIntegerCovs = deparse(fireSenseUtils::spreadProbFromIntegerCovs),
+       spreadProbCovsOfYear = deparse(utils::getFromNamespace("spreadProbCovsOfYear", "fireSenseUtils")),
+       dataYearBefore = deparse(fireSenseUtils::dataYearBefore))
 
 ## The `link` the objective is given: NULL is its default, logistic3p
 spreadLink <- function(link) if (identical(link, "logistic3pUpper")) link
