@@ -36,10 +36,32 @@ pickThreshold <- function(annual, saturated = FALSE, margin = 2, failVal = 1e6) 
 #'
 #' @param par,... passed to `.objfunSpreadFit()`; `...` must carry the fit's own objective settings,
 #'   so the threshold is on the fit's scale.
-#' @return `list(annual =, saturated =)`; `annual` is `NA` if the objective crashed.
+#' @return `list(annual =, saturated =)`; `annual` is `NA` if the objective crashed, and then `error`
+#'   holds the message.
 trialFirstBlock <- function(par, ...) {
   res <- try(.objfunSpreadFit(par = par, thresh = Inf, returnTerms = TRUE, ...), silent = TRUE)
-  if (inherits(res, "try-error") || !"firstBlockSNLL" %in% names(res))
-    return(list(annual = NA_real_, saturated = NA))
+  if (inherits(res, "try-error"))
+    return(list(annual = NA_real_, saturated = NA, error = conditionMessage(attr(res, "condition"))))
+  if (!"firstBlockSNLL" %in% names(res))
+    return(list(annual = NA_real_, saturated = NA, error = "the objective returned no firstBlockSNLL"))
   list(annual = as.numeric(res[["firstBlockSNLL"]]), saturated = as.logical(res[["bailed"]]))
+}
+
+#' Stop if every calibration trial errored
+#'
+#' A threshold of `NA` (then `Inf`, see `noEarlyStopThreshold()`) is cached by `Cache()` and reused, so a
+#' calibration whose every trial crashed (an objective that cannot run, not parameter sets that score
+#' badly) must say so rather than return it.
+#'
+#' @param trials list of `trialFirstBlock()` results (an element that is not a list is a trial whose
+#'   process died).
+#' @return `NULL`, invisibly; stops with the first trial's error if all trials have one.
+stopIfAllTrialsErrored <- function(trials) {
+  errs <- vapply(trials, function(x) {
+    if (!is.list(x)) "the trial's process died without a result"
+    else if (is.null(x$error)) NA_character_ else x$error
+  }, character(1))
+  if (length(errs) && !anyNA(errs))
+    stop("every calibration trial failed (", length(errs), " tried); the first error: ", errs[[1]], call. = FALSE)
+  invisible(NULL)
 }

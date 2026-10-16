@@ -9,12 +9,13 @@ formIcpt <- sub("0 \\+", "1 +", formI, fixed = FALSE)
 icptName <- fireSenseUtils::spreadInterceptTxt
 
 ## The toy non-annual table is named "year2001_year2002", which the real objective could not match to a year
-## (the module names them by their first year, "2001"). Finding the centre runs the objective's covariate
-## code for real, so the intercept tests name it as the module does.
+## (the tables are named by their data year, and a fire year reads the latest one strictly before it, so
+## the toy fire years 2001-2002 read "2000"). Finding the centre runs the objective's covariate code for
+## real, so the intercept tests name it as the module does.
 toyObjectsI <- function(formula) {
   nonAnn <- toyObjects()$fireSense_nonAnnualSpreadFitCovariates
   list(fireSense_spreadFormula = formula,
-       fireSense_nonAnnualSpreadFitCovariates = stats::setNames(nonAnn, "2001"))
+       fireSense_nonAnnualSpreadFitCovariates = stats::setNames(nonAnn, "2000"))
 }
 
 ## a fit on toy inputs, with the formula as given; `rec` records what leaves the machine

@@ -145,10 +145,10 @@ test_that("fit mode: thresholdMargin scales the threshold; no usable trial gives
   expect_match(attr(out, "messages"), "0 of 3 trials usable", all = FALSE)
 })
 
-test_that("a crashed trial is not usable", {
+test_that("when every trial crashed the calibration stops with the error, not an NA to cache", {
   withr::local_options(mc.cores = 2L)
   local_mocked_bindings(.objfunSpreadFit = function(par, thresh, ...) stop("boom"))
-  expect_identical(as.numeric(callIt("fit", iterThresh = 2L)), NA_real_)
+  expect_error(callIt("fit", iterThresh = 2L), "every calibration trial failed.*boom")
 })
 
 test_that("fit mode: the trials run the fit's own objective (penaliseRunaways reaches them)", {
