@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9008"
-date: "Last updated: 2026-10-16"
+date: "Last updated: 2026-10-17"
 output:
   bookdown::html_document2:
     toc: true
@@ -178,6 +178,14 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> DEoptim generations between DEoptim progress figures; the final figures are always drawn. Passed to `fireSenseUtils::runDEoptim()` as `plotEvery`. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> convergence </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> When DEoptim stops early, a list with any of `window`, `minGenerations`, `se`, `sdChange` (see `clusters::deoptimConvergence()`). What is missing comes from `options(clusters.deoptimConvergenceWindow, clusters.deoptimMinGenerations, clusters.deoptimConvergenceSE, clusters.deoptimConvergenceSDChange)`, then clusters' defaults (300, 350, 1, 0.1). The resolved list is part of the fit's cache key, and clusters keeps it out of the cache of each generation: a fit that stopped early continues from its cached generations when rerun with a stricter rule. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotSize </td>
