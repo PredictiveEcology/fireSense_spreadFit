@@ -26,9 +26,9 @@ defineModule(sim, list(
                   "logging", "magrittr", "parallel", "raster", "sf", "terra", "tidyr", "withr", ## TODO: remove magrittr
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
-                  "PredictiveEcology/clusters@development (>= 0.0.78)",
+                  "PredictiveEcology/clusters@development (>= 0.0.80)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9100)",
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9102)",
                   "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -37,6 +37,14 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", default = 25, NA, NA,
                     desc = paste("DEoptim generations between DEoptim progress figures; the final figures",
                                  "are always drawn. Passed to `fireSenseUtils::runDEoptim()` as `plotEvery`.")),
+    defineParameter("convergence", "list", default = NULL, NA, NA,
+                    desc = paste("When DEoptim stops early, a list with any of `window`, `minGenerations`, `se`,",
+                                 "`sdChange` (see `clusters::deoptimConvergence()`). What is missing comes from",
+                                 "`options(clusters.deoptimConvergenceWindow, clusters.deoptimMinGenerations,",
+                                 "clusters.deoptimConvergenceSE, clusters.deoptimConvergenceSDChange)`, then clusters'",
+                                 "defaults (300, 350, 1, 0.1). The resolved list is part of the fit's cache key, and",
+                                 "clusters keeps it out of the cache of each generation: a fit that stopped early",
+                                 "continues from its cached generations when rerun with a stricter rule.")),
     defineParameter(".plotSize", "list", default = list(height = 1600, width = 2000),
                     desc = paste("List specifying height and width of plotting device (in pixels)",
                                  "used to plot DEoptim histograms when `visualizeDEoptim` is TRUE.")),

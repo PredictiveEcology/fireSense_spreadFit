@@ -10,7 +10,7 @@ def <- stats::setNames(p$default, p$paramName)
 test_that("parameter classes", {
   expect_identical(
     cls[sort(names(cls), method = "radix")],
-    (function(x) x[sort(names(x), method = "radix")])(c(.c = "numeric", .plotInterval = "numeric", .plots = "character|logical", .plotSize = "list", .runInitialTime = "numeric", .runName = "character",
+    (function(x) x[sort(names(x), method = "radix")])(c(.c = "numeric", convergence = "list", .plotInterval = "numeric", .plots = "character|logical", .plotSize = "list", .runInitialTime = "numeric", .runName = "character",
       .studyAreaName = "character", .useCache = "logical|character",
       cores = "integer", DEoptimControl = "list", DEoptimTests = "character",
       doFit = "logical", doObjFunAssertions = "logical", heldOutFold = "integer", initialpop = "numeric", iterDEoptim = "integer",
@@ -47,6 +47,7 @@ test_that("DEoptim defaults are the tuning study's best and a production fit's s
   ## describe a run that never happens
   expect_identical(def$.c, 0)
   ## a ceiling: clusters (>= 0.0.46) stops a fit once its population median stops improving
+  expect_null(def$convergence[[1]])               # the clusters options, then clusters' defaults
   expect_identical(def$iterDEoptim, 5000L)
   expect_identical(def$objfunFireReps, 50L)
 })
