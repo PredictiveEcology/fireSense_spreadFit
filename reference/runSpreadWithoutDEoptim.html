@@ -77,6 +77,7 @@ times the best trial that did not saturate.</p>
 <span>  <span class="va">historicalFires</span>,</span>
 <span>  <span class="va">covMinMax</span>,</span>
 <span>  covCentre <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  climateRef <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">objfunFireReps</span>,</span>
 <span>  <span class="va">maxFireSpread</span>,</span>
 <span>  weighted <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -146,6 +147,10 @@ place (<code>options(fireSenseUtils.assertions = )</code>) sets it. Passed to <c
 <dd><p>named list of covariate centres (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadCovCentre.html" class="external-link">fireSenseUtils::spreadCovCentre()</a></code>) subtracted from the
 rescaled covariates, as in the fit; <code>NULL</code> (no intercept) centres nothing. Passed to <code>.objfunSpreadFit()</code>
 and <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadProbGates.html" class="external-link">fireSenseUtils::spreadProbGates()</a></code>, so the threshold is calibrated on the fit's objective.</p></dd>
+
+
+<dt id="arg-climateref">climateRef<a class="anchor" aria-label="anchor" href="#arg-climateref"></a></dt>
+<dd><p>named list, the fit's climate reference (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateRef.html" class="external-link">fireSenseUtils::spreadClimateRef()</a></code>; <code>spreadLink = "climateOutside"</code>), or <code>NULL</code> (the default link). Passed to <code>.objfunSpreadFit()</code> and the gates like <code>covCentre</code>.</p></dd>
 
 
 <dt id="arg-objfunfirereps">objfunFireReps<a class="anchor" aria-label="anchor" href="#arg-objfunfirereps"></a></dt>
