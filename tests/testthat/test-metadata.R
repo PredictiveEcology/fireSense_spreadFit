@@ -44,7 +44,8 @@ test_that("outputs are the expected names and classes", {
   outputs <- stats::setNames(md$outputObjects$objectClass, md$outputObjects$objectName)
   expect_identical(
     outputs[order(names(outputs))],
-    c(covCentre_spread          = "list",
+    c(climateRef_spread        = "list",
+      covCentre_spread          = "list",
       covMinMax_spread          = "data.table",
       DE                        = "data.table",
       fsSpreadFit_hists         = "ggplot",
@@ -67,7 +68,7 @@ test_that("parameters are the expected names", {
     sort(c(".c", "convergence", ".plotInterval", ".plots", ".plotSize", ".runInitialTime", ".runName", ".studyAreaName",
            ".useCache", "cores", "covFixedRange", "DEoptimControl", "DEoptimTests", "doFit", "doObjFunAssertions",
            "heldOutFold", "initialpop", "iterDEoptim", "iterThresh", "thresholdMargin", "libPathDEoptim",
-           "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded",
+           "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded", "spreadLink",
            "objFunCoresInternal", "objfunFireReps", ".rep", "adWeight", "profileReps",
            "simulateMembers", "sizeLik", "sizeLikDf", "escapeSizeHa", "yearAreaWeight", "areaDistWeight", "penaliseRunaways", "runawayEdgeFrac", "runawayEdgeMin", "runawayBufferMultiple",
            "jumpTries", "jumpMeanDist", "upperTailBounds", "weighted", "yearSpreadSDBounds",

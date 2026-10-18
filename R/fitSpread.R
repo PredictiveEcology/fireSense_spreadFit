@@ -53,6 +53,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    formulaToFit = sim$fireSense_spreadFormula,
                    covMinMax = sim$covMinMax_spread,
                    covCentre = sim$covCentre_spread,
+                   climateRef = sim$climateRef_spread,
                    objFunCoresInternal = P(sim)$objFunCoresInternal,
                    tests = P(sim)$DEoptimTests,
                    maxFireSpread = P(sim)$maxFireSpread,
@@ -93,9 +94,10 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
         omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "progressFile", "runawayEdgeFrac", "runawayEdgeMin",
-                     ## NULL without an intercept (or with runawayBufferMultiple NA): omitted then, so fits
-                     ## cached before it existed are found
+                     ## NULL without an intercept (or with runawayBufferMultiple NA, or with the default spreadLink):
+                     ## omitted then, so fits cached before it existed are found
                      fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread,
+                                                  climateRef = sim$climateRef_spread,
                                                   runawayBufferMultiple = runawayMultiple)),
         useCache = P(sim)$useCache_DE
   )
@@ -114,6 +116,7 @@ objectiveBodies <- function()
        objFunInner = deparse(utils::getFromNamespace("objFunInner", "fireSenseUtils")),
        spreadProbFromIntegerCovs = deparse(fireSenseUtils::spreadProbFromIntegerCovs),
        spreadProbCovsOfYear = deparse(utils::getFromNamespace("spreadProbCovsOfYear", "fireSenseUtils")),
+       spreadProbFromCovs = deparse(fireSenseUtils::spreadProbFromCovs), # the spread link itself
        dataYearBefore = deparse(fireSenseUtils::dataYearBefore))
 
 ## The `link` the objective is given: NULL is its default, logistic3p
@@ -258,8 +261,10 @@ spreadObjFunArgs <- function(sim, covs) {
        mutuallyExclusive = P(sim)$mutuallyExclusiveCols, doAssertions = FALSE, verbose = 0,
        link = spreadLink(P(sim)$link), escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
        jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist)
-  ## the fit's centre, not the held-out years': assigning NULL adds nothing, so without an intercept the
-  ## arguments (and the cache key of the simulation that holds them) are what they were
+  ## the fit's centre and climate reference, not the held-out years': assigning NULL adds nothing, so without
+  ## an intercept (or with the default spreadLink) the arguments (and the cache key of the simulation that
+  ## holds them) are what they were
   args$covCentre <- sim$covCentre_spread
+  args$climateRef <- sim$climateRef_spread
   args
 }

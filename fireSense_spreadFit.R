@@ -28,7 +28,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.80)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9104)",
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9106)",
                   "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -114,6 +114,22 @@ defineModule(sim, list(
                                  "Stukel's upper tail, one more parameter `upperTail1` that changes only how the",
                                  "curve approaches its ceiling (`fireSenseUtils::logistic3pUpper()`). Its default",
                                  "bounds are `upperTailBounds`.")),
+    defineParameter("spreadLink", "character", default = "ceiling",
+                    desc = paste("Where climate enters the spread probability (`fireSenseUtils::spreadProbFromCovs()`).",
+                                 "'ceiling' (default): climate is a covariate inside the logistic, under the `maxAsymptote`",
+                                 "ceiling, as always -- fits and their cache keys are unchanged. 'climateOutside': the",
+                                 "logistic, with its ceiling, is fitted to the other covariates only (intercept, fuels,",
+                                 "`youngAge`, non-forest), giving p0; the climate term is added on the logit after it,",
+                                 "p = plogis(qlogis(p0) + beta_clim * (climate - climateRef)), uncapped, and the year effect",
+                                 "`yearSpreadSD` (eps_Y) on the same logit. Where fuel put a pixel near the ceiling, climate could",
+                                 "add almost nothing under 'ceiling' (2026-10 hindcasts: 59-77% of pixels within 0.01 of the",
+                                 "ceiling every year, spread nearly the same in every year). `climateRef` is the mean of each",
+                                 "climate covariate over the fit's pixel-years (`fireSenseUtils::spreadClimateRef()`,",
+                                 "`sim$climateRef_spread`), stored in the ledger row with this choice",
+                                 "(`fireSenseUtils::spreadFitClimateRefTxt`, `spreadLinkTxt`) so `fireSense_spreadPredict` applies",
+                                 "the same link; a row without them is 'ceiling'. The objective's gates and saturation summary",
+                                 "then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate",
+                                 "covariate in the formula (`fireSenseUtils::spreadClimateCols()`).")),
     defineParameter("mode", "character", default = "fit",
                     desc = paste("Options: debug, fit, visualize, validate. Can use multiples. 'debug' runs the",
                                  "objective function with visuals instead of DEoptim; 'fit' runs DEoptim; 'visualize'",
@@ -363,6 +379,12 @@ defineModule(sim, list(
   outputObjects = rbind(
     createsOutput("covMinMax_spread", "data.table",
                   desc = "`data.table` of covariates min and max"),
+    createsOutput("climateRef_spread", "list",
+                  desc = paste("With `spreadLink = 'climateOutside'`, the reference value of each climate covariate of the",
+                               "formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit's",
+                               "pixel-years (`fireSenseUtils::spreadClimateRef()`), the climate at which the spread probability",
+                               "is the fuel ceiling's p0. Given to the fit, the threshold, the validation and the ledger row.",
+                               "`NULL` with `spreadLink = 'ceiling'`.")),
     createsOutput("covCentre_spread", "list",
                   desc = paste("Named list, the mean of each rescaled covariate over the fitting data",
                                "(`fireSenseUtils::spreadCovCentre()`), subtracted from it in the fit; `NULL` unless the",
@@ -493,7 +515,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         nonAnnualDTx1000 = mod$covsX1000$nonAnnualDTx1000,
         fireBufferedListDT = mod$covsX1000$fireBufferedListDT,
         historicalFires = mod$covsX1000$historicalFires,
-        covMinMax = sim$covMinMax_spread, covCentre = sim$covCentre_spread,
+        covMinMax = sim$covMinMax_spread, covCentre = sim$covCentre_spread, climateRef = sim$climateRef_spread,
         formulaToFit = sim$fireSense_spreadFormula,
         objfunFireReps = P(sim)$objfunFireReps,
         tests = P(sim)$DEoptimTests,
@@ -730,6 +752,19 @@ spreadFitPrep <- function(sim) {
     mod$covsX1000$annualDTx1000, mod$covsX1000$nonAnnualDTx1000, sim$fireSense_spreadFormula,
     covMinMax = sim$covMinMax_spread, mutuallyExclusive = P(sim)[[mec]])
 
+  ## With climate outside the ceiling (spreadLink), the climate reference is found once, from the same data, on
+  ## the same scale (after the centre), and every fit, threshold, validation and prediction of this fit uses it.
+  ## NULL with the default link, so nothing downstream (calls, cache keys, the ledger row) changes.
+  sim$climateRef_spread <- NULL
+  if (identical(P(sim)$spreadLink, "climateOutside")) {
+    if (!length(fireSenseUtils::spreadClimateCols(sim$fireSense_spreadFormula, mod$covsX1000$annualDTx1000)))
+      stop("fireSense_spreadFit: spreadLink = 'climateOutside' needs a climate covariate in the spread formula (",
+           sim$fireSense_spreadFormula, " has none: an annual covariate that is not a 0/1 indicator).")
+    sim$climateRef_spread <- fireSenseUtils::spreadClimateRef(
+      mod$covsX1000$annualDTx1000, mod$covsX1000$nonAnnualDTx1000, sim$fireSense_spreadFormula,
+      covMinMax = sim$covMinMax_spread, mutuallyExclusive = P(sim)[[mec]], covCentre = sim$covCentre_spread)
+  }
+
   namesWithGTZeroRows <- lapply(mod$covsX1000, function(x) names(x[sapply(x, function(y) NROW(y)) > 0]))
   annualDataNames <- grep("nonAnnual", names(namesWithGTZeroRows), invert = TRUE, value = TRUE)
   keepYearsNamed <- table(unname(unlist(namesWithGTZeroRows[annualDataNames]))) == length(annualDataNames)
@@ -962,7 +997,7 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
       nonAnnualDTx1000 = covs$nonAnnualDTx1000,
       fireBufferedListDT = covs$fireBufferedListDT,
       historicalFires = covs$historicalFires,
-      covMinMax = sim$covMinMax_spread, covCentre = sim$covCentre_spread,
+      covMinMax = sim$covMinMax_spread, covCentre = sim$covCentre_spread, climateRef = sim$climateRef_spread,
       formulaToFit = sim$fireSense_spreadFormula,
       objfunFireReps = P(sim)$objfunFireReps,
       tests = P(sim)$DEoptimTests,
@@ -1011,10 +1046,11 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
                                spreadProbGates = deparse(fireSenseUtils::spreadProbGates),
                                spreadProbGateTest = deparse(fireSenseUtils::spreadProbGateTest),
                                objective = objectiveBodies()),
-            ## covCentre is NULL without an intercept, runawayBufferMultiple with NA: omitted then, so
-            ## thresholds cached before they existed are found
+            ## covCentre is NULL without an intercept, runawayBufferMultiple with NA, climateRef with the default
+            ## spreadLink: omitted then, so thresholds cached before they existed are found
             omitArgs = c("runawayEdgeFrac", "runawayEdgeMin",
                          fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread,
+                                                      climateRef = sim$climateRef_spread,
                                                       runawayBufferMultiple = runawayMultiple)))
   } else {
     P(sim)$SNLL_FS_thresh
