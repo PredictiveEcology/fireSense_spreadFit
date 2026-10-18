@@ -19,7 +19,7 @@ test_that("parameter classes", {
       nCoresNeeded = "integer", objFunCoresInternal = "integer",
       objfunFireReps = "integer", refitExisting = "logical",
       .rep = "integer", rescaleAll = "logical", SNLL_FS_thresh = "integer",
-      spreadFitFilename = "character", spreadFitGoogleDriveFolder = "character",
+      fitFileSuffix = "character", spreadFitFilename = "character", spreadFitGoogleDriveFolder = "character",
       stopIfNoPreRunFit = "logical", strategy = "integer", trace = "numeric", upper = "numeric",
       upperAndLowerVal = "numeric", upperAndLowerValFuel = "numeric", useCache_DE = "logical",
       covFixedRange = "list",
@@ -118,6 +118,7 @@ test_that("defaults that are 'not set'", {
 
 test_that("the ledger's location", {
   expect_identical(def$spreadFitFilename, "latest")
+  expect_identical(def$fitFileSuffix, "")
   expect_identical(def$spreadFitGoogleDriveFolder,
                    fireSenseUtils::spreadFitLedgerFolder())
 })

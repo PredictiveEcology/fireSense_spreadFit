@@ -151,6 +151,24 @@ test_that("by default (\"latest\") the ledger file is named for the fit's fire y
   expect_identical(ledgerWriteFile("mine.rds", 1985:2024, "year2001"), "mine.rds")
 })
 
+test_that("fitFileSuffix puts the test run's fit in its own ledger file, not the production one", {
+  g <- fitted(params = list(fitFileSuffix = "_boundfix_rep81"))$rec$geoArgs
+  expect_identical(g$targetFile, paste0("fireSenseParams_2001-2002", fireSenseUtils::spreadFitFileTag,
+                                        "_boundfix_rep81.rds"))
+  expect_identical(ledgerWriteFile("latest", 1985:2024, "year2001", "_rep1"),
+                   paste0("fireSenseParams_1985-2024", fireSenseUtils::spreadFitFileTag, "_rep1.rds"))
+  expect_identical(ledgerWriteFile("mine.rds", 1985:2024, "year2001", "_rep1"), "mine.rds")  # a named file is used as given
+})
+
+test_that("modules that disagree on fitFileSuffix are caught", {
+  sim <- toySim(list(fitFileSuffix = "_a"))
+  sim@params$fireSense_ignitionFit <- list(fitFileSuffix = "_b")
+  sim@current <- data.table::data.table(moduleName = toyModule)
+  expect_error(SpaDES.core::paramCheckOtherMods(sim, "fitFileSuffix"), "multiple values for fitFileSuffix")
+  sim@params$fireSense_ignitionFit <- list(fitFileSuffix = "_a")
+  expect_identical(SpaDES.core::paramCheckOtherMods(sim, "fitFileSuffix"), "_a")
+})
+
 test_that("sppEquiv and the land-cover groups in the simList are recorded in the row", {
   out <- fitted(objects = list(sppEquiv = data.frame(sp = c("a", "b")),
                                nonForestedLCCGroups = list(nf = 1:3), missingLCCgroup = "nf"))

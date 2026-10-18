@@ -28,7 +28,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.80)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9103)",
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9104)",
                   "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -248,6 +248,12 @@ defineModule(sim, list(
                     desc = "rescale covariates for `DEOptim`"),
     defineParameter("spreadFitGoogleDriveFolder", "character", fireSenseUtils::spreadFitLedgerFolder(),
                     NA, NA, "Google Drive folder url holding the shared fit ledger (`spreadFitFilename`)."),
+    defineParameter("fitFileSuffix", "character", "", NA, NA,
+                    paste("Text put after the model tag in the ledger file names, e.g. `\"_boundfix_rep81\"`, so a test run",
+                          "writes (and `\"latest\"` readers read) only its own files and never the production ones.",
+                          "`\"\"` (the default) is the production ledger. The same parameter of `fireSense_ignitionFit`,",
+                          "`fireSense_dataPrepFit` and `fireSense_ELFs`; set it for all with `.globals = list(fitFileSuffix = ...)`.",
+                          "Ignored when `spreadFitFilename` names a file.")),
     defineParameter("spreadFitFilename", "character", "latest",
                     NA, NA, paste("File name of the shared fit ledger: an `sf` object with one row of fitted parameters",
                                   "per polygon. `\"latest\"` (the default) writes to the file named for this fit's fire",
@@ -542,7 +548,8 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
                                                   targetFile = ledgerWriteFile(
                                                     Par$spreadFitFilename,
                                                     P(sim, module = "fireSense_dataPrepFit")$fireYears,
-                                                    names(sim$fireSense_annualSpreadFitCovariates)),
+                                                    names(sim$fireSense_annualSpreadFitCovariates),
+                                                    SpaDES.core::paramCheckOtherMods(sim, "fitFileSuffix")),
                                                   domain = saHere,
                                                   destinationPath = inputPath(sim),
                                                   FUN = le(studyAreaFireSense),
