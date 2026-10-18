@@ -1,6 +1,6 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9009"
+subtitle: "v.1.2.0.9010"
 date: "Last updated: 2026-10-18"
 output:
   bookdown::html_document2:
@@ -312,6 +312,14 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> The spread link. 'logistic3p', or 'logistic3pUpper': the same curve with Stukel's upper tail, one more parameter `upperTail1` that changes only how the curve approaches its ceiling (`fireSenseUtils::logistic3pUpper()`). Its default bounds are `upperTailBounds`. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> spreadLink </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> ceiling </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Where climate enters the spread probability (`fireSenseUtils::spreadProbFromCovs()`). 'ceiling' (default): climate is a covariate inside the logistic, under the `maxAsymptote` ceiling, as always -- fits and their cache keys are unchanged. 'climateOutside': the logistic, with its ceiling, is fitted to the other covariates only (intercept, fuels, `youngAge`, non-forest), giving p0; the climate term is added on the logit after it, p = plogis(qlogis(p0) + beta_clim (climate - climateRef)), uncapped, and the year effect `yearSpreadSD` (eps_Y) on the same logit. Where fuel put a pixel near the ceiling, climate could add almost nothing under 'ceiling' (2026-10 hindcasts: 59-77% of pixels within 0.01 of the ceiling every year, spread nearly the same in every year). `climateRef` is the mean of each climate covariate over the fit's pixel-years (`fireSenseUtils::spreadClimateRef()`, `sim$climateRef_spread`), stored in the ledger row with this choice (`fireSenseUtils::spreadFitClimateRefTxt`, `spreadLinkTxt`) so `fireSense_spreadPredict` applies the same link; a row without them is 'ceiling'. The objective's gates and saturation summary then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate covariate in the formula (`fireSenseUtils::spreadClimateCols()`). </td>
   </tr>
   <tr>
    <td style="text-align:left;"> mode </td>
@@ -696,6 +704,11 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-sprea
    <td style="text-align:left;"> covMinMax_spread </td>
    <td style="text-align:left;"> data.table </td>
    <td style="text-align:left;"> `data.table` of covariates min and max </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> climateRef_spread </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> With `spreadLink = 'climateOutside'`, the reference value of each climate covariate of the formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit's pixel-years (`fireSenseUtils::spreadClimateRef()`), the climate at which the spread probability is the fuel ceiling's p0. Given to the fit, the threshold, the validation and the ledger row. `NULL` with `spreadLink = 'ceiling'`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> covCentre_spread </td>
