@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9008"
-date: "Last updated: 2026-10-17"
+subtitle: "v.1.2.0.9009"
+date: "Last updated: 2026-10-18"
 output:
   bookdown::html_document2:
     toc: true
@@ -528,6 +528,14 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Google Drive folder url holding the shared fit ledger (`spreadFitFilename`). </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> fitFileSuffix </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Text put after the model tag in the ledger file names, e.g. `"_boundfix_rep81"`, so a test run writes (and `"latest"` readers read) only its own files and never the production ones. `""` (the default) is the production ledger. The same parameter of `fireSense_ignitionFit`, `fireSense_dataPrepFit` and `fireSense_ELFs`; set it for all with `.globals = list(fitFileSuffix = ...)`. Ignored when `spreadFitFilename` names a file. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> spreadFitFilename </td>
