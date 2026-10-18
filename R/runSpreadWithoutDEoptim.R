@@ -34,7 +34,7 @@
 #' @param mode character; if it includes "debug", the debug branch runs.
 #' @param seed integer or NULL; `set.seed()` value. NULL draws one at random.
 #' @param escapeSizeHa passed to `.objfunSpreadFit()`: fit escaped fires only (NULL: any fire over 1 pixel).
-#' @param sizeLik,sizeLikDf,adWeight,link,jumpTries,jumpMeanDist,yearAreaWeight,areaDistWeight,penaliseRunaways,runawayEdgeFrac,runawayEdgeMin,runawayBufferMultiple passed to
+#' @param sizeLik,sizeLikDf,adWeight,link,jumpTries,jumpMeanDist,yearAreaWeight,areaDistWeight,penaliseRunaways,runawayEdgeFrac,runawayEdgeMin,runawayBufferMultiple,censoredRunaways passed to
 #'   `.objfunSpreadFit()`, so the threshold is calibrated on the objective the fit uses. The defaults are
 #'   that function's.
 #' @return the calibrated threshold (numeric, or NA if no trial was usable); NULL in "debug" mode.
@@ -53,6 +53,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                                     runawayEdgeFrac = fireSenseUtils::fireSenseRunawayEdgeFrac,
                                     runawayEdgeMin = fireSenseUtils::fireSenseRunawayEdgeMin,
                                     runawayBufferMultiple = NULL,
+                                    censoredRunaways = NULL,
                                     thresholdMargin = 2, maxDrawsPerTrial = 100) {
   ## The threshold this returns becomes `thresh` in runDEoptim(), so it is part of every cached
   ## DEoptim generation's key. With a seed drawn here, a single cache miss on the estimateThreshold
@@ -115,6 +116,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                                  penaliseRunaways = penaliseRunaways,
                                  runawayEdgeFrac = runawayEdgeFrac, runawayEdgeMin = runawayEdgeMin,
                                  runawayBufferMultiple = runawayBufferMultiple,
+                                 censoredRunaways = censoredRunaways,
                                  plot.it = plot.it
       )
     }
@@ -189,6 +191,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                       yearAreaWeight = yearAreaWeight, areaDistWeight = areaDistWeight,
                       penaliseRunaways = penaliseRunaways,
                       runawayBufferMultiple = runawayBufferMultiple,
+                      censoredRunaways = censoredRunaways,
                       plot.it = FALSE)
       )
     })

@@ -117,3 +117,32 @@ test_that("penaliseRunaways = FALSE reaches the fit, the calibration and the obj
                          logical(1))))
   expect_true(all(vapply(seen, function(a) identical(a$penaliseRunaways, FALSE), logical(1))))
 })
+
+test_that("censoredRunaways reaches the fit, the calibration and the objective as TRUE; FALSE arrives as NULL (cache keys unchanged)", {
+  for (value in list(TRUE, FALSE)) {
+    rec <- new.env(); fitRec <- new.env()
+    sim <- toySim(list(SNLL_FS_thresh = NULL, censoredRunaways = value))
+    mockFitAndLedger(sim, fitRec)
+    mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
+    sim <- suppressMessages(SpaDES.core::spades(sim))
+    expected <- if (value) TRUE else NULL
+    expect_identical(rec$args$censoredRunaways, expected)
+    expect_identical(fitRec$deArgs$censoredRunaways, expected)
+  }
+  expect_null(formals(runSpreadWithoutDEoptim)$censoredRunaways)
+  seen <- list()
+  local_mocked_bindings(.objfunSpreadFit = function(par, thresh, ...) {
+    seen[[length(seen) + 1L]] <<- list(...)
+    1000 + thresh
+  })
+  land <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 2400, ymin = 0, ymax = 2400)
+  fires <- list(year2001 = data.frame(size = c(5L, 12L), date = "year2001", ids = 11:12, cells = c(3L, 56L)))
+  suppressMessages(utils::capture.output(runSpreadWithoutDEoptim(
+    iterThresh = 3L, lower = c(a = 0), upper = c(a = 1), fireSense_spreadFormula = "~ 0 + a",
+    flammableRTM = land, annualDTx1000 = list(), nonAnnualDTx1000 = list(), fireBufferedListDT = list(),
+    historicalFires = fires, covMinMax = NULL, objfunFireReps = 2L, maxFireSpread = 0.28,
+    tests = "SNLL_FS", formulaToFit = "~ 0 + a", mode = "debug", seed = 1L, escapeSizeHa = 50, doObjFunAssertions = FALSE,
+    censoredRunaways = TRUE)))
+  expect_true(length(seen) > 0)
+  expect_true(all(vapply(seen, function(a) isTRUE(a$censoredRunaways), logical(1))))
+})

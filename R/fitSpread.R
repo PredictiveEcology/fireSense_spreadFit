@@ -83,6 +83,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    runawayEdgeFrac = P(sim)$runawayEdgeFrac,
                    runawayEdgeMin = P(sim)$runawayEdgeMin,
                    runawayBufferMultiple = runawayMultiple,
+                   censoredRunaways = censoredRunawaysOrNULL(P(sim)$censoredRunaways),
                    profileReps = if (diagnostics) P(sim)$profileReps else 0L,
                    simulateMembers = if (diagnostics) P(sim)$simulateMembers else 0L),
         .functionName = fnName,
@@ -93,10 +94,11 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
         omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "progressFile", "runawayEdgeFrac", "runawayEdgeMin",
-                     ## NULL without an intercept (or with runawayBufferMultiple NA): omitted then, so fits
-                     ## cached before it existed are found
+                     ## NULL without an intercept (or with runawayBufferMultiple NA, censoredRunaways FALSE): omitted
+                     ## then, so fits cached before it existed are found
                      fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread,
-                                                  runawayBufferMultiple = runawayMultiple)),
+                                                  runawayBufferMultiple = runawayMultiple,
+                                                  censoredRunaways = censoredRunawaysOrNULL(P(sim)$censoredRunaways))),
         useCache = P(sim)$useCache_DE
   )
   ## 1e6 is the objective's fail value (fireSenseUtils::.objfunSpreadFit). A population that is all
@@ -125,6 +127,10 @@ escapeSizeHaOrNULL <- function(x) if (length(x) && !is.na(x)) x
 ## `runawayBufferMultiple` as the objective takes it, by the same rule: NULL (a runaway scores the size it
 ## burned) for NULL or NA
 runawayBufferMultipleOrNULL <- escapeSizeHaOrNULL
+
+## `censoredRunaways` as `runDEoptim()` and the calibration take it: TRUE, or NULL (not FALSE) so that it is left out
+## of their cache keys and fits made before it existed are found
+censoredRunawaysOrNULL <- function(x) if (isTRUE(x)) TRUE
 
 #' Turn the fit's re-score, profile and simulations into `sim` objects
 #'

@@ -194,6 +194,17 @@ defineModule(sim, list(
                                  "not capped at a size; spread is bounded by the buffers. FALSE scores the simulated",
                                  "size in the likelihood too. Passed to",
                                  "`fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting.")),
+    defineParameter("censoredRunaways", "logical", default = FALSE,
+                    desc = paste("With `penaliseRunaways`, TRUE treats a runaway replicate as right-censored at the size",
+                                 "it burned (`fireSenseUtils::.objfunSpreadFit(censoredRunaways =)`): it keeps burning",
+                                 "inside its buffer, so its size is buffer-bounded exactly as the observed fire is; the",
+                                 "size likelihood fits the replicates with it as 'at least this big' (censored-normal",
+                                 "maximum likelihood, `sizeLik = 't'` only); the Anderson-Darling, annual-area and",
+                                 "area-distribution terms score the size it burned, and `runawayBufferMultiple` is not",
+                                 "used. FALSE (default) keeps the scoring above. Why: scoring a runaway as 2 x its buffer",
+                                 "made the objective prefer no year effect whatever the true one (known-sigma test, ELF",
+                                 "14.3, 2026-10-17). Passed to `fireSenseUtils::runDEoptim()` and the threshold",
+                                 "calibration; left out of their cache keys when FALSE.")),
     defineParameter("runawayBufferMultiple", "numeric", default = 2,
                     desc = paste("With `penaliseRunaways`, a runaway counts in the size-based terms of the objective",
                                  "(Anderson-Darling, annual area, area-weighted size distribution) as this multiple of",
@@ -981,6 +992,7 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
       penaliseRunaways = P(sim)$penaliseRunaways,
       runawayEdgeFrac = P(sim)$runawayEdgeFrac, runawayEdgeMin = P(sim)$runawayEdgeMin,
       runawayBufferMultiple = runawayMultiple,
+      censoredRunaways = censoredRunawaysOrNULL(P(sim)$censoredRunaways),
       thresholdMargin = P(sim)$thresholdMargin,
       maxFireSpread = P(sim)$maxFireSpread) |>
       ## Nothing is omitted from the key, because both of the arguments that used to
@@ -1011,11 +1023,12 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
                                spreadProbGates = deparse(fireSenseUtils::spreadProbGates),
                                spreadProbGateTest = deparse(fireSenseUtils::spreadProbGateTest),
                                objective = objectiveBodies()),
-            ## covCentre is NULL without an intercept, runawayBufferMultiple with NA: omitted then, so
-            ## thresholds cached before they existed are found
+            ## covCentre is NULL without an intercept, runawayBufferMultiple with NA, censoredRunaways with
+            ## FALSE: omitted then, so thresholds cached before they existed are found
             omitArgs = c("runawayEdgeFrac", "runawayEdgeMin",
                          fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread,
-                                                      runawayBufferMultiple = runawayMultiple)))
+                                                      runawayBufferMultiple = runawayMultiple,
+                                                      censoredRunaways = censoredRunawaysOrNULL(P(sim)$censoredRunaways))))
   } else {
     P(sim)$SNLL_FS_thresh
   }
