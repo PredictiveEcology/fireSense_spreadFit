@@ -674,10 +674,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> yearSpreadSDBounds </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 0, 1 </td>
+   <td style="text-align:left;"> 0, 5 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Bounds of `yearSpreadSD`, the sd of a per-year random effect on logit spread probability (`fireSenseUtils::.objfunSpreadFit()`), when `lower`/`upper` are not supplied. A seasonal departure: each year draws one eps, so all of a year's fires burn hotter or cooler together, which widens the simulated fire-size distribution. `NA` turns it off. </td>
+   <td style="text-align:left;"> Bounds of `yearSpreadSD`, the sd of a per-year random effect on spread (`fireSenseUtils::.objfunSpreadFit()`), when `lower`/`upper` are not supplied. It is added to the linear predictor with `spreadLink = 'powerLaw'` (one unit there scales a year's mean fire size by about e) and to the logit of spread probability with the other links. A seasonal departure: each year draws one eps, so all of a year's fires burn hotter or cooler together, which widens the simulated fire-size distribution. The upper bound is wide so it never binds: power-law fits reached the former bound of 1. `NA` turns it off. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> upperTailBounds </td>
