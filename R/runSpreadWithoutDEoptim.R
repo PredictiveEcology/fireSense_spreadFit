@@ -130,18 +130,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
     if (is(a, "FutureStrategy") && !is(a, "sequential")) {
       coresToUse <- nbrOfWorkers()
     } else {
-      activeThreads <- clusters::numActiveThreads()
-      detCores <- detectCores()
-      # Each fork is a copy-on-write image of this process that diverges as the
-      # garbage collector marks the heap, so budget one heap per fork; the gc()
-      # call also leaves less garbage to copy. See thresholdForks().
-      heapMB <- sum(gc()[, 2])
-      availMB <- pemisc::availableMemory()
-      availMB <- if (length(availMB)) availMB / 1e6 else NULL
-      coresToUse <- thresholdForks(heapMB = heapMB, availMB = availMB,
-                                   nPars = if (drawFromActiveRange) n else length(pars),
-                                   detCores = detCores, activeThreads = activeThreads,
-                                   mcCores = getOption("mc.cores"))
+      coresToUse <- forkBudget(if (drawFromActiveRange) n else length(pars))
       withr::local_options("mc.cores" = coresToUse)
     }
     message("Using ", coresToUse, " cores",
