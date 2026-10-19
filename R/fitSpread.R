@@ -75,7 +75,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    weighted = P(sim)$weighted,
                    adWeight = P(sim)$adWeight,
                    link = spreadLink(P(sim)),
-                   powerLawGamma = P(sim)$powerLawGamma,
+                   powerLawGamma = powerLawGammaOf(sim),
                    escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
                    jumpTries = P(sim)$jumpTries,
                    jumpMeanDist = P(sim)$jumpMeanDist,
@@ -130,9 +130,10 @@ spreadLink <- function(Par) {
   if (identical(Par$spreadLink, "powerLaw")) "powerLaw" else if (identical(Par$link, "logistic3pUpper")) Par$link
 }
 
-## The bounds of `maxAsymptote`: for `spreadLink = "powerLaw"` it is p_c, which must stay above the floor
-maxAsymptoteBoundsOf <- function(spreadLink = "ceiling") {
-  if (identical(spreadLink, "powerLaw")) fireSenseUtils::spreadPowerLawPcBounds
+## The bounds of `maxAsymptote`: for `spreadLink = "powerLaw"` it is p_c, which must stay above the floor and,
+## per ELF, within `margin` of the calibrated threshold `p50` (fireSenseUtils::powerLawPcBounds())
+maxAsymptoteBoundsOf <- function(spreadLink = "ceiling", p50 = NULL, margin = 0.005) {
+  if (identical(spreadLink, "powerLaw")) fireSenseUtils::powerLawPcBounds(p50, margin)
   else c(fireSenseUtils::spreadProbFloor, fireSenseUtils::spreadProbCeiling)
 }
 
@@ -144,9 +145,9 @@ checkSpreadLink <- function(Par) {
   if (identical(Par$spreadLink, "powerLaw")) {
     if (identical(Par$link, "logistic3pUpper"))
       stop("fireSense_spreadFit: spreadLink = 'powerLaw' cannot be combined with link = 'logistic3pUpper'")
-    if (!(is.numeric(Par$powerLawGamma) && length(Par$powerLawGamma) == 1L && is.finite(Par$powerLawGamma) &&
-          Par$powerLawGamma > 0))
-      stop("fireSense_spreadFit: powerLawGamma must be one positive number; got ", format(Par$powerLawGamma))
+    if (!(is.numeric(Par$powerLawGamma) && length(Par$powerLawGamma) == 1L &&
+          (is.na(Par$powerLawGamma) || (is.finite(Par$powerLawGamma) && Par$powerLawGamma > 0))))
+      stop("fireSense_spreadFit: powerLawGamma must be one positive number, or NA to calibrate it; got ", format(Par$powerLawGamma))
   }
 }
 
@@ -294,6 +295,6 @@ spreadObjFunArgs <- function(sim, covs) {
   ## holds them) are what they were
   args$covCentre <- sim$covCentre_spread
   args$climateRef <- sim$climateRef_spread
-  args$powerLawGamma <- if (identical(args$link, "powerLaw")) P(sim)$powerLawGamma
+  args$powerLawGamma <- if (identical(args$link, "powerLaw")) powerLawGammaOf(sim)
   args
 }

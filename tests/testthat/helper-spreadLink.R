@@ -8,7 +8,7 @@ linkCol <- fireSenseUtils::spreadLinkTxt
 ## the toy non-annual table named by data year, as the objective's covariate code needs (see test-spreadIntercept.R)
 toyObjectsCO <- function(formula = formCO) {
   nonAnn <- toyObjects()$fireSense_nonAnnualSpreadFitCovariates
-  list(fireSense_spreadFormula = formula,
+  list(fireSense_spreadFormula = formula, 
        fireSense_nonAnnualSpreadFitCovariates = stats::setNames(nonAnn, "2000"))
 }
 
@@ -20,6 +20,13 @@ fittedCO <- function(params = list(), formula = formCO, rec = new.env()) {
   list(sim = sim, rec = rec)
 }
 
+## What the module's Cache() does with the powerLaw calibration in a test that mocks Cache(): run it, without the
+## Cache() arguments
+runCalibration <- function(FUN, ...) {
+  a <- list(...)
+  do.call(FUN, a[setdiff(names(a), c("omitArgs", ".cacheExtra", "useCache"))])
+}
+
 ## what Cache(omitArgs =) the fit and the threshold calibration are given, and what the calibration receives
 omitArgsCO <- function(params = list()) {
   rec <- new.env()
@@ -28,6 +35,7 @@ omitArgsCO <- function(params = list()) {
   mockInModule(sim,
     runSpreadWithoutDEoptim = function(...) { rec$rswd <- list(...); 777 },
     Cache = function(FUN, ..., omitArgs = NULL) {
+      if (identical(FUN, fireSenseUtils::calibratePowerLaw)) return(runCalibration(FUN, ..., omitArgs = omitArgs))
       f <- if (is.function(FUN)) FUN(..., omitArgs = NULL) else FUN
       rec$omit <- c(rec$omit, list(omitArgs))
       f

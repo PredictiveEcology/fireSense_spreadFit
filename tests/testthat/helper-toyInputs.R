@@ -38,10 +38,17 @@ toyPoints <- function(x, y, id, yr, ha) {
                coords = c("x", "y"), crs = toyCRS)
 }
 
+## A flammable map for the powerLaw calibration (81 x 81, all flammable), and the settings that keep the
+## calibration small: 20 fires on each of a few spread probabilities
+calFlammable <- function(n = 81L) {
+  terra::rast(nrows = n, ncols = n, xmin = 0, xmax = n * 240, ymin = 0, ymax = n * 240, crs = toyCRS, vals = 1L)
+}
+calParams <- list(powerLawFires = 20L, powerLawPGrid = seq(0.15, 0.40, by = 0.025))
+
 ## A fresh copy every call: spreadFitPrep() changes some of its inputs by reference.
 toyObjects <- function() {
   list(
-    .ELFind = "9.9",
+    .ELFind = "9.9", flammableRTM = calFlammable(),
     rasterToMatch = toyRTM(), studyArea = toyStudyArea(),
     spreadFirePoints = list(
       year2001 = toyPoints(c(250, 550), c(950, 450), c(11L, 12L), 2001L, c(5, 12)), # cells 3 and 56
@@ -84,7 +91,10 @@ toySim <- function(params = list(), objects = list()) {
     base[!vapply(base, is.null, logical(1))]
   }
   obj <- override(toyObjects(), objects)
-  pars <- override(list(.runName = "toyRun", .useCache = FALSE, useCache_DE = FALSE, SNLL_FS_thresh = 500L), params)
+  ## spreadLink and penaliseRunaways are the module's pre-2026-10-18 defaults here, so the tests keep testing those
+  ## paths; a test of the new defaults sets them to NULL (removed: the module's default)
+  pars <- override(c(list(.runName = "toyRun", .useCache = FALSE, useCache_DE = FALSE, SNLL_FS_thresh = 500L,
+                          spreadLink = "ceiling", penaliseRunaways = TRUE), calParams), params)
   suppressMessages(
     SpaDES.core::simInit(times = list(start = 0, end = 1), modules = toyModule,
                          paths = toyPaths(), params = stats::setNames(list(pars), toyModule),

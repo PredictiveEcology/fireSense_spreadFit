@@ -12,9 +12,9 @@ cmdMean <- function(sim) {
   mean((cmd - rng[1]) / (rng[2] - rng[1]))
 }
 
-test_that("the default link is 'ceiling', and leaves the fit, the ledger row and the cache keys as they were", {
+test_that("the 'ceiling' link leaves the fit, the ledger row and the cache keys as they were", {
   md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
-  expect_identical(md$parameters$default[[which(md$parameters$paramName == "spreadLink")]], "ceiling")
+  expect_identical(md$parameters$default[[which(md$parameters$paramName == "spreadLink")]], "powerLaw") # the module's default
   expect_identical(fireSenseUtils::spreadLinkOptions[1], "ceiling")
   out <- fittedCO()
   expect_null(out$sim$climateRef_spread)
