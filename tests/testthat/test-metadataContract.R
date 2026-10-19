@@ -101,7 +101,9 @@ test_that("defaults of the objective and of the post-fit diagnostics", {
   expect_identical(def$jumpMeanDist, 3)
   expect_identical(def$link, "logistic3p")
   expect_identical(def$upperTailBounds, c(-1, 1))
-  expect_identical(def$yearSpreadSDBounds, c(0, 1))   # the per-year random effect is on by default
+  expect_identical(def$yearSpreadSDBounds, c(0, 5))   # the per-year random effect is on by default
+  ## power-law fits (2026-10-19) put yearSpreadSD at 0.85-0.99 against an upper bound of 1: the bound must not bind
+  expect_gte(max(def$yearSpreadSDBounds), 3)
   expect_identical(def$profileReps, 10L)
   expect_identical(def$.plotInterval, 25)       # DEoptim generations between progress figures
   expect_identical(def$simulateMembers, 10L)
