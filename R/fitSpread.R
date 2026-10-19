@@ -74,7 +74,8 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    sizeLikDf = P(sim)$sizeLikDf,
                    weighted = P(sim)$weighted,
                    adWeight = P(sim)$adWeight,
-                   link = spreadLink(P(sim)$link),
+                   link = spreadLink(P(sim)),
+                   powerLawGamma = P(sim)$powerLawGamma,
                    escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
                    jumpTries = P(sim)$jumpTries,
                    jumpMeanDist = P(sim)$jumpMeanDist,
@@ -94,6 +95,8 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
         omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "progressFile", "runawayEdgeFrac", "runawayEdgeMin",
+                     ## only the powerLaw link uses it
+                     fireSenseUtils::powerLawOmitArgs(spreadLink(P(sim))),
                      ## NULL without an intercept (or with runawayBufferMultiple NA, or with the default spreadLink):
                      ## omitted then, so fits cached before it existed are found
                      fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread,
@@ -117,10 +120,35 @@ objectiveBodies <- function()
        spreadProbFromIntegerCovs = deparse(fireSenseUtils::spreadProbFromIntegerCovs),
        spreadProbCovsOfYear = deparse(utils::getFromNamespace("spreadProbCovsOfYear", "fireSenseUtils")),
        spreadProbFromCovs = deparse(fireSenseUtils::spreadProbFromCovs), # the spread link itself
+       logisticAll = deparse(fireSenseUtils::logisticAll),
+       powerLawLink = deparse(fireSenseUtils::powerLawLink),
        dataYearBefore = deparse(fireSenseUtils::dataYearBefore))
 
-## The `link` the objective is given: NULL is its default, logistic3p
-spreadLink <- function(link) if (identical(link, "logistic3pUpper")) link
+## The `link` the objective is given, from the parameters `Par` (`P(sim)`): "powerLaw" for `spreadLink = "powerLaw"`,
+## else the `link` parameter's "logistic3pUpper", else NULL, its default, logistic3p
+spreadLink <- function(Par) {
+  if (identical(Par$spreadLink, "powerLaw")) "powerLaw" else if (identical(Par$link, "logistic3pUpper")) Par$link
+}
+
+## The bounds of `maxAsymptote`: for `spreadLink = "powerLaw"` it is p_c, which must stay above the floor
+maxAsymptoteBoundsOf <- function(spreadLink = "ceiling") {
+  if (identical(spreadLink, "powerLaw")) fireSenseUtils::spreadPowerLawPcBounds
+  else c(fireSenseUtils::spreadProbFloor, fireSenseUtils::spreadProbCeiling)
+}
+
+## Stop on a `spreadLink` the fit does not know, or one that cannot go with the other parameters
+checkSpreadLink <- function(Par) {
+  if (!Par$spreadLink %in% fireSenseUtils::spreadLinkOptions)
+    stop("fireSense_spreadFit: spreadLink must be one of ", paste(dQuote(fireSenseUtils::spreadLinkOptions, FALSE), collapse = ", "),
+         "; got ", dQuote(Par$spreadLink, FALSE))
+  if (identical(Par$spreadLink, "powerLaw")) {
+    if (identical(Par$link, "logistic3pUpper"))
+      stop("fireSense_spreadFit: spreadLink = 'powerLaw' cannot be combined with link = 'logistic3pUpper'")
+    if (!(is.numeric(Par$powerLawGamma) && length(Par$powerLawGamma) == 1L && is.finite(Par$powerLawGamma) &&
+          Par$powerLawGamma > 0))
+      stop("fireSense_spreadFit: powerLawGamma must be one positive number; got ", format(Par$powerLawGamma))
+  }
+}
 
 ## `escapeSizeHa` as the objective takes it: NULL (the old fit) for NULL or NA
 escapeSizeHaOrNULL <- function(x) if (length(x) && !is.na(x)) x
@@ -259,12 +287,13 @@ spreadObjFunArgs <- function(sim, covs) {
        tests = P(sim)$DEoptimTests, maxFireSpread = P(sim)$maxFireSpread,
        objFunCoresInternal = P(sim)$objFunCoresInternal, Nreps = P(sim)$objfunFireReps,
        mutuallyExclusive = P(sim)$mutuallyExclusiveCols, doAssertions = FALSE, verbose = 0,
-       link = spreadLink(P(sim)$link), escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
+       link = spreadLink(P(sim)), escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
        jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist)
   ## the fit's centre and climate reference, not the held-out years': assigning NULL adds nothing, so without
-  ## an intercept (or with the default spreadLink) the arguments (and the cache key of the simulation that
+  ## an intercept (or with the default spreadLink, or without powerLawGamma) the arguments (and the cache key of the simulation that
   ## holds them) are what they were
   args$covCentre <- sim$covCentre_spread
   args$climateRef <- sim$climateRef_spread
+  args$powerLawGamma <- if (identical(args$link, "powerLaw")) P(sim)$powerLawGamma
   args
 }
