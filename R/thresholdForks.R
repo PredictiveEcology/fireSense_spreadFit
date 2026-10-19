@@ -29,3 +29,21 @@ thresholdForks <- function(heapMB, availMB, nPars, detCores, activeThreads = 0L,
   n <- min(c(byMem, byCPU, nPars, mcCores))
   max(1L, as.integer(n))
 }
+
+#' How many forks this process may start now
+#'
+#' [thresholdForks()] with this host's state: the R heap in use (each fork is a copy-on-write image of this
+#' process that diverges as the garbage collector marks the heap, so budget one heap per fork; the `gc()` call
+#' also leaves less garbage to copy), the memory available, the busy threads, `detectCores()` and
+#' `options(mc.cores)`. Used by the threshold self-calibration and the `"powerLaw"` calibration, so several
+#' fits on one host, or a fit run inside a cluster worker, share the same caps.
+#'
+#' @param nTasks integer; number of tasks to spread over the forks.
+#' @return integer, at least 1.
+forkBudget <- function(nTasks) {
+  heapMB <- sum(gc()[, 2])
+  availMB <- pemisc::availableMemory()
+  availMB <- if (length(availMB)) availMB / 1e6 else NULL
+  thresholdForks(heapMB = heapMB, availMB = availMB, nPars = nTasks, detCores = parallel::detectCores(),
+                 activeThreads = clusters::numActiveThreads(), mcCores = getOption("mc.cores"))
+}

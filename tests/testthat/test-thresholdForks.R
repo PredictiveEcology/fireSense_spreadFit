@@ -35,3 +35,11 @@ test_that("never fewer than one fork; unknown memory means one", {
   expect_equal(thresholdForks(heapMB = 20, availMB = numeric(0), nPars = 96, detCores = 68), 1L)
   expect_equal(thresholdForks(heapMB = 20, availMB = NA_real_, nPars = 96, detCores = 68), 1L)
 })
+
+test_that("forkBudget() honours options(mc.cores), whoever calls it", {
+  withr::local_options(mc.cores = 1L)
+  expect_equal(forkBudget(10000L), 1L)
+  withr::local_options(mc.cores = 3L)
+  expect_lte(forkBudget(10000L), 3L)
+  expect_equal(forkBudget(1L), 1L)
+})

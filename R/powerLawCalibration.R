@@ -16,20 +16,13 @@ calibratePowerLawFor <- function(sim) {
   sim$powerLawCalibration <- Cache(
     fireSenseUtils::calibratePowerLaw,
     flammable = sim$flammableRTM, pGrid = P(sim)$powerLawPGrid, nFires = P(sim)$powerLawFires,
-    cores = calibrationCores(P(sim)$cores), seed = .elfSeed(sim$.ELFind),
+    cores = forkBudget(length(P(sim)$powerLawPGrid) * P(sim)$powerLawFires), seed = .elfSeed(sim$.ELFind),
     escapeSizeHa = P(sim)$escapeSizeHa, jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist,
     omitArgs = "cores",
     .cacheExtra = list(calibratePowerLaw = deparse(fireSenseUtils::calibratePowerLaw),
                        escapeSizePixels = deparse(fireSenseUtils::escapeSizePixels)),
     useCache = P(sim)$useCache_DE)
   sim
-}
-
-## Local forked processes for the calibration: the module's `cores` if it is one number, else (host names) as
-## many as it lists; never more than this machine has
-calibrationCores <- function(cores) {
-  n <- if (is.numeric(cores) && length(cores) == 1L && !is.na(cores)) cores else length(cores)
-  max(1L, min(as.integer(n), parallel::detectCores(), na.rm = TRUE))
 }
 
 #' The `"powerLaw"` link's `gamma` for this fit
