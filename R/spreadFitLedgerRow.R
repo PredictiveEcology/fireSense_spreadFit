@@ -8,7 +8,7 @@
 #'
 #' @param sim a `simList`; uses `.ELFind`, `studyArea`, `sppEquiv`, `nonForestedLCCGroups`,
 #'   `missingLCCgroup`, `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`, and the parameters
-#'   `spreadLink` and `powerLawGamma`.
+#'   `spreadLink`, `powerLawGamma` and `powerLawPcMargin`, and `powerLawCalibration`.
 #' @param numIterations integer, the number of DEoptim generations.
 #' @param objFunVal numeric, the objective values of the members in `params`.
 #' @param params `data.table`, one row per member, with `hillSlope1` and `inflectionPoint1` (see `addFixedParsToLedger()`).
@@ -33,8 +33,13 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params) {
   if (!identical(P(sim)$spreadLink, "ceiling")) df[[fireSenseUtils::spreadLinkTxt]] <- P(sim)$spreadLink
   if (!is.null(sim$climateRef_spread))
     df[[fireSenseUtils::spreadFitClimateRefTxt]] <- I(list(sim$climateRef_spread))
-  if (identical(P(sim)$spreadLink, "powerLaw"))
-    df[[fireSenseUtils::spreadFitPowerLawGammaTxt]] <- P(sim)$powerLawGamma
+  if (identical(P(sim)$spreadLink, "powerLaw")) {
+    df[[fireSenseUtils::spreadFitPowerLawGammaTxt]] <- powerLawGammaOf(sim)
+    ## the calibration that set gamma (unless given) and p_c's upper bound (p50 + margin), to compare p_c with
+    df[[fireSenseUtils::spreadFitPowerLawPc50Txt]] <- sim$powerLawCalibration$p50
+    df[[fireSenseUtils::spreadFitPowerLawR2Txt]] <- sim$powerLawCalibration$R2
+    df[[fireSenseUtils::spreadFitPowerLawPcMarginTxt]] <- P(sim)$powerLawPcMargin
+  }
   # The ledger is keyed by polygon identity, NOT by run label -- see the
   # `.ELFind` input declaration. This row is shared cloud state that every
   # other project reads, so validate before writing.
