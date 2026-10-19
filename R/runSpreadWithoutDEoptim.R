@@ -26,6 +26,8 @@
 #'   and `fireSenseUtils::spreadProbGates()`, so the threshold is calibrated on the fit's objective.
 #' @param climateRef named list, the fit's climate reference (`fireSenseUtils::spreadClimateRef()`; `spreadLink =
 #'   "climateOutside"`), or `NULL` (the default link). Passed to `.objfunSpreadFit()` and the gates like `covCentre`.
+#' @param powerLawGamma numeric; the `"powerLaw"` link's `gamma` (`fireSenseUtils::powerLawLink()`), used with
+#'   `link = "powerLaw"`. Passed to `.objfunSpreadFit()` and the gates.
 #' @param objfunFireReps integer; passed to `Nreps`, the replicates per fire.
 #' @param maxFireSpread numeric; upper limit on mean spread probability.
 #' @param weighted logical; weight the SNLL by log fire size. Also used in the rough threshold estimate.
@@ -50,7 +52,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                                     pars = NULL, plot.it = TRUE, mode = "fit",
                                     seed = NULL, escapeSizeHa = NULL,
                                     sizeLik = "kde", sizeLikDf = 5, adWeight = "auto", link = NULL,
-                                    jumpTries = 0, jumpMeanDist = 0, yearAreaWeight = 0, areaDistWeight = 0,
+                                    powerLawGamma = fireSenseUtils::spreadPowerLawGamma, jumpTries = 0, jumpMeanDist = 0, yearAreaWeight = 0, areaDistWeight = 0,
                                     penaliseRunaways = TRUE,
                                     runawayEdgeFrac = fireSenseUtils::fireSenseRunawayEdgeFrac,
                                     runawayEdgeMin = fireSenseUtils::fireSenseRunawayEdgeMin,
@@ -112,7 +114,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                                  weighted = weighted,
                                  escapeSizeHa = escapeSizeHa,
                                  sizeLik = sizeLik, sizeLikDf = sizeLikDf, adWeight = adWeight, link = link,
-                                 jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
+                                 powerLawGamma = powerLawGamma, jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
                                  yearAreaWeight = yearAreaWeight, areaDistWeight = areaDistWeight,
                                  penaliseRunaways = penaliseRunaways,
                                  runawayEdgeFrac = runawayEdgeFrac, runawayEdgeMin = runawayEdgeMin,
@@ -156,7 +158,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                         covMinMax = covMinMax, covCentre = covCentre, climateRef = climateRef,
                         mutuallyExclusive = mutuallyExclusive,
                         maxFireSpread = maxFireSpread, escapeSizeHa = escapeSizeHa,
-                        landscape = flammableRTM, link = link, doAssertions = FALSE)$pass
+                        landscape = flammableRTM, link = link, powerLawGamma = powerLawGamma, doAssertions = FALSE)$pass
       }
       active <- drawActivePars(n, lower, upper, maxDraws, gates, cores = coresToUse)
       message("  accepted ", active$accepted, " of ", active$drawn, " draws (cap ", maxDraws, " = ",
@@ -188,7 +190,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                       maxFireSpread = maxFireSpread,
                       weighted = weighted, escapeSizeHa = escapeSizeHa,
                       sizeLik = sizeLik, sizeLikDf = sizeLikDf, adWeight = adWeight, link = link,
-                      jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
+                      powerLawGamma = powerLawGamma, jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
                       yearAreaWeight = yearAreaWeight, areaDistWeight = areaDistWeight,
                       penaliseRunaways = penaliseRunaways,
                       runawayBufferMultiple = runawayBufferMultiple,

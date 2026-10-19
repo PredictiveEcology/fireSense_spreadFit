@@ -28,7 +28,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.80)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9106)",
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9107)",
                   "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -129,7 +129,17 @@ defineModule(sim, list(
                                  "(`fireSenseUtils::spreadFitClimateRefTxt`, `spreadLinkTxt`) so `fireSense_spreadPredict` applies",
                                  "the same link; a row without them is 'ceiling'. The objective's gates and saturation summary",
                                  "then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate",
-                                 "covariate in the formula (`fireSenseUtils::spreadClimateCols()`).")),
+                                 "covariate in the formula (`fireSenseUtils::spreadClimateCols()`). 'powerLaw': the link from a",
+                                 "percolation calibration, p = p_c - (p_c - lowerSpreadProb) * exp(-x / `powerLawGamma`), with x the",
+                                 "linear predictor and p below 0 set to 0 (`fireSenseUtils::powerLawLink()`). `maxAsymptote` is p_c,",
+                                 "fitted, bounded by `fireSenseUtils::spreadPowerLawPcBounds`; the year effect `yearSpreadSD` is added",
+                                 "to x, not to the logit of p, so no year takes p past p_c. Stored in the ledger row with",
+                                 "`powerLawGamma` (`fireSenseUtils::spreadLinkTxt`, `spreadFitPowerLawGammaTxt`) so",
+                                 "`fireSense_spreadPredict` applies the same link. Not with `link = 'logistic3pUpper'`.")),
+    defineParameter("powerLawGamma", "numeric", default = fireSenseUtils::spreadPowerLawGamma,
+                    desc = paste("The exponent `gamma` of `spreadLink = 'powerLaw'`, from a percolation calibration. It is",
+                                 "fixed, not fitted: it is exactly confounded with the scale of the coefficients. Ignored with",
+                                 "the other links.")),
     defineParameter("mode", "character", default = "fit",
                     desc = paste("Options: debug, fit, visualize, validate. Can use multiples. 'debug' runs the",
                                  "objective function with visuals instead of DEoptim; 'fit' runs DEoptim; 'visualize'",
@@ -522,7 +532,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         mode = Par$mode,
         escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
         weighted = P(sim)$weighted, sizeLik = P(sim)$sizeLik, sizeLikDf = P(sim)$sizeLikDf,
-        adWeight = P(sim)$adWeight, link = spreadLink(P(sim)$link),
+        adWeight = P(sim)$adWeight, link = spreadLink(P(sim)), powerLawGamma = P(sim)$powerLawGamma,
         jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist,
         yearAreaWeight = P(sim)$yearAreaWeight, areaDistWeight = P(sim)$areaDistWeight,
         penaliseRunaways = P(sim)$penaliseRunaways,
@@ -668,6 +678,7 @@ spreadFitPrep <- function(sim) {
   # fuel biomass should have a lower limit of zero - more fuel shouldn't decrease spread probability
   ## yearSpreadSD (the per-year random effect) is in the default bounds unless turned off; when one bound
   ## is supplied, the one filled in includes it only if the supplied one does, so the two stay aligned
+  checkSpreadLink(Par)
   fsdBounds <- if (!anyNA(Par$yearSpreadSDBounds)) Par$yearSpreadSDBounds
   upperMissing <- is.null(P(sim)$upper) || any(is.na(P(sim)$upper))
   lowerMissing <- is.null(P(sim)$lower) || any(is.na(P(sim)$lower))
@@ -679,7 +690,8 @@ spreadFitPrep <- function(sim) {
                                          whichBound = "upper", upperAndLower = Par$upperAndLowerVal,
                                          fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
                                          upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
-                                         yearSpreadSDBounds = fsdBounds)
+                                         yearSpreadSDBounds = fsdBounds,
+                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink))
   }
 
   if (is.null(P(sim)$lower) || any(is.na(P(sim)$lower))) {
@@ -689,7 +701,8 @@ spreadFitPrep <- function(sim) {
                                           whichBound = "lower", upperAndLower = Par$upperAndLowerVal,
                                           fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
                                          upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
-                                         yearSpreadSDBounds = fsdBounds)
+                                         yearSpreadSDBounds = fsdBounds,
+                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink))
   }
   ## hillSlope1 (the spread link's slope) and inflectionPoint1 (its Richards exponent) are fixed at 1,
   ## not fitted (see estimateSpreadParams()). A supplied 'upper'/'lower' naming either would silently
@@ -1010,7 +1023,7 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
       escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
       ## the same objective as the fit (R/fitSpread.R), or the threshold is calibrated on another one
       weighted = P(sim)$weighted, sizeLik = P(sim)$sizeLik, sizeLikDf = P(sim)$sizeLikDf,
-      adWeight = P(sim)$adWeight, link = spreadLink(P(sim)$link),
+      adWeight = P(sim)$adWeight, link = spreadLink(P(sim)), powerLawGamma = P(sim)$powerLawGamma,
       jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist,
       yearAreaWeight = P(sim)$yearAreaWeight, areaDistWeight = P(sim)$areaDistWeight,
       penaliseRunaways = P(sim)$penaliseRunaways,
@@ -1047,8 +1060,9 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
                                spreadProbGateTest = deparse(fireSenseUtils::spreadProbGateTest),
                                objective = objectiveBodies()),
             ## covCentre is NULL without an intercept, runawayBufferMultiple with NA, climateRef with the default
-            ## spreadLink: omitted then, so thresholds cached before they existed are found
-            omitArgs = c("runawayEdgeFrac", "runawayEdgeMin",
+            ## spreadLink, powerLawGamma unless spreadLink is "powerLaw": omitted then, so thresholds cached before
+            ## they existed are found
+            omitArgs = c("runawayEdgeFrac", "runawayEdgeMin", fireSenseUtils::powerLawOmitArgs(spreadLink(P(sim))),
                          fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread,
                                                       climateRef = sim$climateRef_spread,
                                                       runawayBufferMultiple = runawayMultiple)))
@@ -1089,13 +1103,15 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
 #' @param fuelTerms,upperAndLowerFuel character names of the fuel biomass terms, and their upper bound (lower is 0).
 #' @param upperTailBounds numeric; if not `NULL`, the bounds of `upperTail1`, which is added after
 #'   `maxAsymptote` (link "logistic3pUpper").
-#' @return named numeric vector: `maxAsymptote` (bounded by `fireSenseUtils::spreadProbFloor` and
-#'   `fireSenseUtils::spreadProbCeiling`), `upperTail1` (with `upperTailBounds`), then
+#' @param maxAsymptoteBounds numeric(2); the bounds of `maxAsymptote` (`maxAsymptoteBoundsOf()`).
+#' @return named numeric vector: `maxAsymptote` (bounded by `maxAsymptoteBounds`, by default
+#'   `fireSenseUtils::spreadProbFloor` and `fireSenseUtils::spreadProbCeiling`), `upperTail1` (with `upperTailBounds`), then
 #'   `fireSenseUtils::spreadInterceptTxt` if the formula has an intercept (`~ 1 + ...`), then formula
 #'   terms. No `hillSlope1` or `inflectionPoint1` -- both are fixed at 1, not fitted.
 estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, whichBound,
                                  upperAndLower, fuelTerms = character(), upperAndLowerFuel = upperAndLower,
-                                 upperTailBounds = NULL, yearSpreadSDBounds = NULL) {
+                                 upperTailBounds = NULL, yearSpreadSDBounds = NULL,
+                                 maxAsymptoteBounds = maxAsymptoteBoundsOf()) {
 
   stopifnot(whichBound %in% c("upper", "lower"))
 
@@ -1122,11 +1138,8 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
     newParams <- c(stats::setNames(if (whichBound == "upper") upperAndLower else -upperAndLower,
                                    fireSenseUtils::spreadInterceptTxt), newParams)
 
-  if (whichBound == "upper") {
-    newParams <- c("maxAsymptote" = fireSenseUtils::spreadProbCeiling, newParams)
-  } else {
-    newParams <- c("maxAsymptote" = fireSenseUtils::spreadProbFloor, newParams)
-  }
+  newParams <- c("maxAsymptote" = if (whichBound == "upper") max(maxAsymptoteBounds) else min(maxAsymptoteBounds),
+                 newParams)
   ## the objective takes the logistic parameters by position, so upperTail1 must be the 2nd
   ## (the fixed hillSlope1 and inflectionPoint1 go between them)
   if (!is.null(upperTailBounds))

@@ -7,7 +7,8 @@
 #' either the same way.
 #'
 #' @param sim a `simList`; uses `.ELFind`, `studyArea`, `sppEquiv`, `nonForestedLCCGroups`,
-#'   `missingLCCgroup`, `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`.
+#'   `missingLCCgroup`, `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`, and the parameters
+#'   `spreadLink` and `powerLawGamma`.
 #' @param numIterations integer, the number of DEoptim generations.
 #' @param objFunVal numeric, the objective values of the members in `params`.
 #' @param params `data.table`, one row per member, with `hillSlope1` and `inflectionPoint1` (see `addFixedParsToLedger()`).
@@ -26,12 +27,14 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params) {
   ## A fit without one has no such column, so its row is what it always was.
   if (!is.null(sim$covCentre_spread))
     df[[fireSenseUtils::spreadFitCovCentreTxt]] <- I(list(sim$covCentre_spread))
-  ## climateRef_spread: a fit with climate outside the ceiling (spreadLink) records the link and its climate
-  ## reference, and prediction applies the same link. A fit with the default link writes neither column.
-  if (!is.null(sim$climateRef_spread)) {
-    df[[fireSenseUtils::spreadLinkTxt]] <- P(sim)$spreadLink
+  ## spreadLink: a fit with another link than the default records it, with what the link needs (climateRef_spread
+  ## for climate outside the ceiling, powerLawGamma for the power law), and prediction applies the same link.
+  ## A fit with the default link writes none of these columns.
+  if (!identical(P(sim)$spreadLink, "ceiling")) df[[fireSenseUtils::spreadLinkTxt]] <- P(sim)$spreadLink
+  if (!is.null(sim$climateRef_spread))
     df[[fireSenseUtils::spreadFitClimateRefTxt]] <- I(list(sim$climateRef_spread))
-  }
+  if (identical(P(sim)$spreadLink, "powerLaw"))
+    df[[fireSenseUtils::spreadFitPowerLawGammaTxt]] <- P(sim)$powerLawGamma
   # The ledger is keyed by polygon identity, NOT by run label -- see the
   # `.ELFind` input declaration. This row is shared cloud state that every
   # other project reads, so validate before writing.

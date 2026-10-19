@@ -5,25 +5,6 @@
 ## records it with the link. With the default "ceiling" nothing changes: no reference, no ledger columns, and the
 ## cache keys of the fit, the threshold and the held-out simulation are what they were.
 
-formCO <- "~ 0 + CMDsm + youngAge + class1 + class2 + nf"
-refCol <- fireSenseUtils::spreadFitClimateRefTxt
-linkCol <- fireSenseUtils::spreadLinkTxt
-
-## the toy non-annual table named by data year, as the objective's covariate code needs (see test-spreadIntercept.R)
-toyObjectsCO <- function(formula = formCO) {
-  nonAnn <- toyObjects()$fireSense_nonAnnualSpreadFitCovariates
-  list(fireSense_spreadFormula = formula,
-       fireSense_nonAnnualSpreadFitCovariates = stats::setNames(nonAnn, "2000"))
-}
-
-## a fit on toy inputs; `rec` records what leaves the machine
-fittedCO <- function(params = list(), formula = formCO, rec = new.env()) {
-  sim <- toySim(params, toyObjectsCO(formula))
-  mockFitAndLedger(sim, rec)
-  sim <- suppressMessages(SpaDES.core::spades(sim))
-  list(sim = sim, rec = rec)
-}
-
 ## the mean of the rescaled CMDsm over the 9 toy pixel-years, with the range the fit stores
 cmdMean <- function(sim) {
   cmd <- c(10, 20, 30, 40, 25, 15, 12, 22, 32)
@@ -78,22 +59,6 @@ test_that("climateOutside without a climate covariate in the formula stops, sayi
   mockFitAndLedger(sim)
   expect_error(suppressMessages(SpaDES.core::spades(sim)), "needs a climate covariate")
 })
-
-## what Cache(omitArgs =) the fit and the threshold calibration are given, and what the calibration receives
-omitArgsCO <- function(params = list()) {
-  rec <- new.env()
-  sim <- toySim(c(list(SNLL_FS_thresh = NULL, iterThresh = 3L), params), toyObjectsCO())
-  mockFitAndLedger(sim, rec)
-  mockInModule(sim,
-    runSpreadWithoutDEoptim = function(...) { rec$rswd <- list(...); 777 },
-    Cache = function(FUN, ..., omitArgs = NULL) {
-      f <- if (is.function(FUN)) FUN(..., omitArgs = NULL) else FUN
-      rec$omit <- c(rec$omit, list(omitArgs))
-      f
-    })
-  suppressMessages(SpaDES.core::spades(sim))
-  rec
-}
 
 test_that("the fit's and the threshold's cache keys omit climateRef only when it is NULL; the calibration is given it", {
   off <- omitArgsCO()

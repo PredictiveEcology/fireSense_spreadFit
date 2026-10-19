@@ -4,7 +4,10 @@
 test_that("the fit's and the threshold calibration's cache keys include the objective's bodies", {
   ob <- objectiveBodies()
   expect_named(ob, c("objfunSpreadFit", "objFunInner", "spreadProbFromIntegerCovs", "spreadProbCovsOfYear",
-                     "spreadProbFromCovs", "dataYearBefore"))
+                     "spreadProbFromCovs", "logisticAll", "powerLawLink", "dataYearBefore"))
+  ## the power-law link, and the dispatcher that reaches it
+  expect_identical(ob$powerLawLink, deparse(fireSenseUtils::powerLawLink))
+  expect_identical(ob$logisticAll, deparse(fireSenseUtils::logisticAll))
   ## the spread link itself: a change in how spreadProb is computed from the covariates is a cache miss
   expect_identical(ob$spreadProbFromCovs, deparse(fireSenseUtils::spreadProbFromCovs))
   ## the covariates the objective reads are part of it: a change in which vegetation table a fire year uses
