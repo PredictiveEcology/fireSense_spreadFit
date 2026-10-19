@@ -20,7 +20,7 @@ times the best trial that did not saturate."><!-- mathjax --><script src="https:
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9011</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9013</span>
       </span>
     </div>
 
@@ -92,6 +92,7 @@ times the best trial that did not saturate.</p>
 <span>  sizeLikDf <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  adWeight <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  link <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  powerLawGamma <span class="op">=</span> <span class="fu">fireSenseUtils</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">spreadPowerLawGamma</a></span>,</span>
 <span>  jumpTries <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  jumpMeanDist <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  yearAreaWeight <span class="op">=</span> <span class="fl">0</span>,</span>
@@ -197,6 +198,11 @@ and <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadProbGates.html" 
 <dd><p>passed to
 <code>.objfunSpreadFit()</code>, so the threshold is calibrated on the objective the fit uses. The defaults are
 that function's.</p></dd>
+
+
+<dt id="arg-powerlawgamma">powerLawGamma<a class="anchor" aria-label="anchor" href="#arg-powerlawgamma"></a></dt>
+<dd><p>numeric; the <code>"powerLaw"</code> link's <code>gamma</code> (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/powerLawLink.html" class="external-link">fireSenseUtils::powerLawLink()</a></code>), used with
+<code>link = "powerLaw"</code>. Passed to <code>.objfunSpreadFit()</code> and the gates.</p></dd>
 
 
 <dt id="arg-thresholdmargin">thresholdMargin<a class="anchor" aria-label="anchor" href="#arg-thresholdmargin"></a></dt>

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9011</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9013</span>
       </span>
     </div>
 
@@ -583,6 +583,24 @@ NA
 </td>
 <td style="text-align:left;">
 The spread link. ‘logistic3p’, or ‘logistic3pUpper’: the same curve with Stukel’s upper tail, one more parameter <code>upperTail1</code> that changes only how the curve approaches its ceiling (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/logistic.html" class="external-link">fireSenseUtils::logistic3pUpper()</a></code>). Its default bounds are <code>upperTailBounds</code>.
+</td>
+</tr><tr><td style="text-align:left;">
+spreadLink
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+ceiling
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Where climate enters the spread probability (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadProbFromCovs.html" class="external-link">fireSenseUtils::spreadProbFromCovs()</a></code>). ‘ceiling’ (default): climate is a covariate inside the logistic, under the <code>maxAsymptote</code> ceiling, as always – fits and their cache keys are unchanged. ‘climateOutside’: the logistic, with its ceiling, is fitted to the other covariates only (intercept, fuels, <code>youngAge</code>, non-forest), giving p0; the climate term is added on the logit after it, p = plogis(qlogis(p0) + beta_clim (climate - climateRef)), uncapped, and the year effect <code>yearSpreadSD</code> (eps_Y) on the same logit. Where fuel put a pixel near the ceiling, climate could add almost nothing under ‘ceiling’ (2026-10 hindcasts: 59-77% of pixels within 0.01 of the ceiling every year, spread nearly the same in every year). <code>climateRef</code> is the mean of each climate covariate over the fit’s pixel-years (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateRef.html" class="external-link">fireSenseUtils::spreadClimateRef()</a></code>, <code>sim$climateRef_spread</code>), stored in the ledger row with this choice (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadFitClimateRefTxt</a></code>, <code>spreadLinkTxt</code>) so <code>fireSense_spreadPredict</code> applies the same link; a row without them is ‘ceiling’. The objective’s gates and saturation summary then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate covariate in the formula (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateCols.html" class="external-link">fireSenseUtils::spreadClimateCols()</a></code>).
 </td>
 </tr><tr><td style="text-align:left;">
 mode
@@ -1402,6 +1420,15 @@ data.table
 </td>
 <td style="text-align:left;">
 <code>data.table</code> of covariates min and max
+</td>
+</tr><tr><td style="text-align:left;">
+climateRef_spread
+</td>
+<td style="text-align:left;">
+list
+</td>
+<td style="text-align:left;">
+With <code>spreadLink = 'climateOutside'</code>, the reference value of each climate covariate of the formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit’s pixel-years (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateRef.html" class="external-link">fireSenseUtils::spreadClimateRef()</a></code>), the climate at which the spread probability is the fuel ceiling’s p0. Given to the fit, the threshold, the validation and the ledger row. <code>NULL</code> with <code>spreadLink = 'ceiling'</code>.
 </td>
 </tr><tr><td style="text-align:left;">
 covCentre_spread
