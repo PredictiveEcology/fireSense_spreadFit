@@ -2994,8 +2994,8 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">fireSense_spreadFit Manual</h1>
-<h3 class="subtitle">v.1.2.0.9010</h3>
-<h4 class="date">Last updated: 2026-10-18</h4>
+<h3 class="subtitle">v.1.2.0.9013</h3>
+<h4 class="date">Last updated: 2026-10-19</h4>
 
 </div>
 
@@ -3167,6 +3167,20 @@ SpatRaster
 </td>
 <td style="text-align:left;">
 template raster for study area
+</td>
+<td style="text-align:left;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+flammableRTM
+</td>
+<td style="text-align:left;">
+SpatRaster
+</td>
+<td style="text-align:left;">
+Flammable (1) land of <code>rasterToMatch</code> in the latest vegetation year, from <code>fireSense_dataPrepFit</code>. The <code>&quot;powerLaw&quot;</code> link is calibrated on it. Not used with the other links.
 </td>
 <td style="text-align:left;">
 NA
@@ -3629,7 +3643,7 @@ spreadLink
 character
 </td>
 <td style="text-align:left;">
-ceiling
+powerLaw
 </td>
 <td style="text-align:left;">
 NA
@@ -3638,7 +3652,87 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Where climate enters the spread probability (<code>fireSenseUtils::spreadProbFromCovs()</code>). ‘ceiling’ (default): climate is a covariate inside the logistic, under the <code>maxAsymptote</code> ceiling, as always – fits and their cache keys are unchanged. ‘climateOutside’: the logistic, with its ceiling, is fitted to the other covariates only (intercept, fuels, <code>youngAge</code>, non-forest), giving p0; the climate term is added on the logit after it, p = plogis(qlogis(p0) + beta_clim (climate - climateRef)), uncapped, and the year effect <code>yearSpreadSD</code> (eps_Y) on the same logit. Where fuel put a pixel near the ceiling, climate could add almost nothing under ‘ceiling’ (2026-10 hindcasts: 59-77% of pixels within 0.01 of the ceiling every year, spread nearly the same in every year). <code>climateRef</code> is the mean of each climate covariate over the fit’s pixel-years (<code>fireSenseUtils::spreadClimateRef()</code>, <code>sim$climateRef_spread</code>), stored in the ledger row with this choice (<code>fireSenseUtils::spreadFitClimateRefTxt</code>, <code>spreadLinkTxt</code>) so <code>fireSense_spreadPredict</code> applies the same link; a row without them is ‘ceiling’. The objective’s gates and saturation summary then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate covariate in the formula (<code>fireSenseUtils::spreadClimateCols()</code>).
+Where climate enters the spread probability (<code>fireSenseUtils::spreadProbFromCovs()</code>). ‘powerLaw’ (default): see below. ‘ceiling’: climate is a covariate inside the logistic, under the <code>maxAsymptote</code> ceiling, the link before ‘powerLaw’ became the default – its fits and cache keys are unchanged. ‘climateOutside’: the logistic, with its ceiling, is fitted to the other covariates only (intercept, fuels, <code>youngAge</code>, non-forest), giving p0; the climate term is added on the logit after it, p = plogis(qlogis(p0) + beta_clim (climate - climateRef)), uncapped, and the year effect <code>yearSpreadSD</code> (eps_Y) on the same logit. Where fuel put a pixel near the ceiling, climate could add almost nothing under ‘ceiling’ (2026-10 hindcasts: 59-77% of pixels within 0.01 of the ceiling every year, spread nearly the same in every year). <code>climateRef</code> is the mean of each climate covariate over the fit’s pixel-years (<code>fireSenseUtils::spreadClimateRef()</code>, <code>sim$climateRef_spread</code>), stored in the ledger row with this choice (<code>fireSenseUtils::spreadFitClimateRefTxt</code>, <code>spreadLinkTxt</code>) so <code>fireSense_spreadPredict</code> applies the same link; a row without them is ‘ceiling’. The objective’s gates and saturation summary then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate covariate in the formula (<code>fireSenseUtils::spreadClimateCols()</code>). ‘powerLaw’: the link from a percolation calibration, p = p_c - (p_c - lowerSpreadProb) exp(-x / <code>powerLawGamma</code>), with x the linear predictor and p below 0 set to 0 (<code>fireSenseUtils::powerLawLink()</code>). The calibration (<code>fireSenseUtils::calibratePowerLaw()</code>, on <code>flammableRTM</code>, once per ELF) always runs: its p_c50, the spread probability at which half the fires burn a quarter of the largest flammable patch, sets the bounds of p_c (<code>fireSenseUtils::powerLawPcBounds()</code>: <code>lowerSpreadProb</code> + 0.01 to p_c50 + <code>powerLawPcMargin</code>), so a fit never tries thresholds far above the ELF’s own. <code>maxAsymptote</code> is p_c, fitted; the year effect <code>yearSpreadSD</code> is added to x, not to the logit of p, so no year takes p past p_c. Stored in the ledger row with <code>powerLawGamma</code> (<code>fireSenseUtils::spreadLinkTxt</code>, <code>spreadFitPowerLawGammaTxt</code>) so <code>fireSense_spreadPredict</code> applies the same link. Not with <code>link = &#39;logistic3pUpper&#39;</code>.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+powerLawGamma
+</td>
+<td style="text-align:left;">
+numeric
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+The exponent <code>gamma</code> of <code>spreadLink = &#39;powerLaw&#39;</code>. <code>NA</code> (default): the calibrated value for the ELF’s flammable map. A number overrides <code>gamma</code> only (the bounds of p_c still come from the calibration). It is fixed, not fitted: it is exactly confounded with the scale of the coefficients. Ignored with the other links.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+powerLawPcMargin
+</td>
+<td style="text-align:left;">
+numeric
+</td>
+<td style="text-align:left;">
+0.005
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+With <code>spreadLink = &#39;powerLaw&#39;</code>, the upper bound of p_c is the calibrated p_c50 plus this (<code>fireSenseUtils::powerLawPcBounds()</code>). Written to the ledger row.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+powerLawFires
+</td>
+<td style="text-align:left;">
+integer
+</td>
+<td style="text-align:left;">
+400
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Fires per spread probability in the calibration (<code>fireSenseUtils::calibratePowerLaw()</code>). 400 took 5-10 minutes on 16 cores.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+powerLawPGrid
+</td>
+<td style="text-align:left;">
+numeric
+</td>
+<td style="text-align:left;">
+0.15, 0…..
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+The spread probabilities the calibration simulates; the default brackets p_c50 of 0.22-0.32.
 </td>
 </tr>
 <tr>
@@ -3908,7 +4002,7 @@ penaliseRunaways
 logical
 </td>
 <td style="text-align:left;">
-TRUE
+FALSE
 </td>
 <td style="text-align:left;">
 NA
@@ -3917,7 +4011,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-A simulated fire that burns its buffer’s outer edge (see <code>runawayEdgeFrac</code>) is a runaway, censored in the size likelihood: it has no density at the observed size. The Anderson-Darling, annual-area and area-distribution terms count it as <code>runawayBufferMultiple</code> times its own buffer’s size (NA: the size it burned). Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size in the likelihood too. Passed to <code>fireSenseUtils::runDEoptim()</code>; the threshold calibration uses the same setting.
+A simulated fire that burns its buffer’s outer edge (see <code>runawayEdgeFrac</code>) is a runaway, censored in the size likelihood: it has no density at the observed size. The Anderson-Darling, annual-area and area-distribution terms count it as <code>runawayBufferMultiple</code> times its own buffer’s size (NA: the size it burned). Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size in the likelihood too (default since 2026-10-17: simulated sizes are scored as burned, buffer-bounded like the observed; the 2x-buffer runaway score shrank <code>yearSpreadSD</code> 3-4 times). Passed to <code>fireSenseUtils::runDEoptim()</code>; the threshold calibration uses the same setting.
 </td>
 </tr>
 <tr>
@@ -4562,6 +4656,17 @@ list
 </td>
 <td style="text-align:left;">
 With <code>spreadLink = &#39;climateOutside&#39;</code>, the reference value of each climate covariate of the formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit’s pixel-years (<code>fireSenseUtils::spreadClimateRef()</code>), the climate at which the spread probability is the fuel ceiling’s p0. Given to the fit, the threshold, the validation and the ledger row. <code>NULL</code> with <code>spreadLink = &#39;ceiling&#39;</code>.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+powerLawCalibration
+</td>
+<td style="text-align:left;">
+list
+</td>
+<td style="text-align:left;">
+With <code>spreadLink = &#39;powerLaw&#39;</code>, the result of <code>fireSenseUtils::calibratePowerLaw()</code> on <code>flammableRTM</code>: <code>p50</code>, <code>gamma</code>, <code>R2</code> and the per-p <code>table</code>. <code>p50</code> bounds p_c, <code>gamma</code> is the link’s unless <code>powerLawGamma</code> is a number; <code>p50</code>, <code>R2</code> and the margin go to the ledger row (<code>fireSenseUtils::spreadFitPowerLawPc50Txt</code>, <code>spreadFitPowerLawR2Txt</code>, <code>spreadFitPowerLawPcMarginTxt</code>).
 </td>
 </tr>
 <tr>
