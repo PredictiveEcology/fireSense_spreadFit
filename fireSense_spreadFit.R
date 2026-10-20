@@ -26,7 +26,7 @@ defineModule(sim, list(
                   "logging", "magrittr", "parallel", "raster", "sf", "terra", "tidyr", "withr", ## TODO: remove magrittr
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
-                  "PredictiveEcology/clusters@development (>= 0.0.80)",
+                  "PredictiveEcology/clusters@development (>= 0.0.82)", # DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9108)",
                   "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
