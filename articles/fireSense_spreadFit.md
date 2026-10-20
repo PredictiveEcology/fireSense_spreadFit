@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9015"
-date: "Last updated: 2026-10-19"
+subtitle: "v.1.2.0.9017"
+date: "Last updated: 2026-10-20"
 output:
   bookdown::html_document2:
     toc: true
@@ -231,7 +231,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Passed to `cores` in `fireSenseUtils::runDEoptim()`: a number of local cores, or a character vector of machine names, one element per core wanted on that machine. </td>
+   <td style="text-align:left;"> Passed to `cores` in `fireSenseUtils::runDEoptim()`: a number of local cores, or a character vector of machine names, one element per core wanted on that machine. Not part of this module's cache keys: it changes where the work is done, not the result. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> DEoptimTests </td>

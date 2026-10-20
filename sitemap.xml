@@ -19,6 +19,7 @@
 <url><loc>/reference/drawActivePars.html</loc></url>
 <url><loc>/reference/estimateSNLLThresholdPostLargeFires.html</loc></url>
 <url><loc>/reference/estimateSpreadParams.html</loc></url>
+<url><loc>/reference/feasibleInitialPopulation.html</loc></url>
 <url><loc>/reference/fitAndScoreFold.html</loc></url>
 <url><loc>/reference/fitSpread.html</loc></url>
 <url><loc>/reference/forkBudget.html</loc></url>
@@ -36,6 +37,7 @@
 <url><loc>/reference/spreadFitLedgerRow.html</loc></url>
 <url><loc>/reference/spreadFitPrep.html</loc></url>
 <url><loc>/reference/spreadFitValidationFigures.html</loc></url>
+<url><loc>/reference/spreadGates.html</loc></url>
 <url><loc>/reference/stopIfAllTrialsErrored.html</loc></url>
 <url><loc>/reference/thresholdForks.html</loc></url>
 <url><loc>/reference/trialFirstBlock.html</loc></url>

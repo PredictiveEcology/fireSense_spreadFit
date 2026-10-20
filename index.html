@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9015</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9017</span>
       </span>
     </div>
 
@@ -473,7 +473,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Passed to <code>cores</code> in <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>: a number of local cores, or a character vector of machine names, one element per core wanted on that machine.
+Passed to <code>cores</code> in <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>: a number of local cores, or a character vector of machine names, one element per core wanted on that machine. Not part of this module’s cache keys: it changes where the work is done, not the result.
 </td>
 </tr>
 <tr>
@@ -1580,7 +1580,7 @@ yearSpreadSDBounds
 numeric
 </td>
 <td style="text-align:left;">
-0, 1
+0, 5
 </td>
 <td style="text-align:left;">
 NA
@@ -1589,7 +1589,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Bounds of <code>yearSpreadSD</code>, the sd of a per-year random effect on logit spread probability (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>), when <code>lower</code>/<code>upper</code> are not supplied. A seasonal departure: each year draws one eps, so all of a year’s fires burn hotter or cooler together, which widens the simulated fire-size distribution. <code>NA</code> turns it off.
+Bounds of <code>yearSpreadSD</code>, the sd of a per-year random effect on spread (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>), when <code>lower</code>/<code>upper</code> are not supplied. It is added to the linear predictor with <code>spreadLink = 'powerLaw'</code> (one unit there scales a year’s mean fire size by about e) and to the logit of spread probability with the other links. A seasonal departure: each year draws one eps, so all of a year’s fires burn hotter or cooler together, which widens the simulated fire-size distribution. The upper bound is wide so it never binds: power-law fits reached the former bound of 1. <code>NA</code> turns it off.
 </td>
 </tr>
 <tr>
