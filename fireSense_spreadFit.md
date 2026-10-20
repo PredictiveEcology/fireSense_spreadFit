@@ -1,6 +1,6 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9017"
+subtitle: "v.1.2.0.9018"
 date: "Last updated: 2026-10-20"
 output:
   bookdown::html_document2:
@@ -164,6 +164,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <th style="text-align:left;"> min </th>
    <th style="text-align:left;"> max </th>
    <th style="text-align:left;"> paramDesc </th>
+   <th style="text-align:left;"> cacheKey </th>
   </tr>
  </thead>
 <tbody>
@@ -174,6 +175,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Plot types passed to `Plots()`, e.g. 'png' or 'screen'; NULL or NA for none. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInterval </td>
@@ -182,6 +184,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> DEoptim generations between DEoptim progress figures; the final figures are always drawn. Passed to `fireSenseUtils::runDEoptim()` as `plotEvery`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> convergence </td>
@@ -190,6 +193,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> When DEoptim stops early, a list with any of `window`, `minGenerations`, `se`, `sdChange` (see `clusters::deoptimConvergence()`). What is missing comes from `options(clusters.deoptimConvergenceWindow, clusters.deoptimMinGenerations, clusters.deoptimConvergenceSE, clusters.deoptimConvergenceSDChange)`, then clusters' defaults (300, 350, 1, 0.1). The resolved list is part of the fit's cache key, and clusters keeps it out of the cache of each generation: a fit that stopped early continues from its cached generations when rerun with a stricter rule. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotSize </td>
@@ -198,6 +202,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> List specifying height and width of plotting device (in pixels) used to plot DEoptim histograms when `visualizeDEoptim` is TRUE. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .runInitialTime </td>
@@ -206,6 +211,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> when to start this module? By default, the start time of the simulation. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .studyAreaName </td>
@@ -214,6 +220,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Human-readable name for the study area used. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCache </td>
@@ -222,6 +229,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Should this entire module be run with caching activated? This is generally intended for data-type modules, where stochasticity and time are not relevant. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> cores </td>
@@ -230,6 +238,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Passed to `cores` in `fireSenseUtils::runDEoptim()`: a number of local cores, or a character vector of machine names, one element per core wanted on that machine. Not part of this module's cache keys: it changes where the work is done, not the result. </td>
+   <td style="text-align:left;"> FALSE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> DEoptimTests </td>
@@ -238,6 +247,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Currently either `'SNLL_FS'` or `'adTest'` or a length 2 character vector of both. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> doFit </td>
@@ -246,6 +256,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Whether to fit this polygon. NA (default): do whatever is needed -- use the ledger's fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it when the fit's INPUTS changed -- new land cover, vegetation parameters, objective). FALSE: never fit -- use the ledger's fit, and stop with an error if it holds none. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> doObjFunAssertions </td>
@@ -254,6 +265,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Passed to `fireSenseUtils::.objfunSpreadFit()` and to the threshold calibration; TRUE runs diagnostics but is slower; FALSE for operational runs. The default follows `options(fireSenseUtils.assertions = )`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> initialpop </td>
@@ -262,6 +274,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> A numeric matrix of dimensions `NCOL = length(lower)` and `NROW = NP`. This will be passed into DEoptim through `control$initialpop = P(sim)$initialpop` if it is not NULL </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> iterDEoptim </td>
@@ -270,6 +283,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> integer defining the maximum number of iterations allowed (DEoptim optimizer). A ceiling: clusters (&gt;= 0.0.46) stops the fit earlier, once the population's median value has stopped improving. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> iterThresh </td>
@@ -278,6 +292,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Number of random parameter sets tried when calibrating `SNLL_FS_thresh`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> thresholdMargin </td>
@@ -286,6 +301,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> When calibrating `SNLL_FS_thresh`, the threshold is this multiple of the best usable trial's first-block average annual SNLL (trials run with no early stop; a trial that saturates spreadProb is not usable). Must be &gt;= 1. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> libPathDEoptim </td>
@@ -294,6 +310,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Absolute path specifying R package directory location to use when running DEotpim. NOTE: this path must be read/write accessible on ALL machines used for fitting (identified in cores). Therefore, it's best use a directory in your user's `~` directory. If the directory does not exist at this path, will attempt to create it. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> lower </td>
@@ -302,6 +319,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> see `?DEoptim`. Lower limits for the logistic function parameters (maxAsymptote, then upperTail1 if `link` is 'logistic3pUpper') and the statistical model parameters (named in the order they appear in the formula). Do not include `hillSlope1` or `inflectionPoint1`: they are fixed at 1, not fitted (see `estimateSpreadParams()`); supplying either is an error. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> maxFireSpread </td>
@@ -310,6 +328,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> optional. Maximum fire spread average to be passed to the `.objFun`; default `fireSenseUtils::spreadProbCeiling`, also the upper bound of `maxAsymptote`. `maxAsymptote` is the spread-probability ceiling in a typical year. The year random effect (`yearSpreadSD`) is added on the logit of the final spread probability, after the link, so in a given year p can exceed `maxAsymptote` or fall below `lowerSpreadProb`; that is intended, and there is no absolute cap because `spreadCpp` does not need one. `maxAsymptote` is bounded because runaway fires are slow to simulate and wasted if the parameters are wrong. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> link </td>
@@ -318,6 +337,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> The spread link. 'logistic3p', or 'logistic3pUpper': the same curve with Stukel's upper tail, one more parameter `upperTail1` that changes only how the curve approaches its ceiling (`fireSenseUtils::logistic3pUpper()`). Its default bounds are `upperTailBounds`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> spreadLink </td>
@@ -326,6 +346,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Where climate enters the spread probability (`fireSenseUtils::spreadProbFromCovs()`). 'powerLaw' (default): see below. 'ceiling': climate is a covariate inside the logistic, under the `maxAsymptote` ceiling, the link before 'powerLaw' became the default -- its fits and cache keys are unchanged. 'climateOutside': the logistic, with its ceiling, is fitted to the other covariates only (intercept, fuels, `youngAge`, non-forest), giving p0; the climate term is added on the logit after it, p = plogis(qlogis(p0) + beta_clim (climate - climateRef)), uncapped, and the year effect `yearSpreadSD` (eps_Y) on the same logit. Where fuel put a pixel near the ceiling, climate could add almost nothing under 'ceiling' (2026-10 hindcasts: 59-77% of pixels within 0.01 of the ceiling every year, spread nearly the same in every year). `climateRef` is the mean of each climate covariate over the fit's pixel-years (`fireSenseUtils::spreadClimateRef()`, `sim$climateRef_spread`), stored in the ledger row with this choice (`fireSenseUtils::spreadFitClimateRefTxt`, `spreadLinkTxt`) so `fireSense_spreadPredict` applies the same link; a row without them is 'ceiling'. The objective's gates and saturation summary then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate covariate in the formula (`fireSenseUtils::spreadClimateCols()`). 'powerLaw': the link from a percolation calibration, p = p_c - (p_c - lowerSpreadProb) exp(-x / `powerLawGamma`), with x the linear predictor and p below 0 set to 0 (`fireSenseUtils::powerLawLink()`). The calibration (`fireSenseUtils::calibratePowerLaw()`, on `flammableRTM`, once per ELF) always runs: its p_c50, the spread probability at which half the fires burn a quarter of the largest flammable patch, sets the bounds of p_c (`fireSenseUtils::powerLawPcBounds()`: `lowerSpreadProb` + 0.01 to p_c50 + `powerLawPcMargin`), so a fit never tries thresholds far above the ELF's own. `maxAsymptote` is p_c, fitted; the year effect `yearSpreadSD` is added to x, not to the logit of p, so no year takes p past p_c. Stored in the ledger row with `powerLawGamma` (`fireSenseUtils::spreadLinkTxt`, `spreadFitPowerLawGammaTxt`) so `fireSense_spreadPredict` applies the same link. Not with `link = 'logistic3pUpper'`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> powerLawGamma </td>
@@ -334,6 +355,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> The exponent `gamma` of `spreadLink = 'powerLaw'`. `NA` (default): the calibrated value for the ELF's flammable map. A number overrides `gamma` only (the bounds of p_c still come from the calibration). It is fixed, not fitted: it is exactly confounded with the scale of the coefficients. Ignored with the other links. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> powerLawPcMargin </td>
@@ -342,6 +364,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> With `spreadLink = 'powerLaw'`, the upper bound of p_c is the calibrated p_c50 plus this (`fireSenseUtils::powerLawPcBounds()`). Written to the ledger row. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> powerLawFires </td>
@@ -350,6 +373,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Fires per spread probability in the calibration (`fireSenseUtils::calibratePowerLaw()`). 400 took 5-10 minutes on 16 cores. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> powerLawPGrid </td>
@@ -358,6 +382,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> The spread probabilities the calibration simulates; the default brackets p_c50 of 0.22-0.32. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> mode </td>
@@ -366,6 +391,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Options: debug, fit, visualize, validate. Can use multiples. 'debug' runs the objective function with visuals instead of DEoptim; 'fit' runs DEoptim; 'visualize' adds the `debug` and `plot` events after the fit; 'validate' adds `crossValidate`, two more fits, each on half the years, predicting the other half (`sim$spreadFitHeldOut`). Validation never writes the ledger, but does write `sim$spreadFitHeldOut` to `outputPath(sim)`, since a batch run typically stops after `crossValidate` and the simList is discarded. See `heldOutFold` to run a single fold as its own job instead of both folds together. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> heldOutFold </td>
@@ -374,6 +400,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA (default): unchanged behaviour, governed by `mode`. `1` or `2`: run ONLY that cross-validation fold, as its own job. `init` then schedules `spreadFitPrepare`, `estimateThreshold` and `crossValidate` -- never `run`, so the full fit and the ledger write never happen, and the ledger (`doFit`) is not consulted. `crossValidate` fits on the OTHER fold's years and scores this fold's held-out years (`cvFolds()` in `R/fitSpread.R`), and writes `spreadFitHeldOut_&lt;.runName&gt;_fold&lt;heldOutFold&gt;.rds` instead of `spreadFitHeldOut_&lt;.runName&gt;.rds`. A run script stops after `crossValidate`: `events = list(.stopAfter = list(fireSense_spreadFit = "crossValidate"))`. Any other value is an error. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> profileReps </td>
@@ -382,6 +409,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> After the fit, each covariate coefficient in turn is set to 0 and to 5 values across the final population, the others held at the best member, and each point is evaluated this many times (`fireSenseUtils::profileCoefficients()`). About `6 nCoefficients profileReps` evaluations, on the fit's workers. It decides which coefficients are identified in isolation (`sim$spreadFitIdentifiability`). 0 skips it. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> mutuallyExclusiveCols </td>
@@ -390,6 +418,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> a named list of mutually exclusive covariates - see `fireSenseUtils::makeMutuallyExclusive` </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> nCoresNeeded </td>
@@ -398,6 +427,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> How many workers to request for the DEoptim cluster. This IS the population size: `clusters::clusterSetup()` sets NP to the workers it builds. `NULL` takes `fireSenseUtils::deoptimPopulationSize()` of the number of parameters: 30 for 4-7, 40 for 8-12, 50 for 13-15 (40 was a good middle in tests of 10 per parameter against other sizes, with little gain above it; current ledgers have 10-12 parameters). A generation costs the slowest of NP evaluations and that barely falls as NP falls, so a smaller NP buys throughput by allowing more fits at once rather than by shortening generations (measured 2026-09-16). </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> simulateMembers </td>
@@ -406,6 +436,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> After the fit, this many best members simulate the observed fires, for `sim$spreadFitSizes` and `sim$spreadFitLinkSaturation`; also the members each `crossValidate` fold predicts with. 0 skips it after the fit. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> sizeLik </td>
@@ -414,6 +445,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Likelihood of fire size in the objective, 'kde' or 't', passed to `fireSenseUtils::runDEoptim()`. 't' with `weighted = FALSE` predicted held-out years best in the 2026-09-21 cross-validation. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> escapeSizeHa </td>
@@ -422,6 +454,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Size (ha) a fire must reach to count as escaped. The spread model is fitted to escaped fires only, and each simulated fire first grows to this size with its own spread probabilities (its burning cells stay active until it gets there), then spreads normally. `NULL` or `NA` gives the old fit (any fire over 1 pixel). Passed to `fireSenseUtils::runDEoptim()`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> sizeLikDf </td>
@@ -430,6 +463,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Degrees of freedom of the 't' size likelihood. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> weighted </td>
@@ -438,6 +472,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Weight of each fire in the size likelihood: FALSE (none), TRUE (log size) or 'sqrt'. Passed to `fireSenseUtils::runDEoptim()`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> adWeight </td>
@@ -446,6 +481,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Weight of the Anderson-Darling term against the size likelihood; 'auto' is `fireSenseUtils::adWeightAuto()`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> yearAreaWeight </td>
@@ -454,6 +490,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Weight of the annual-area term in the objective: each fit year's observed area burned is scored against that year's simulated totals (one per replicate) with the size likelihood. 0 leaves it out; 'auto' (default) is (number of fitted fires) / (number of fit years), so the year view and the per-fire view weigh the same. Passed to `fireSenseUtils::runDEoptim()`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> areaDistWeight </td>
@@ -462,6 +499,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Weight of the area-weighted size-distribution term: simulated and observed fires compared by the share of area burned that fires up to each size make up (`fireSenseUtils::areaWeightedCvM()`). 0 leaves it out; 'auto' (default) uses the Anderson-Darling term's weight (`fireSenseUtils::adWeightAuto()`). </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> penaliseRunaways </td>
@@ -470,6 +508,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> A simulated fire that burns its buffer's outer edge (see `runawayEdgeFrac`) is a runaway, censored in the size likelihood: it has no density at the observed size. The Anderson-Darling, annual-area and area-distribution terms count it as `runawayBufferMultiple` times its own buffer's size (NA: the size it burned). Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size in the likelihood too (default since 2026-10-17: simulated sizes are scored as burned, buffer-bounded like the observed; the 2x-buffer runaway score shrank `yearSpreadSD` 3-4 times). Passed to `fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> runawayBufferMultiple </td>
@@ -478,6 +517,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> With `penaliseRunaways`, a runaway counts in the size-based terms of the objective (Anderson-Darling, annual area, area-weighted size distribution) as this multiple of the size of its own fire's buffer: a fire that reaches the edge of its buffer would have kept burning. A full-landscape hindcast of ELF 5.4 showed fits that matched the observed area inside the buffers ran away on the whole landscape (fires of 3-6 Mha, median 2-12 times the observed area). NA scores the size it burned before it was stopped, the old behaviour. Passed to `fireSenseUtils::runDEoptim()` and the threshold calibration. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> runawayEdgeFrac </td>
@@ -486,6 +526,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> A simulated fire is a runaway when it burns at least `max(runawayEdgeMin, ceiling(runawayEdgeFrac n))` of the `n` pixels of the edge ring of its own buffer (never more than `n`); one touched pixel is luck. Passed to `fireSenseUtils::runDEoptim()`. Not part of the DEoptim cache key. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> runawayEdgeMin </td>
@@ -494,6 +535,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> The least number of edge-ring pixels that makes a fire a runaway; see `runawayEdgeFrac`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> jumpTries </td>
@@ -502,6 +544,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> With `escapeSizeHa`: how many attempts a simulated fire that is still below the escape size, with no burnable neighbour left, may make to jump to burnable land nearby (`SpaDES.tools::spreadCpp()`). Default 20; 0 is off. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> jumpMeanDist </td>
@@ -510,6 +553,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Mean jump distance (pixels) for `jumpTries`; distances are exponential, truncated to 1.5-20 pixels. No effect while `jumpTries` is 0. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> objFunCoresInternal </td>
@@ -518,6 +562,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Integer defining the number of cores to pass to `mcmapply(mc.cores = ...)` This will fork this many to do the years loop internally. This would be in addition to `cores` and is effecively a multiplier. The computer needs to have `cores objFunCoresInternal` threads or it will stall. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> objfunFireReps </td>
@@ -526,6 +571,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> integer defining the number of replicates the objective function will attempt each fire. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .runName </td>
@@ -534,6 +580,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> A short name for this fit, e.g. "4.3_NRV_370_1". It labels the DEoptim run, its progress file and cache entries. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .rep </td>
@@ -542,6 +589,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> An optional integer indicating which replicate run this represents. This is used to identify unique runs of `runDEoptim`, from a Cache perspective. For example, if this module is run twice with all the same data, Cache will think that the second run should recover the cache result, unless this `.rep` is modified. A SpaDES-aware parameter: `SpaDES.project::setupProject()` sets `.globals$.rep` from the experiment's `.rep`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .c </td>
@@ -550,6 +598,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> the `c` argument passed to DEoptim.control. `iterStep` is hard-coded to 1, so DEoptim's adaptation restarts every generation, and `c` has no effect either way. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> DEoptimControl </td>
@@ -558,6 +607,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Further `DEoptim.control()` settings, e.g. `list(CR = 0.7, F = 0.6)`, passed through `fireSenseUtils::runDEoptim()` to DEoptim. Names must be `DEoptim.control()` arguments. `strategy`, `trace`, `initialpop` and `.c` have their own parameters; `NP` is the number of workers the cluster gets. The default `p = 0.1` is for `strategy = 6`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> rescaleAll </td>
@@ -566,6 +616,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> rescale covariates for `DEOptim` </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> spreadFitGoogleDriveFolder </td>
@@ -574,6 +625,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Google Drive folder url holding the shared fit ledger (`spreadFitFilename`). </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fitFileSuffix </td>
@@ -582,6 +634,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Text put after the model tag in the ledger file names, e.g. `"_boundfix_rep81"`, so a test run writes (and `"latest"` readers read) only its own files and never the production ones. `""` (the default) is the production ledger. The same parameter of `fireSense_ignitionFit`, `fireSense_dataPrepFit` and `fireSense_ELFs`; set it for all with `.globals = list(fitFileSuffix = ...)`. Ignored when `spreadFitFilename` names a file. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> spreadFitFilename </td>
@@ -590,6 +643,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> File name of the shared fit ledger: an `sf` object with one row of fitted parameters per polygon. `"latest"` (the default) writes to the file named for this fit's fire years and model, `fireSenseUtils::spreadFitFilenameFor()`, e.g. `fireSenseParams_1985-2024_linearFuel.rds`; readers then find it with `fireSenseUtils::latestSpreadFits()`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> strategy </td>
@@ -598,6 +652,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Passed to `DEoptim.control`. 6 (DE/current-to-p-best/1) with `p = 0.1` did best in a settings study (see NEWS). </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> SNLL_FS_thresh </td>
@@ -606,6 +661,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Threshold multiplier used in objective function SNLL fire size test. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> refitExisting </td>
@@ -614,6 +670,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> DEPRECATED, use `doFit`. TRUE is `doFit = TRUE`; NA (unset) and FALSE do nothing. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> stopIfNoPreRunFit </td>
@@ -622,6 +679,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> DEPRECATED, use `doFit`. TRUE is `doFit = FALSE`; NA (unset) and FALSE (allow a fit) are `doFit = NA`. Ignored when `refitExisting` is TRUE. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> trace </td>
@@ -630,6 +688,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> non-negative integer. If &gt; 0, tracing information on the progress of the optimization are printed every `trace` iteration. Default is 1, i.e. every iteration. Setting to 0 turns off tracing. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> upper </td>
@@ -638,6 +697,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> see `?DEoptim`. Upper limits for the logistic function parameters (maxAsymptote, then upperTail1 if `link` is 'logistic3pUpper') and the statistical model parameters (named in the order they appear in the formula). Do not include `hillSlope1` or `inflectionPoint1`: they are fixed at 1, not fitted (see `estimateSpreadParams()`); supplying either is an error. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> useCache_DE </td>
@@ -646,6 +706,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> should `DEoptim` use `Cache`? to do multiple independent runs, use FALSE </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> verbose </td>
@@ -654,6 +715,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> optional. With increasing number, more verbosity. Level 1 is normal reproducible (e.g., Cache), level 2 includes objective function e.g., print median of spreadProb during calculations </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> visualizeDEoptim </td>
@@ -662,6 +724,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Directory where `runDEoptim` saves parameter plots every `.plotInterval` generations. Reset to `figurePath(sim)` unless its last folder is the module name. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> covFixedRange </td>
@@ -670,6 +733,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Named list of `c(min, max)`: the FIXED range every climate covariate is rescaled with, not the range of this polygon's data. Default `fireSenseUtils::climateCovRanges`, the one table of climate ranges, which documents each variable's units and says its values are provisional. `CMDsm = c(0, 100)` makes the covariate CMDsm / 100 in every polygon. With the data's range, 1 meant a CMDsm of 104 in one polygon and 297 in another, so the coefficient could not be compared across polygons, and a polygon that never gets dry stretched its small range over [0, 1]. A climate covariate with no entry stops the fit; there is no fallback to the data's range. `youngAge`, the `nfLCC_ ` groups and the `treedWetland` indicator are always `c(0, 1)` (`fireSenseUtils::spreadIndicatorRanges()`). `fireSense_spreadPredict` rescales with the stored `covMinMax_spread`, so it follows. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> yearSpreadSDBounds </td>
@@ -678,6 +742,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Bounds of `yearSpreadSD`, the sd of a per-year random effect on spread (`fireSenseUtils::.objfunSpreadFit()`), when `lower`/`upper` are not supplied. It is added to the linear predictor with `spreadLink = 'powerLaw'` (one unit there scales a year's mean fire size by about e) and to the logit of spread probability with the other links. A seasonal departure: each year draws one eps, so all of a year's fires burn hotter or cooler together, which widens the simulated fire-size distribution. The upper bound is wide so it never binds: power-law fits reached the former bound of 1. `NA` turns it off. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> upperTailBounds </td>
@@ -686,6 +751,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Bounds of `upperTail1` when `link` is 'logistic3pUpper' and `lower`/`upper` are not supplied. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> upperAndLowerVal </td>
@@ -694,6 +760,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Bound given to each covariate coefficient (`upper` = this, `lower` = minus this) when `upper` or `lower` is not supplied. Bounds should be wide enough that they do not influence the fitted value; only the sign of drought-index, `youngAge` and fuel biomass terms is constrained (see `estimateSpreadParams()`). A held-out experiment (7 ELFs x 2 folds) found estimates up to 25.7 and youngAge medians down to -23.0 with the previous default of 9. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> upperAndLowerValFuel </td>
@@ -702,6 +769,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> As `upperAndLowerVal`, for the fuel biomass covariates. They are biomass / 1e4, so their coefficients are larger than those of covariates rescaled to [0, 1]. The same held-out experiment found fuel estimates up to 54.5 (29 of 82 above 25) with the previous default of 60. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
 </tbody>
 </table>
