@@ -26,7 +26,8 @@ test_that("the fit passes DEoptimControl, strategy and .c to runDEoptim", {
   invisible(lapply(exprs, walk))
   expect_length(calls, 1L)
   args <- as.list(calls[[1L]])
-  expect_identical(deparse(args$DEoptimControl), "P(sim)$DEoptimControl")
+  ## the parameter, plus a starting population only on the retry after a `deoptimNoFeasibleMember` stop
+  expect_identical(deparse(args$DEoptimControl), "deoptimControlStart(P(sim)$DEoptimControl, initialpop)")
   expect_identical(deparse(args$strategy), "P(sim)$strategy")
   expect_identical(deparse(args$.c), "P(sim)$.c")
 })

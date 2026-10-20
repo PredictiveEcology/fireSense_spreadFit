@@ -30,7 +30,10 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                             paste0("DEoptimProgress_", runName, ".csv"))
   ## the early-stop rule in full (parameter, else options, else clusters' defaults), so it is in the fit's key
   convergence <- clusters::deoptimConvergence(P(sim)$convergence)
-  DE <- Cache(runDEoptim(landscape = sim$rasterToMatch,
+  ## `initialpop` is NULL for the fit as always run: DEoptim draws its start, and nothing in the cache
+  ## key changes, so a fit in progress resumes from its cached generations. It is a matrix only on the
+  ## retry below, which is a new fit with its own key.
+  fit <- function(initialpop = NULL) Cache(runDEoptim(landscape = sim$rasterToMatch,
                    annualDTx1000 = covs$annualDTx1000,
                    nonAnnualDTx1000 = covs$nonAnnualDTx1000,
                    fireBufferedListDT = covs$fireBufferedListDT,
@@ -60,7 +63,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                    Nreps = P(sim)$objfunFireReps,
                    thresh = thresh,
                    .c = P(sim)$.c,
-                   DEoptimControl = P(sim)$DEoptimControl,
+                   DEoptimControl = deoptimControlStart(P(sim)$DEoptimControl, initialpop),
                    .verbose = P(sim)$verbose,
                    visualizeDEoptim = P(sim)$visualizeDEoptim,
                    .plotSize = P(sim)$.plotSize,
@@ -104,6 +107,27 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                                                   runawayBufferMultiple = runawayMultiple)),
         useCache = P(sim)$useCache_DE
   )
+  ## clusters stops after the first generation when every member holds the fail value: DEoptim's
+  ## uniform start had no member the objective accepts, and DE cannot improve on a population of fail
+  ## values (ELF 6.6.2, 2026-10-20). Start again from a population the gates accept
+  ## (feasibleInitialPopulation()); a second stop is final and says so.
+  DE <- tryCatch(fit(), deoptimNoFeasibleMember = function(e) {
+    message("fireSense_spreadFit: ", conditionMessage(e),
+            "\nDrawing a starting population that passes the spreadProb gates, as the threshold calibration does")
+    lower <- P(sim)$lower
+    n <- max(10L * length(lower), as.integer(P(sim)$nCoresNeeded))
+    gates <- spreadGates(covs, formulaToFit = sim$fireSense_spreadFormula, covMinMax = sim$covMinMax_spread,
+                         covCentre = sim$covCentre_spread, climateRef = sim$climateRef_spread,
+                         mutuallyExclusive = P(sim)$mutuallyExclusiveCols, maxFireSpread = P(sim)$maxFireSpread,
+                         escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa), landscape = sim$rasterToMatch,
+                         link = spreadLink(P(sim)), powerLawGamma = powerLawGammaOf(sim))
+    pop <- feasibleInitialPopulation(n, lower = lower, upper = P(sim)$upper, gates = gates,
+                                     seed = .elfSeed(sim$.ELFind), cores = forkBudget(n))
+    tryCatch(fit(initialpop = pop), deoptimNoFeasibleMember = function(e2)
+      stop("fireSense_spreadFit: fit '", runName, "' failed again from a starting population of which ",
+           attr(pop, "feasible"), " of ", nrow(pop), " members pass the spreadProb gates: ", conditionMessage(e2),
+           call. = FALSE))
+  })
   ## 1e6 is the objective's fail value (fireSenseUtils::.objfunSpreadFit). A population that is all
   ## fail values was never fitted; its "best" members are random draws.
   if (length(DE) && all(as.numeric(DE[[length(DE)]]$member$popval) >= 1e6))
