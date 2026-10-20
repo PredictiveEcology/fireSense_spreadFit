@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/clusters@development (>= 0.0.80)",
                   "PredictiveEcology/Require@development (>= 0.3.1)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9108)",
-                  "PredictiveEcology/SpaDES.core@development (>= 3.0.4)",
+                  "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9045)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
     defineParameter(".plots", "character|logical", default = NULL, ## TODO: use .plotInitialTime etc.
@@ -58,7 +58,9 @@ defineModule(sim, list(
                                  "modules, where stochasticity and time are not relevant.")),
     defineParameter("cores", "integer", default = 1L,
                     desc = paste("Passed to `cores` in `fireSenseUtils::runDEoptim()`: a number of local cores, or a",
-                                 "character vector of machine names, one element per core wanted on that machine.")),
+                                 "character vector of machine names, one element per core wanted on that machine.",
+                                 "Not part of this module's cache keys: it changes where the work is done, not the result."),
+                    cacheKey = FALSE),
     defineParameter("DEoptimTests", "character", default = c("adTest", "SNLL_FS"),
                     desc = paste("Currently either `'SNLL_FS'` or `'adTest'` or a length 2 character vector of both.",
                                  "Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`.")),

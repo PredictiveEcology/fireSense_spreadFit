@@ -1,5 +1,7 @@
 # fireSense_spreadFit (development version)
 
+* `cores` is no longer part of the module's cache keys (`defineParameter(cacheKey = FALSE)`): adding a host to it re-ran every cached spreadFit event (spreadFitPrepare, estimateThreshold, run), although the fit's and calibration's own `Cache()` calls already leave it out. A cache hit keeps the current `cores`. Floor `SpaDES.core` 3.2.1.9045 (Depends-on: PredictiveEcology/SpaDES.core#503). Cached spreadFit events are missed once, because `cores` leaves their keys.
+
 * `yearSpreadSDBounds` defaults to `c(0, 5)` (was `c(0, 1)`). With the default power-law link the year effect is on the linear predictor, and all 14 power-law fits of 2026-10-19 pressed against the old upper bound (0.85-0.99). The description no longer says the effect is on the logit for every link.
 
 - **Defaults changed.** `spreadLink` is now `"powerLaw"` (was `"ceiling"`) and `penaliseRunaways` is `FALSE` (was `TRUE`; Eliot 2026-10-17: score simulated sizes as burned, buffer-bounded like the observed ones; the 2x-buffer runaway score shrank `yearSpreadSD` 3-4 times). `"ceiling"` and `"climateOutside"` remain options, with their fits, cache keys and ledger rows as they were; set them (and `penaliseRunaways = TRUE`) to reproduce earlier fits. With `"powerLaw"` the module needs the input `flammableRTM` (set by `fireSense_dataPrepFit`).
