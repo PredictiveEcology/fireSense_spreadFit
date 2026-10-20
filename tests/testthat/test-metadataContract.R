@@ -32,6 +32,13 @@ test_that("parameter classes", {
   )
 })
 
+test_that("`cores` is not part of the module's cache keys", {
+  ## adding a host to `cores` (2026-10-20: "mega") re-ran every cached spreadFit event, although the
+  ## fit's own Cache() calls already leave `cores` out; needs SpaDES.core >= 3.2.1.9045
+  expect_identical(p$cacheKey[p$paramName == "cores"], FALSE)
+  expect_true(all(p$cacheKey[p$paramName != "cores"]))
+})
+
 test_that("the defunct DEoptim-retrieval parameters and output are gone", {
   for (nm in c("cacheId_DE", "cloudFolderID_DE", "useCloud_DE", "onlyLoadDEOptim", "NP",
                ".runInterval", ".saveInitialTime", ".saveInterval", "urlDEOptimObject"))
