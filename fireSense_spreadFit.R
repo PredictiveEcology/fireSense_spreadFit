@@ -518,7 +518,6 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
       # `doFit` overrides that: TRUE refits (the stored row is stale when the inputs have changed),
       # FALSE stops when there is no row.
       if (mustFitThisPolygon(sim, message = TRUE)) {
-        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "estimateThreshold")
         if ("debug" %in% P(sim)$mode) {
           sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "debug")

@@ -1,6 +1,6 @@
 ## What `init` decides: fit, skip, or stop. Toy inputs; no event after `init` is run here.
 
-fitEvents <- c("spreadFitPrepare", "spreadFitPrepare", "estimateThreshold", "run", "postFitDiagnostics")
+fitEvents <- c("spreadFitPrepare", "estimateThreshold", "run", "postFitDiagnostics")
 noFitMsg <- "no usable pre-run fit in the ledger for polygon 9\\.9.*doFit"
 
 ## the messages `init` sends (runEvents() hides them)
@@ -70,7 +70,7 @@ test_that("a run that sets none of the deprecated parameters prints no deprecati
 })
 
 test_that("mode picks the events that follow the threshold", {
-  prep <- c("spreadFitPrepare", "spreadFitPrepare", "estimateThreshold")
+  prep <- c("spreadFitPrepare", "estimateThreshold")
   p <- function(mode) list(mode = mode)
   expect_identical(queued(initOnly(p("debug"))), c(prep, "debug"))
   expect_identical(queued(initOnly(p(c("fit", "visualize")))),
@@ -122,4 +122,11 @@ test_that("heldOutFold 1 or 2 schedules ONLY prepare, threshold and crossValidat
 test_that("heldOutFold rejects values other than NA, 1 or 2", {
   expect_error(initOnly(list(heldOutFold = 3L)), "heldOutFold.*NA, 1L or 2L")
   expect_error(initOnly(list(heldOutFold = "a")))
+})
+
+test_that("init schedules each event once", {
+  for (p in list(list(), list(doFit = TRUE), list(mode = c("fit", "validate")), list(mode = "debug"))) {
+    ev <- queued(initOnly(p))
+    expect_false(anyDuplicated(ev) > 0L)
+  }
 })
