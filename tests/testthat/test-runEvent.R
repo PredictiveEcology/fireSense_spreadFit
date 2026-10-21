@@ -15,7 +15,7 @@ test_that("every scheduled event runs, in order, and nothing is left queued", {
   out <- fitted()
   done <- SpaDES.core::completed(out$sim)
   expect_identical(done$eventType[done$moduleName == moduleName],
-                   c(".inputObjects", "init", "spreadFitPrepare", "spreadFitPrepare",
+                   c(".inputObjects", "init", "spreadFitPrepare",
                      "estimateThreshold", "run", "postFitDiagnostics"))
   expect_length(queued(out$sim), 0L)
 })
