@@ -134,7 +134,7 @@ defineModule(sim, list(
                                  "covariate in the formula (`fireSenseUtils::spreadClimateCols()`). 'powerLaw': the link from a",
                                  "percolation calibration, p = p_c - (p_c - lowerSpreadProb) * exp(-x / `powerLawGamma`), with x the",
                                  "linear predictor and p below 0 set to 0 (`fireSenseUtils::powerLawLink()`). The calibration",
-                                 "(`fireSenseUtils::calibratePowerLaw()`, on `flammableRTM`, once per ELF) always runs: its p_c50, the",
+                                 "(`fireSenseUtils::calibratePowerLaw()`, on `flammableRTM`, once per ELF) runs when the job fits or validates, not when it uses the ledger row: its p_c50, the",
                                  "spread probability at which half the fires burn a quarter of the largest flammable patch, sets",
                                  "the bounds of p_c (`fireSenseUtils::powerLawPcBounds()`: `lowerSpreadProb` + 0.01 to p_c50 +",
                                  "`powerLawPcMargin`), so a fit never tries thresholds far above the ELF's own. `maxAsymptote` is p_c,",

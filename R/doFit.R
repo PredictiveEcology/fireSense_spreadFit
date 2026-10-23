@@ -11,3 +11,16 @@ mustFitThisPolygon <- function(sim, message = FALSE) {
                                         module = "fireSense_spreadFit", message = message)
   fireSenseUtils::mustFit(doFit, hasPreRunFitForThisPolygon(sim), sim$.ELFind)
 }
+
+#' Does this job use the `"powerLaw"` calibration?
+#'
+#' Only a job that fits (`mustFitThisPolygon()`), validates (`mode` has "validate") or runs a held-out fold
+#' (`heldOutFold`) sets bounds or simulates fires with the calibrated `p_c50` and `gamma`. A job that uses the
+#' ledger's fit reads them from the ledger row, so it skips the calibration.
+#'
+#' @param sim a `simList`.
+#' @return Logical, length one.
+needsPowerLawCalibration <- function(sim) {
+  heldOut <- !isTRUE(is.na(P(sim)$heldOutFold))
+  heldOut || "validate" %in% P(sim)$mode || mustFitThisPolygon(sim)
+}

@@ -1,5 +1,7 @@
 # fireSense_spreadFit (development version)
 
+* The `"powerLaw"` calibration (`fireSenseUtils::calibratePowerLaw()`, 400 fires per spread probability, one forked process per fire) runs only when the job fits, validates (`mode`) or runs a held-out fold. A job that reuses the ledger row (`doFit = FALSE`, or a row found), as every hindcast does, read p_c and gamma from the row but still recalibrated on its year's flammable map: up to 96 recalibrations in a 12-ELF hindcast queue. Results are unchanged: the calibration only set the fit's bounds and gamma.
+
 * `init` schedules `spreadFitPrepare` once, not twice at the same time, when it fits: the second run recomputed the same bounds, covariates and centre.
 
 * `cores` is no longer part of the module's cache keys (`defineParameter(cacheKey = FALSE)`): adding a host to it re-ran every cached spreadFit event (spreadFitPrepare, estimateThreshold, run), although the fit's and calibration's own `Cache()` calls already leave it out. A cache hit keeps the current `cores`. Floor `SpaDES.core` 3.2.1.9045 (Depends-on: PredictiveEcology/SpaDES.core#503). Cached spreadFit events are missed once, because `cores` leaves their keys.
