@@ -2,14 +2,14 @@
 #'
 #' With `spreadLink = "powerLaw"`, runs `fireSenseUtils::calibratePowerLaw()` once per ELF, on `flammableRTM`
 #' (the latest vegetation year's flammable map) and with the fit's own escape size and jump settings, and
-#' stores the result as `sim$powerLawCalibration`. It always runs, because its `p50` bounds `p_c`; a numeric
-#' `powerLawGamma` replaces only `gamma` ([powerLawGammaOf()]). The `Cache()` key is the map and the arguments
+#' stores the result as `sim$powerLawCalibration`. It runs when the job uses it ([needsPowerLawCalibration()]),
+#' because its `p50` bounds `p_c`; a numeric `powerLawGamma` replaces only `gamma` ([powerLawGammaOf()]). The `Cache()` key is the map and the arguments
 #' (not `cores`: the result does not depend on it) and the bodies of the calibration and its callee.
 #'
 #' @param sim a `simList`.
 #' @return the `simList`; unchanged unless `spreadLink` is `"powerLaw"`.
 calibratePowerLawFor <- function(sim) {
-  if (!identical(P(sim)$spreadLink, "powerLaw")) return(sim)
+  if (!identical(P(sim)$spreadLink, "powerLaw") || !needsPowerLawCalibration(sim)) return(sim)
   if (!inherits(sim$flammableRTM, "SpatRaster"))
     stop("fireSense_spreadFit: spreadLink = 'powerLaw' calibrates on `flammableRTM`, a SpatRaster (from fireSense_dataPrepFit); ",
          "supply it, or use spreadLink = 'ceiling'")

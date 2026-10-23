@@ -166,3 +166,26 @@ test_that("maxAsymptoteBoundsOf() and estimateSpreadParams(): p_c's bounds follo
   expect_identical(estimateSpreadParams(form, annual, "upper", 9, maxAsymptoteBounds = pl),
                    c(maxAsymptote = pl[2], CMDsm = 9, youngAge = 0))
 })
+
+## calibratePowerLaw() forks one process per fire; only a job that fits (or validates) uses its result
+calibrationCalls <- function(params, objects = list()) {
+  rec <- new.env()
+  rec$n <- 0L
+  sim <- toySim(c(list(spreadLink = "powerLaw"), params), c(toyObjectsCO(), objects))
+  mockFitAndLedger(sim, rec)
+  mockInModule(sim, Cache = function(FUN, ...) {
+    if (!identical(FUN, fireSenseUtils::calibratePowerLaw)) return(reproducible::Cache(FUN, ...))
+    rec$n <- rec$n + 1L
+    runCalibration(FUN, ...)
+  })
+  sim <- suppressMessages(SpaDES.core::spades(sim))
+  rec$n
+}
+
+test_that("calibratePowerLaw runs when the job fits, and not when it uses the ledger's row", {
+  row <- list(studyAreaWithSpreadParams = toyLedger("9.9"))
+  expect_identical(calibrationCalls(list()), 1L)                              # no row: fit
+  expect_identical(calibrationCalls(list(doFit = TRUE), row), 1L)             # refit over a row
+  expect_identical(calibrationCalls(list(doFit = FALSE), row), 0L)            # hindcast: use the row
+  expect_identical(calibrationCalls(list(doFit = NA), row), 0L)               # row found, reused
+})

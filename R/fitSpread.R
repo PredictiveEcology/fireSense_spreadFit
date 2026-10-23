@@ -157,7 +157,7 @@ spreadLink <- function(Par) {
 ## The bounds of `maxAsymptote`: for `spreadLink = "powerLaw"` it is p_c, which must stay above the floor and,
 ## per ELF, within `margin` of the calibrated threshold `p50` (fireSenseUtils::powerLawPcBounds())
 maxAsymptoteBoundsOf <- function(spreadLink = "ceiling", p50 = NULL, margin = 0.005) {
-  if (identical(spreadLink, "powerLaw")) fireSenseUtils::powerLawPcBounds(p50, margin)
+  if (identical(spreadLink, "powerLaw") && !is.null(p50)) fireSenseUtils::powerLawPcBounds(p50, margin)
   else c(fireSenseUtils::spreadProbFloor, fireSenseUtils::spreadProbCeiling)
 }
 
