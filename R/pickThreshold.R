@@ -47,21 +47,26 @@ trialFirstBlock <- function(par, ...) {
   list(annual = as.numeric(res[["firstBlockSNLL"]]), saturated = as.logical(res[["bailed"]]))
 }
 
-#' Stop if every calibration trial errored
+#' Stop if any calibration trial errored
 #'
 #' A threshold of `NA` (then `Inf`, see `noEarlyStopThreshold()`) is cached by `Cache()` and reused, so a
-#' calibration whose every trial crashed (an objective that cannot run, not parameter sets that score
-#' badly) must say so rather than return it.
+#' calibration with a crashing trial (an objective that cannot run, not parameter sets that score badly)
+#' must say so rather than return it. A few crashing trials are a code bug that kills the fit later (4 of
+#' 30 trials hit the `kernelLogScore` underflow, then every fit died in DEoptim generation 1). A trial whose
+#' process died (a fork killed for memory) is a resource problem: tolerated unless all trials died.
 #'
 #' @param trials list of `trialFirstBlock()` results (an element that is not a list is a trial whose
 #'   process died).
-#' @return `NULL`, invisibly; stops with the first trial's error if all trials have one.
-stopIfAllTrialsErrored <- function(trials) {
-  errs <- vapply(trials, function(x) {
-    if (!is.list(x)) "the trial's process died without a result"
-    else if (is.null(x$error)) NA_character_ else x$error
-  }, character(1))
-  if (length(errs) && !anyNA(errs))
-    stop("every calibration trial failed (", length(errs), " tried); the first error: ", errs[[1]], call. = FALSE)
+#' @return `NULL`, invisibly; stops with the count and the first error if any trial has an `error`, or if
+#'   all trials died.
+stopIfTrialsErrored <- function(trials) {
+  died <- !vapply(trials, is.list, logical(1))
+  errs <- vapply(trials[!died], function(x) if (is.null(x$error)) NA_character_ else x$error, character(1))
+  errs <- errs[!is.na(errs)]
+  if (length(errs))
+    stop(length(errs), " of ", length(trials), " calibration trials failed; the first error: ", errs[[1]],
+         call. = FALSE)
+  if (length(trials) && all(died))
+    stop("every calibration trial's process died without a result (", length(trials), " tried)", call. = FALSE)
   invisible(NULL)
 }

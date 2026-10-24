@@ -132,6 +132,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
     } else {
       coresToUse <- forkBudget(if (drawFromActiveRange) n else length(pars))
       withr::local_options("mc.cores" = coresToUse)
+      localSingleThreadBLAS()
     }
     message("Using ", coresToUse, " cores",
             if (exists("heapMB", inherits = FALSE))
@@ -187,7 +188,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
       )
     })
 
-    stopIfAllTrialsErrored(objSpreadFit)
+    stopIfTrialsErrored(objSpreadFit)
     first <- lapply(objSpreadFit, function(x) if (is.list(x)) x else list(annual = NA_real_, saturated = NA))
     annual <- vapply(first, function(x) as.numeric(x$annual)[1], numeric(1))
     saturated <- vapply(first, function(x) isTRUE(x$saturated), logical(1))

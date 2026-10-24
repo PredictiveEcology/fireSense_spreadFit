@@ -1,5 +1,8 @@
 # fireSense_spreadFit (development version)
 
+* The threshold self-calibration and the `"powerLaw"` calibration fork with one BLAS thread (`localSingleThreadBLAS()`; the forks inherited the parent's 64 OpenBLAS threads, and five fits calibrating at once took the load of an 80-core host past 370), and `forkBudget()` is also capped by `fireSenseUtils::nThreads()` (host load). Results are unchanged. Needs `fireSenseUtils` (>= 0.2.3.9121); `RhpcBLASctl` is added to `reqdPkgs`.
+
+* The threshold calibration stops when any trial's objective errors (`stopIfTrialsErrored()`, was: only when every trial errored), with the count and the first error; a bug that crashed a few parameter sets was hidden (`kernelLogScore` underflow: 4 of 30 trials, then every fit died in DEoptim generation 1). Trials whose process died are still tolerated unless all died.
 * The `"powerLaw"` calibration (`fireSenseUtils::calibratePowerLaw()`, 400 fires per spread probability, one forked process per fire) runs only when the job fits, validates (`mode`) or runs a held-out fold. A job that reuses the ledger row (`doFit = FALSE`, or a row found), as every hindcast does, read p_c and gamma from the row but still recalibrated on its year's flammable map: up to 96 recalibrations in a 12-ELF hindcast queue. Results are unchanged: the calibration only set the fit's bounds and gamma.
 
 * `init` schedules `spreadFitPrepare` once, not twice at the same time, when it fits: the second run recomputed the same bounds, covariates and centre.
