@@ -17,7 +17,7 @@ settings <- list(weighted = "sqrt", sizeLik = "t", sizeLikDf = 7, adWeight = 2,
 
 test_that("the calibration and the fit get the same objective settings", {
   rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(c(list(SNLL_FS_thresh = NULL), settings))
+  sim <- toySim(c(list(firstBlockThresh = NULL), settings))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
   sim <- suppressMessages(SpaDES.core::spades(sim))
@@ -51,15 +51,15 @@ test_that("runSpreadWithoutDEoptim() hands the settings to the objective", {
   expect_true(all(vapply(seen, function(a) identical(a$link, "logistic3pUpper"), logical(1))))
 })
 
-test_that("the new terms and jumping are on by default", {
+test_that("jumping is on by default; the retired objective terms are off", {
   rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(list(SNLL_FS_thresh = NULL))
+  sim <- toySim(list(firstBlockThresh = NULL))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
   sim <- suppressMessages(SpaDES.core::spades(sim))
   for (a in list(rec$args, fitRec$deArgs)) {
-    expect_identical(a$yearAreaWeight, "auto")
-    expect_identical(a$areaDistWeight, "auto")
+    expect_identical(a$yearAreaWeight, 0)
+    expect_identical(a$areaDistWeight, 0)
     expect_identical(a$jumpTries, 20)
     expect_identical(a$jumpMeanDist, 3)
     expect_identical(a$penaliseRunaways, TRUE)
@@ -68,13 +68,15 @@ test_that("the new terms and jumping are on by default", {
   for (a in list(rec$args, fitRec$deArgs)) {
     expect_identical(a$runawayEdgeFrac, 0.01)
     expect_identical(a$runawayEdgeMin, 3L)
-    expect_identical(a$runawayBufferMultiple, 2)
+    expect_null(a$runawayBufferMultiple)    # NA: fireSenseUtils does not warn about it
   }
 })
 
-test_that("runawayBufferMultiple = NA reaches the fit and the calibration as NULL (the size it burned)", {
+test_that("runawayBufferMultiple = NA reaches the fit and the calibration as NULL", {
   rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(list(stopIfNoPreRunFit = FALSE, SNLL_FS_thresh = NULL, runawayBufferMultiple = NA_real_))
+  ## NA is the default now: iterThresh differs from the test above, so its cached threshold is not reused
+  sim <- toySim(list(stopIfNoPreRunFit = FALSE, firstBlockThresh = NULL, runawayBufferMultiple = NA_real_,
+                     iterThresh = 5L))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
   sim <- suppressMessages(SpaDES.core::spades(sim))
@@ -86,11 +88,11 @@ test_that("runawayBufferMultiple = NA reaches the fit and the calibration as NUL
 })
 
 test_that("penaliseRunaways = FALSE reaches the fit, the calibration and the objective", {
-  ## FALSE only: the default TRUE is asserted in "the new terms and jumping are on by default", and a
+  ## FALSE only: the default TRUE is asserted in "jumping is on by default; the retired objective terms are off", and a
   ## second TRUE call here would hit that test's cached threshold and never reach the mock
   for (value in list(FALSE)) {
     rec <- new.env(); fitRec <- new.env()
-    sim <- toySim(list(SNLL_FS_thresh = NULL, penaliseRunaways = value))
+    sim <- toySim(list(firstBlockThresh = NULL, penaliseRunaways = value))
     mockFitAndLedger(sim, fitRec)
     mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
     sim <- suppressMessages(SpaDES.core::spades(sim))

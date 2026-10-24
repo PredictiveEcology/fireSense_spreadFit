@@ -5,7 +5,7 @@
 test_that("every trial failed -> Inf, with a message", {
   thresh <- suppressWarnings(pickThreshold(c(1e6, 1e6)))
   expect_message(out <- noEarlyStopThreshold(thresh, runName = "6.2.1_cvFold1", nTrials = 2L),
-                 "no SNLL threshold calibrated for 6.2.1_cvFold1: every one of 2 trials failed")
+                 "no early-stop threshold calibrated for 6.2.1_cvFold1: every one of 2 trials failed")
   expect_identical(out, Inf)
 })
 

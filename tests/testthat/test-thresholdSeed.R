@@ -31,10 +31,10 @@ test_that("a given seed reproduces the same parameter draws", {
 })
 
 test_that("the production caller passes a deterministic seed derived from the ELF", {
-  ## Parsed, not run: estimateSNLLThresholdPostLargeFires() needs a full simList.
+  ## Parsed, not run: estimateFirstBlockThreshold() needs a full simList.
   exprs <- parse(testthat::test_path("..", "..", "fireSense_spreadFit.R"), keep.source = FALSE)
   def <- Filter(function(x) is.call(x) && identical(x[[1]], as.name("<-")) &&
-                  identical(x[[2]], as.name("estimateSNLLThresholdPostLargeFires")), exprs)
+                  identical(x[[2]], as.name("estimateFirstBlockThreshold")), exprs)
   expect_length(def, 1L)
   code <- paste(deparse(def[[1]][[3]]), collapse = "\n")
   expect_match(code, "runSpreadWithoutDEoptim", fixed = TRUE)

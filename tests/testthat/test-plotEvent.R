@@ -7,7 +7,7 @@
 test_that("the plot event draws one histogram per coefficient, named as the run event names them", {
   skip_if_not_installed("ggplot2"); skip_if_not_installed("tidyr")
   rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(list(SNLL_FS_thresh = 250L, mode = c("fit", "visualize")))
+  sim <- toySim(list(firstBlockThresh = 250, mode = c("fit", "visualize")))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = function(...) NULL)
   sim <- suppressWarnings(suppressMessages(SpaDES.core::spades(sim)))

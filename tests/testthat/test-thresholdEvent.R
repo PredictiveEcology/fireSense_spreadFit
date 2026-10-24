@@ -10,16 +10,16 @@ recordingRSWD <- function(rec, value) {
   f
 }
 
-test_that("without SNLL_FS_thresh the threshold is calibrated, seeded by the polygon id", {
+test_that("without firstBlockThresh the threshold is calibrated, seeded by the polygon id", {
   rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(list(SNLL_FS_thresh = NULL, iterThresh = 6L, objfunFireReps = 8L))
+  sim <- toySim(list(firstBlockThresh = NULL, iterThresh = 6L, objfunFireReps = 8L))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
   sim <- suppressMessages(SpaDES.core::spades(sim))
   expect_identical(rec$args$seed, .elfSeed("9.9"))
   expect_identical(rec$args$iterThresh, 6L)
   expect_identical(rec$args$objfunFireReps, 8L)
-  expect_identical(rec$args$tests, c("adTest", "SNLL_FS"))
+  expect_identical(rec$args$tests, "SNLL_FS")
   expect_identical(rec$args$mode, "fit")
   expect_identical(rec$args$lower, SpaDES.core::params(sim)[[moduleName]]$lower)
   expect_identical(rec$args$annualDTx1000$year2002$CMDsm, c(12000L, 22000L, 32000L))
@@ -27,14 +27,14 @@ test_that("without SNLL_FS_thresh the threshold is calibrated, seeded by the pol
   expect_identical(as.vector(fitRec$deArgs$thresh), 777)   # Cache() adds attributes
 })
 
-test_that("a supplied SNLL_FS_thresh is used as is: no calibration", {
+test_that("a supplied firstBlockThresh is used as is: no calibration", {
   rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(list(SNLL_FS_thresh = 250L))
+  sim <- toySim(list(firstBlockThresh = 250))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
   sim <- suppressMessages(SpaDES.core::spades(sim))
   expect_null(rec$args)
-  expect_identical(fitRec$deArgs$thresh, 250L)
+  expect_identical(fitRec$deArgs$thresh, 250)
 })
 
 test_that("debug mode evaluates the objective function instead of fitting", {
@@ -60,7 +60,7 @@ test_that("one option, fireSenseUtils.assertions, sets the objective's diagnosti
   for (opt in c(FALSE, TRUE)) {
     withr::local_options(fireSenseUtils.assertions = opt)
     rec <- new.env(); fitRec <- new.env()
-    sim <- toySim(list(SNLL_FS_thresh = NULL, iterThresh = 3L, objfunFireReps = 2L))
+    sim <- toySim(list(firstBlockThresh = NULL, iterThresh = 3L, objfunFireReps = 2L))
     expect_identical(SpaDES.core::P(sim, "doObjFunAssertions", moduleName), opt)
     mockFitAndLedger(sim, fitRec)
     mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))

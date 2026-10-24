@@ -93,7 +93,7 @@ knitr::kable(df_params, caption = "List of (ref:fireSense-spreadFit) parameters 
 
 - `init`: schedules `spreadFitPrepare` and, if the polygon needs a fit, `estimateThreshold` then `run` (or `debug` when `mode` includes `"debug"`; `debug` and `plot` after `run` when it includes `"visualize"`);
 - `spreadFitPrepare`: sets default `lower`/`upper`, computes `covMinMax_spread` and `lociList`, converts covariates to integers (x 1000);
-- `estimateThreshold`: uses `SNLL_FS_thresh`, or calibrates it from `iterThresh` random parameter sets (cached, with a seed derived from `.ELFind`);
+- `estimateThreshold`: uses `firstBlockThresh`, or calibrates it from `iterThresh` random parameter sets (cached, with a seed derived from `.ELFind`);
 - `run`: runs DEoptim (cached per generation) and writes the polygon's row to the ledger;
 - `debug`: evaluates the objective function without DEoptim;
 - `plot`: histograms of the final population;
