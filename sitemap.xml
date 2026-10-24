@@ -28,6 +28,7 @@
 <url><loc>/reference/histOfCovariates.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
 <url><loc>/reference/ledgerWriteFile.html</loc></url>
+<url><loc>/reference/localSingleThreadBLAS.html</loc></url>
 <url><loc>/reference/makeFitDiagnostics.html</loc></url>
 <url><loc>/reference/mustFitThisPolygon.html</loc></url>
 <url><loc>/reference/needsPowerLawCalibration.html</loc></url>
@@ -39,7 +40,7 @@
 <url><loc>/reference/spreadFitPrep.html</loc></url>
 <url><loc>/reference/spreadFitValidationFigures.html</loc></url>
 <url><loc>/reference/spreadGates.html</loc></url>
-<url><loc>/reference/stopIfAllTrialsErrored.html</loc></url>
+<url><loc>/reference/stopIfTrialsErrored.html</loc></url>
 <url><loc>/reference/thresholdForks.html</loc></url>
 <url><loc>/reference/trialFirstBlock.html</loc></url>
 </urlset>

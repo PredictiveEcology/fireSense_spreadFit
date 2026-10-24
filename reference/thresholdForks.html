@@ -77,7 +77,8 @@ on one host exhausted 1 TB.</p>
 <span>  <span class="va">nPars</span>,</span>
 <span>  <span class="va">detCores</span>,</span>
 <span>  activeThreads <span class="op">=</span> <span class="fl">0L</span>,</span>
-<span>  mcCores <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  mcCores <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  loadCap <span class="op">=</span> <span class="cn">Inf</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -108,6 +109,10 @@ Unknown (<code>NULL</code>, empty, non-finite) means one fork.</p></dd>
 
 <dt id="arg-mccores">mcCores<a class="anchor" aria-label="anchor" href="#arg-mccores"></a></dt>
 <dd><p>integer or <code>NULL</code>; <code>getOption("mc.cores")</code>, an explicit cap.</p></dd>
+
+
+<dt id="arg-loadcap">loadCap<a class="anchor" aria-label="anchor" href="#arg-loadcap"></a></dt>
+<dd><p>numeric; cap from the host's load (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/nThreads.html" class="external-link">fireSenseUtils::nThreads()</a></code>). <code>Inf</code> (default) is no cap.</p></dd>
 
 </dl></div>
     <div id="value">
