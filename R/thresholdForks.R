@@ -20,13 +20,14 @@
 #' @param detCores integer; `parallel::detectCores()`.
 #' @param activeThreads integer; busy threads already running on the host.
 #' @param mcCores integer or `NULL`; `getOption("mc.cores")`, an explicit cap.
+#' @param loadCap numeric; cap from the host's load (`fireSenseUtils::nThreads()`). `Inf` (default) is no cap.
 #' @return integer, at least 1.
 thresholdForks <- function(heapMB, availMB, nPars, detCores, activeThreads = 0L,
-                           mcCores = NULL) {
+                           mcCores = NULL, loadCap = Inf) {
   byMem <- if (!length(availMB) || !is.finite(availMB[1])) 1L
            else floor(availMB[1] / max(heapMB, 1))
   byCPU <- floor(detCores * 0.5) - activeThreads
-  n <- min(c(byMem, byCPU, nPars, mcCores))
+  n <- min(c(byMem, byCPU, nPars, mcCores, loadCap))
   max(1L, as.integer(n))
 }
 
@@ -35,7 +36,7 @@ thresholdForks <- function(heapMB, availMB, nPars, detCores, activeThreads = 0L,
 #' [thresholdForks()] with this host's state: the R heap in use (each fork is a copy-on-write image of this
 #' process that diverges as the garbage collector marks the heap, so budget one heap per fork; the `gc()` call
 #' also leaves less garbage to copy), the memory available, the busy threads, `detectCores()` and
-#' `options(mc.cores)`. Used by the threshold self-calibration and the `"powerLaw"` calibration, so several
+#' `options(mc.cores)`, and capped by the host's load (`fireSenseUtils::nThreads()`). Used by the threshold self-calibration and the `"powerLaw"` calibration, so several
 #' fits on one host, or a fit run inside a cluster worker, share the same caps.
 #'
 #' @param nTasks integer; number of tasks to spread over the forks.
@@ -45,5 +46,22 @@ forkBudget <- function(nTasks) {
   availMB <- pemisc::availableMemory()
   availMB <- if (length(availMB)) availMB / 1e6 else NULL
   thresholdForks(heapMB = heapMB, availMB = availMB, nPars = nTasks, detCores = parallel::detectCores(),
-                 activeThreads = clusters::numActiveThreads(), mcCores = getOption("mc.cores"))
+                 activeThreads = clusters::numActiveThreads(), mcCores = getOption("mc.cores"),
+                 loadCap = fireSenseUtils::nThreads())
+}
+
+#' One BLAS thread until the calling function returns
+#'
+#' A fork inherits the parent's OpenBLAS thread pool, so each fork of the threshold calibration ran several
+#' threads (64 on an 80-core host) and five fits calibrating at once pushed the 1-minute load past 370.
+#' Call this before forking: the forks inherit one thread, and the previous number is restored when the
+#' caller exits.
+#'
+#' @param envir environment whose exit restores the previous number of BLAS threads.
+#' @return `NULL`, invisibly.
+localSingleThreadBLAS <- function(envir = parent.frame()) {
+  previous <- RhpcBLASctl::blas_get_num_procs()
+  RhpcBLASctl::blas_set_num_threads(1L)
+  withr::defer(RhpcBLASctl::blas_set_num_threads(previous), envir = envir)
+  invisible(NULL)
 }

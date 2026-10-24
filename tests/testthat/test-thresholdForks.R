@@ -43,3 +43,20 @@ test_that("forkBudget() honours options(mc.cores), whoever calls it", {
   expect_lte(forkBudget(10000L), 3L)
   expect_equal(forkBudget(1L), 1L)
 })
+
+test_that("loadCap lowers the fork count; the default Inf leaves it unchanged", {
+  expect_equal(thresholdForks(heapMB = 20, availMB = 1e6, nPars = 96, detCores = 68, loadCap = 5L), 5L)
+  expect_equal(thresholdForks(heapMB = 20, availMB = 1e6, nPars = 96, detCores = 68, loadCap = Inf), 34L)
+  expect_equal(thresholdForks(heapMB = 20, availMB = 1e6, nPars = 96, detCores = 68, loadCap = 100L), 34L)
+})
+
+test_that("localSingleThreadBLAS() gives one BLAS thread until the caller returns", {
+  skip_if_not_installed("RhpcBLASctl")
+  before <- RhpcBLASctl::blas_get_num_procs()
+  inside <- (function() {
+    localSingleThreadBLAS()
+    RhpcBLASctl::blas_get_num_procs()
+  })()
+  expect_equal(inside, 1L)
+  expect_equal(RhpcBLASctl::blas_get_num_procs(), before)
+})

@@ -70,13 +70,22 @@ test_that("a crashed trial, or an objective without the fields, counts as failed
   expect_match(trialFirstBlock(c(a = 1))$error, "firstBlockPerFire")
 })
 
-test_that("when every trial errored the calibration stops with the first error, it does not return NA", {
-  errored <- list(trialFirstBlock = list(perFire = NA_real_, saturated = NA, error = "no covariates"),
-                  other = list(perFire = NA_real_, saturated = NA, error = "second"))
-  expect_error(stopIfAllTrialsErrored(errored), "every calibration trial failed.*no covariates")
-  ## one usable trial, or trials that merely bailed (no error), are not an error
-  expect_null(stopIfAllTrialsErrored(c(list(list(perFire = 80, saturated = FALSE)), errored)))
-  expect_null(stopIfAllTrialsErrored(list(list(perFire = 1e6, saturated = TRUE))))
+test_that("one errored trial among good ones stops the calibration with its message", {
+  good <- list(perFire = 80, saturated = FALSE)
+  bad <- list(perFire = NA_real_, saturated = NA, error = "no covariates")
+  expect_error(stopIfTrialsErrored(list(good, bad, good, bad)), "2 of 4 calibration trials failed.*no covariates")
+  expect_error(stopIfTrialsErrored(list(bad)), "1 of 1 calibration trials failed.*no covariates")
+  ## trials that merely bailed (no error) are not an error
+  expect_null(stopIfTrialsErrored(list(good, list(perFire = 1e6, saturated = TRUE))))
+})
+
+test_that("trials whose process died are tolerated unless all died", {
+  good <- list(perFire = 80, saturated = FALSE)
+  dead <- structure("fork killed", class = "try-error")
+  expect_null(stopIfTrialsErrored(list(good, dead, good)))
+  expect_error(stopIfTrialsErrored(list(dead, dead)), "died")
+  ## a real error still stops, even beside dead forks
+  expect_error(stopIfTrialsErrored(list(dead, list(perFire = NA_real_, saturated = NA, error = "boom"))), "boom")
 })
 
 test_that("no printed output is parsed anywhere in the sources", {
