@@ -95,9 +95,9 @@
         </td>
         <td><p>Draw parameter sets from the logistic's active range, by rejection</p></td>
       </tr><tr><td>
-          <p><code><a href="estimateSNLLThresholdPostLargeFires.html">estimateSNLLThresholdPostLargeFires()</a></code> </p>
+          <p><code><a href="estimateFirstBlockThreshold.html">estimateFirstBlockThreshold()</a></code> </p>
         </td>
-        <td><p>The SNLL fire-size threshold of the objective function, for the years in <code>covs</code></p></td>
+        <td><p>The early-stop threshold of the objective function, calibrated on the years in <code>covs</code></p></td>
       </tr><tr><td>
           <p><code><a href="estimateSpreadParams.html">estimateSpreadParams()</a></code> </p>
         </td>
@@ -153,7 +153,7 @@
       </tr><tr><td>
           <p><code><a href="pickThreshold.html">pickThreshold()</a></code> </p>
         </td>
-        <td><p>The calibrated SNLL threshold: <code>margin</code> times the best usable trial's first-block SNLL</p></td>
+        <td><p>The calibrated early-stop threshold: <code>margin</code> times the best usable trial's first-block value per fire</p></td>
       </tr><tr><td>
           <p><code><a href="powerLawGammaOf.html">powerLawGammaOf()</a></code> </p>
         </td>

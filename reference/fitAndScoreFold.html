@@ -93,10 +93,11 @@ a full fit (plain <code>P(sim)$.runName</code>, no suffix) never share a cache e
     </div>
     <div id="details">
     <h2>Details</h2>
-    <p>The SNLL threshold is calibrated on the fitted years (<code><a href="estimateSNLLThresholdPostLargeFires.html">estimateSNLLThresholdPostLargeFires()</a></code>), not
-taken from the full data: it bounds the SNLL of the two largest fire years, and a fold's two largest
-years are not the full data's. With the full data's threshold, held-out fits of ELFs 4.3 and 5.2.1
-(2026-09-29) never passed it and returned the fail value for all 5000 generations.</p>
+    <p>The early-stop threshold is the full data's (<code><a href="estimateFirstBlockThreshold.html">estimateFirstBlockThreshold()</a></code> on all years, the same
+cached calibration as the full fit's). It is per fire, so it does not depend on how many fires the
+two largest years of the fitted data hold. (It was a summed SNLL per year, which did: with the full
+data's threshold, held-out fits of ELFs 4.3 and 5.2.1 (2026-09-29) never passed it and returned the
+fail value for all 5000 generations, so each fold calibrated its own.)</p>
     </div>
 
   </div>

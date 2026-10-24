@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9020"
-date: "Last updated: 2026-10-23"
+date: "Last updated: 2026-10-24"
 output:
   bookdown::html_document2:
     toc: true
@@ -245,10 +245,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> DEoptimTests </td>
    <td style="text-align:left;"> character </td>
-   <td style="text-align:left;"> adTest, .... </td>
+   <td style="text-align:left;"> SNLL_FS </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Currently either `'SNLL_FS'` or `'adTest'` or a length 2 character vector of both. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. </td>
+   <td style="text-align:left;"> `'SNLL_FS'`: the per-fire kernel log score of each fitted fire's observed size given its simulated sizes, the objective. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. `'adTest'` is retired: the objective has no Anderson-Darling term (it depended on the fit buffers), and fireSenseUtils ignores it with a warning. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -293,7 +293,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 96 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Number of random parameter sets tried when calibrating `SNLL_FS_thresh`. </td>
+   <td style="text-align:left;"> Number of random parameter sets tried when calibrating `firstBlockThresh`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -302,7 +302,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 2 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> When calibrating `SNLL_FS_thresh`, the threshold is this multiple of the best usable trial's first-block average annual SNLL (trials run with no early stop; a trial that saturates spreadProb is not usable). Must be &gt;= 1. </td>
+   <td style="text-align:left;"> When calibrating `firstBlockThresh`, the threshold is this multiple of the best usable trial's first-block value per fire (trials run with no early stop; a trial that saturates spreadProb is not usable). Must be &gt;= 1. With 2, known-truth simulations of three ELFs never stopped a parameter set near the truth (2026-10-23). </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -446,7 +446,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> t </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Likelihood of fire size in the objective, 'kde' or 't', passed to `fireSenseUtils::runDEoptim()`. 't' with `weighted = FALSE` predicted held-out years best in the 2026-09-21 cross-validation. </td>
+   <td style="text-align:left;"> Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it. It chose the per-fire likelihood ('kde' or 't'); the objective is now the per-fire kernel log score on the log scale (`DEoptimTests`). </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -464,7 +464,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 5 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Degrees of freedom of the 't' size likelihood. </td>
+   <td style="text-align:left;"> Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it. Degrees of freedom of the former 't' size likelihood. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -473,7 +473,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Weight of each fire in the size likelihood: FALSE (none), TRUE (log size) or 'sqrt'. Passed to `fireSenseUtils::runDEoptim()`. </td>
+   <td style="text-align:left;"> Weight of each fire's score in the objective: FALSE (none), TRUE (log size) or 'sqrt'. Passed to `fireSenseUtils::runDEoptim()`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -482,25 +482,25 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> auto </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Weight of the Anderson-Darling term against the size likelihood; 'auto' is `fireSenseUtils::adWeightAuto()`. </td>
+   <td style="text-align:left;"> Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it. It weighted the Anderson-Darling term, which the objective no longer has. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> yearAreaWeight </td>
    <td style="text-align:left;"> numeric&amp;#124;.... </td>
-   <td style="text-align:left;"> auto </td>
+   <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Weight of the annual-area term in the objective: each fit year's observed area burned is scored against that year's simulated totals (one per replicate) with the size likelihood. 0 leaves it out; 'auto' (default) is (number of fitted fires) / (number of fit years), so the year view and the per-fire view weigh the same. Passed to `fireSenseUtils::runDEoptim()`. </td>
+   <td style="text-align:left;"> Retired: the objective no longer has the annual-area term. It scored years with fires cut at the fit buffers at the size they had reached, so it depended on the buffers. fireSenseUtils (&gt;= 0.2.3.9123) ignores any value, with a warning unless 0. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> areaDistWeight </td>
    <td style="text-align:left;"> numeric&amp;#124;.... </td>
-   <td style="text-align:left;"> auto </td>
+   <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Weight of the area-weighted size-distribution term: simulated and observed fires compared by the share of area burned that fires up to each size make up (`fireSenseUtils::areaWeightedCvM()`). 0 leaves it out; 'auto' (default) uses the Anderson-Darling term's weight (`fireSenseUtils::adWeightAuto()`). </td>
+   <td style="text-align:left;"> Retired: the objective no longer has the area-weighted size-distribution term (`fireSenseUtils::areaWeightedCvM()`, kept for diagnostics). It was biased by fires cut at the fit buffers. fireSenseUtils (&gt;= 0.2.3.9123) ignores any value, with a warning unless 0. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -509,16 +509,16 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> A simulated fire that burns its buffer's outer edge (see `runawayEdgeFrac`) is a runaway, censored in the size likelihood: it has no density at the observed size. The Anderson-Darling, annual-area and area-distribution terms count it as `runawayBufferMultiple` times its own buffer's size (NA: the size it burned). Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size in the likelihood too (default since 2026-10-17: simulated sizes are scored as burned, buffer-bounded like the observed; the 2x-buffer runaway score shrank `yearSpreadSD` 3-4 times). Passed to `fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting. </td>
+   <td style="text-align:left;"> Retired as a choice of objective: a simulated fire that burns an open edge pixel of its year's buffers (one next to flammable land outside every buffer, `fireSenseUtils::bufferOpen()`) is always cut, i.e. it adds no density to its fire's score, so the fit no longer depends on the buffers. TRUE only stops such a fire at the first open pixel of its own buffer, which saves time and leaves the score as it is (up to fires sharing a year's landscape). Passed to `fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> runawayBufferMultiple </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 2 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> With `penaliseRunaways`, a runaway counts in the size-based terms of the objective (Anderson-Darling, annual area, area-weighted size distribution) as this multiple of the size of its own fire's buffer: a fire that reaches the edge of its buffer would have kept burning. A full-landscape hindcast of ELF 5.4 showed fits that matched the observed area inside the buffers ran away on the whole landscape (fires of 3-6 Mha, median 2-12 times the observed area). NA scores the size it burned before it was stopped, the old behaviour. Passed to `fireSenseUtils::runDEoptim()` and the threshold calibration. </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Retired: a cut fire has no size in the objective. It set the size a runaway counted as in the Anderson-Darling, annual-area and area-distribution terms, which are gone. fireSenseUtils (&gt;= 0.2.3.9123) ignores it, with a warning unless NA. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -527,7 +527,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 0.01 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> A simulated fire is a runaway when it burns at least `max(runawayEdgeMin, ceiling(runawayEdgeFrac n))` of the `n` pixels of the edge ring of its own buffer (never more than `n`); one touched pixel is luck. Passed to `fireSenseUtils::runDEoptim()`. Not part of the DEoptim cache key. </td>
+   <td style="text-align:left;"> Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it. A fire was a runaway when it burned at least `max(runawayEdgeMin, ceiling(runawayEdgeFrac n))` of the `n` edge pixels of its own buffer; it is now cut at the first open edge pixel. Not part of the DEoptim cache key. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -536,7 +536,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 3 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> The least number of edge-ring pixels that makes a fire a runaway; see `runawayEdgeFrac`. </td>
+   <td style="text-align:left;"> Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it; see `runawayEdgeFrac`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -657,12 +657,12 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> SNLL_FS_thresh </td>
-   <td style="text-align:left;"> integer </td>
+   <td style="text-align:left;"> firstBlockThresh </td>
+   <td style="text-align:left;"> numeric </td>
    <td style="text-align:left;">  </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Threshold multiplier used in objective function SNLL fire size test. </td>
+   <td style="text-align:left;"> The objective's early stop: a parameter set whose first block of years (the two with the most area burned) scores above this per fire is abandoned. NULL (default) calibrates it (`iterThresh`, `thresholdMargin`) once per ELF, and the cross-validation folds reuse it. Replaces `SNLL_FS_thresh`, which was per year. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -780,7 +780,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
 
 - `init`: schedules `spreadFitPrepare` and, if the polygon needs a fit, `estimateThreshold` then `run` (or `debug` when `mode` includes `"debug"`; `debug` and `plot` after `run` when it includes `"visualize"`);
 - `spreadFitPrepare`: sets default `lower`/`upper`, computes `covMinMax_spread` and `lociList`, converts covariates to integers (x 1000);
-- `estimateThreshold`: uses `SNLL_FS_thresh`, or calibrates it from `iterThresh` random parameter sets (cached, with a seed derived from `.ELFind`);
+- `estimateThreshold`: uses `firstBlockThresh`, or calibrates it from `iterThresh` random parameter sets (cached, with a seed derived from `.ELFind`);
 - `run`: runs DEoptim (cached per generation) and writes the polygon's row to the ledger;
 - `debug`: evaluates the objective function without DEoptim;
 - `plot`: histograms of the final population;

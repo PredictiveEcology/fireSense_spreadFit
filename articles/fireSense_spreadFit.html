@@ -73,7 +73,7 @@
       <h1 data-toc-skip>fireSense_spreadFit Manual</h1>
             <h3 data-toc-skip class="subtitle">v.1.2.0.9020</h3>
             
-            <h4 data-toc-skip class="date">Last updated: 2026-10-23</h4>
+            <h4 data-toc-skip class="date">Last updated: 2026-10-24</h4>
       
 
       <div class="hidden name"><code>fireSense_spreadFit.Rmd</code></div>
@@ -536,7 +536,7 @@ DEoptimTests
 character
 </td>
 <td style="text-align:left;">
-adTest, ….
+SNLL_FS
 </td>
 <td style="text-align:left;">
 NA
@@ -545,7 +545,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Currently either <code>'SNLL_FS'</code> or <code>'adTest'</code> or a length 2 character vector of both. Passed to <code>tests</code> in <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>.
+<code>'SNLL_FS'</code>: the per-fire kernel log score of each fitted fire’s observed size given its simulated sizes, the objective. Passed to <code>tests</code> in <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>. <code>'adTest'</code> is retired: the objective has no Anderson-Darling term (it depended on the fit buffers), and fireSenseUtils ignores it with a warning.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -659,7 +659,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Number of random parameter sets tried when calibrating <code>SNLL_FS_thresh</code>.
+Number of random parameter sets tried when calibrating <code>firstBlockThresh</code>.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -682,7 +682,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-When calibrating <code>SNLL_FS_thresh</code>, the threshold is this multiple of the best usable trial’s first-block average annual SNLL (trials run with no early stop; a trial that saturates spreadProb is not usable). Must be &gt;= 1.
+When calibrating <code>firstBlockThresh</code>, the threshold is this multiple of the best usable trial’s first-block value per fire (trials run with no early stop; a trial that saturates spreadProb is not usable). Must be &gt;= 1. With 2, known-truth simulations of three ELFs never stopped a parameter set near the truth (2026-10-23).
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1049,7 +1049,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Likelihood of fire size in the objective, ‘kde’ or ‘t’, passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>. ‘t’ with <code>weighted = FALSE</code> predicted held-out years best in the 2026-09-21 cross-validation.
+Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it. It chose the per-fire likelihood (‘kde’ or ‘t’); the objective is now the per-fire kernel log score on the log scale (<code>DEoptimTests</code>).
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1095,7 +1095,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Degrees of freedom of the ‘t’ size likelihood.
+Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it. Degrees of freedom of the former ‘t’ size likelihood.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1118,7 +1118,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Weight of each fire in the size likelihood: FALSE (none), TRUE (log size) or ‘sqrt’. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>.
+Weight of each fire’s score in the objective: FALSE (none), TRUE (log size) or ‘sqrt’. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1141,7 +1141,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Weight of the Anderson-Darling term against the size likelihood; ‘auto’ is <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/adWeightAuto.html" class="external-link">fireSenseUtils::adWeightAuto()</a></code>.
+Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it. It weighted the Anderson-Darling term, which the objective no longer has.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1155,7 +1155,7 @@ yearAreaWeight
 numeric&amp;#124;….
 </td>
 <td style="text-align:left;">
-auto
+0
 </td>
 <td style="text-align:left;">
 NA
@@ -1164,7 +1164,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Weight of the annual-area term in the objective: each fit year’s observed area burned is scored against that year’s simulated totals (one per replicate) with the size likelihood. 0 leaves it out; ‘auto’ (default) is (number of fitted fires) / (number of fit years), so the year view and the per-fire view weigh the same. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>.
+Retired: the objective no longer has the annual-area term. It scored years with fires cut at the fit buffers at the size they had reached, so it depended on the buffers. fireSenseUtils (&gt;= 0.2.3.9123) ignores any value, with a warning unless 0.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1178,7 +1178,7 @@ areaDistWeight
 numeric&amp;#124;….
 </td>
 <td style="text-align:left;">
-auto
+0
 </td>
 <td style="text-align:left;">
 NA
@@ -1187,7 +1187,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Weight of the area-weighted size-distribution term: simulated and observed fires compared by the share of area burned that fires up to each size make up (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/areaWeightedCvM.html" class="external-link">fireSenseUtils::areaWeightedCvM()</a></code>). 0 leaves it out; ‘auto’ (default) uses the Anderson-Darling term’s weight (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/adWeightAuto.html" class="external-link">fireSenseUtils::adWeightAuto()</a></code>).
+Retired: the objective no longer has the area-weighted size-distribution term (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/areaWeightedCvM.html" class="external-link">fireSenseUtils::areaWeightedCvM()</a></code>, kept for diagnostics). It was biased by fires cut at the fit buffers. fireSenseUtils (&gt;= 0.2.3.9123) ignores any value, with a warning unless 0.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1210,7 +1210,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-A simulated fire that burns its buffer’s outer edge (see <code>runawayEdgeFrac</code>) is a runaway, censored in the size likelihood: it has no density at the observed size. The Anderson-Darling, annual-area and area-distribution terms count it as <code>runawayBufferMultiple</code> times its own buffer’s size (NA: the size it burned). Fires are not capped at a size; spread is bounded by the buffers. FALSE scores the simulated size in the likelihood too (default since 2026-10-17: simulated sizes are scored as burned, buffer-bounded like the observed; the 2x-buffer runaway score shrank <code>yearSpreadSD</code> 3-4 times). Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>; the threshold calibration uses the same setting.
+Retired as a choice of objective: a simulated fire that burns an open edge pixel of its year’s buffers (one next to flammable land outside every buffer, <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/bufferEdge.html" class="external-link">fireSenseUtils::bufferOpen()</a></code>) is always cut, i.e. it adds no density to its fire’s score, so the fit no longer depends on the buffers. TRUE only stops such a fire at the first open pixel of its own buffer, which saves time and leaves the score as it is (up to fires sharing a year’s landscape). Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>; the threshold calibration uses the same setting.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1224,16 +1224,16 @@ runawayBufferMultiple
 numeric
 </td>
 <td style="text-align:left;">
-2
-</td>
-<td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
-With <code>penaliseRunaways</code>, a runaway counts in the size-based terms of the objective (Anderson-Darling, annual area, area-weighted size distribution) as this multiple of the size of its own fire’s buffer: a fire that reaches the edge of its buffer would have kept burning. A full-landscape hindcast of ELF 5.4 showed fits that matched the observed area inside the buffers ran away on the whole landscape (fires of 3-6 Mha, median 2-12 times the observed area). NA scores the size it burned before it was stopped, the old behaviour. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code> and the threshold calibration.
+NA
+</td>
+<td style="text-align:left;">
+Retired: a cut fire has no size in the objective. It set the size a runaway counted as in the Anderson-Darling, annual-area and area-distribution terms, which are gone. fireSenseUtils (&gt;= 0.2.3.9123) ignores it, with a warning unless NA.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1256,7 +1256,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-A simulated fire is a runaway when it burns at least <code>max(runawayEdgeMin, ceiling(runawayEdgeFrac n))</code> of the <code>n</code> pixels of the edge ring of its own buffer (never more than <code>n</code>); one touched pixel is luck. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>. Not part of the DEoptim cache key.
+Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it. A fire was a runaway when it burned at least <code>max(runawayEdgeMin, ceiling(runawayEdgeFrac n))</code> of the <code>n</code> edge pixels of its own buffer; it is now cut at the first open edge pixel. Not part of the DEoptim cache key.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1279,7 +1279,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-The least number of edge-ring pixels that makes a fire a runaway; see <code>runawayEdgeFrac</code>.
+Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it; see <code>runawayEdgeFrac</code>.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1585,21 +1585,21 @@ TRUE
 </tr>
 <tr>
 <td style="text-align:left;">
-SNLL_FS_thresh
+firstBlockThresh
 </td>
 <td style="text-align:left;">
-integer
+numeric
 </td>
 <td style="text-align:left;">
-</td>
-<td style="text-align:left;">
-NA
 </td>
 <td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
-Threshold multiplier used in objective function SNLL fire size test.
+NA
+</td>
+<td style="text-align:left;">
+The objective’s early stop: a parameter set whose first block of years (the two with the most area burned) scores above this per fire is abandoned. NULL (default) calibrates it (<code>iterThresh</code>, <code>thresholdMargin</code>) once per ELF, and the cross-validation folds reuse it. Replaces <code>SNLL_FS_thresh</code>, which was per year.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1893,7 +1893,7 @@ TRUE
 <li>
 <code>spreadFitPrepare</code>: sets default <code>lower</code>/<code>upper</code>, computes <code>covMinMax_spread</code> and <code>lociList</code>, converts covariates to integers (x 1000);</li>
 <li>
-<code>estimateThreshold</code>: uses <code>SNLL_FS_thresh</code>, or calibrates it from <code>iterThresh</code> random parameter sets (cached, with a seed derived from <code>.ELFind</code>);</li>
+<code>estimateThreshold</code>: uses <code>firstBlockThresh</code>, or calibrates it from <code>iterThresh</code> random parameter sets (cached, with a seed derived from <code>.ELFind</code>);</li>
 <li>
 <code>run</code>: runs DEoptim (cached per generation) and writes the polygon’s row to the ledger;</li>
 <li>
