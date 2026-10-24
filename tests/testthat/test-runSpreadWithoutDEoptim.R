@@ -2,7 +2,7 @@
 ## recorder (the real one simulates fires and belongs to fireSenseUtils).
 ##
 ## The calibration runs each trial with no early stop and `returnTerms = TRUE`, and reads the
-## objective's `firstBlockSNLL` and `bailed` fields; the recorder returns the same fields.
+## objective's `firstBlockPerFire` and `bailed` fields; the recorder returns the same fields.
 
 fires <- list(year2001 = data.frame(size = c(5L, 12L), date = "year2001", ids = 11:12, cells = c(3L, 56L)),
               year2002 = data.frame(size = c(3L, 1L), date = "year2002", ids = 21:22, cells = c(89L, 12L)))
@@ -45,7 +45,7 @@ recorder <- function(rec, annual = annualOf, saturated = function(par) FALSE) {
                                                   penaliseRunaways = penaliseRunaways), list(...))
     a <- annual(par) + if (isTRUE(penaliseRunaways)) 0 else 1000
     if (isTRUE(returnTerms))
-      return(c(objective = 1000 + a, firstBlockSNLL = a, bailed = as.numeric(saturated(par))))
+      return(c(objective = 1000 + a, firstBlockPerFire = a, bailed = as.numeric(saturated(par))))
     1000 + a
   }
 }
@@ -164,7 +164,7 @@ test_that("fit mode: runawayBufferMultiple reaches the trials", {
   ## forks do not share a recorder: the multiple shows in the score
   local_mocked_bindings(.objfunSpreadFit = function(par, thresh, returnTerms = FALSE, runawayBufferMultiple = NULL, ...) {
     a <- annualOf(par) + 1000 * (if (is.null(runawayBufferMultiple)) 0 else runawayBufferMultiple)
-    c(objective = 1000 + a, firstBlockSNLL = a, bailed = 0)
+    c(objective = 1000 + a, firstBlockPerFire = a, bailed = 0)
   })
   asBurned <- callIt("fit", iterThresh = 3L)
   byBuffer <- callIt("fit", iterThresh = 3L, runawayBufferMultiple = 2)

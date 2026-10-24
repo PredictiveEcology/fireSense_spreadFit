@@ -18,7 +18,7 @@ test_that("parameter classes", {
       maxFireSpread = "numeric", mode = "character", mutuallyExclusiveCols = "list",
       nCoresNeeded = "integer", objFunCoresInternal = "integer",
       objfunFireReps = "integer", refitExisting = "logical",
-      .rep = "integer", rescaleAll = "logical", SNLL_FS_thresh = "integer",
+      .rep = "integer", rescaleAll = "logical", firstBlockThresh = "numeric",
       fitFileSuffix = "character", spreadFitFilename = "character", spreadFitGoogleDriveFolder = "character",
       stopIfNoPreRunFit = "logical", strategy = "integer", trace = "numeric", upper = "numeric",
       upperAndLowerVal = "numeric", upperAndLowerValFuel = "numeric", useCache_DE = "logical",
@@ -65,7 +65,7 @@ test_that("defaults that decide whether and how a fit runs", {
   expect_identical(def$stopIfNoPreRunFit, NA)
   expect_identical(def$refitExisting, NA)
   expect_identical(def$mode, "fit")
-  expect_identical(def$DEoptimTests, c("adTest", "SNLL_FS"))
+  expect_identical(def$DEoptimTests, "SNLL_FS")   # no "adTest": the objective has no Anderson-Darling term
   expect_identical(def$rescaleAll, TRUE)
   ## diagnostics inside the objective are slow: off unless options(fireSenseUtils.assertions = TRUE)
   expect_identical(def$doObjFunAssertions, getOption("fireSenseUtils.assertions", FALSE))
@@ -74,10 +74,10 @@ test_that("defaults that decide whether and how a fit runs", {
   expect_identical(def$mutuallyExclusiveCols, list(youngAge = c("class", "nonForest")))
 })
 
-test_that("the runaway rule's parameters exist with their defaults", {
+test_that("the retired runaway rule's parameters exist with their defaults", {
   expect_identical(def$runawayEdgeFrac, 0.01)
   expect_identical(def$runawayEdgeMin, 3L)
-  expect_identical(def$runawayBufferMultiple, 2)
+  expect_identical(def$runawayBufferMultiple, NA_real_)
 })
 
 test_that("numeric defaults", {
@@ -101,9 +101,9 @@ test_that("defaults of the objective and of the post-fit diagnostics", {
   expect_identical(def$sizeLikDf, 5)
   expect_identical(def$weighted, FALSE)
   expect_identical(def$adWeight, "auto")
-  ## the annual-area and area-distribution terms and jumping are on by default
-  expect_identical(def$yearAreaWeight, "auto")
-  expect_identical(def$areaDistWeight, "auto")
+  ## jumping is on by default; the retired annual-area and area-distribution terms are off
+  expect_identical(def$yearAreaWeight, 0)
+  expect_identical(def$areaDistWeight, 0)
   expect_identical(def$jumpTries, 20)
   expect_identical(def$jumpMeanDist, 3)
   expect_identical(def$link, "logistic3p")
@@ -117,7 +117,7 @@ test_that("defaults of the objective and of the post-fit diagnostics", {
 })
 
 test_that("defaults that are 'not set'", {
-  for (nm in c(".plots", "initialpop", "nCoresNeeded", "SNLL_FS_thresh"))
+  for (nm in c(".plots", "initialpop", "nCoresNeeded", "firstBlockThresh"))
     expect_null(def[[nm]], label = nm)
   for (nm in c("lower", "upper"))
     expect_identical(def[[nm]], NA, label = nm)

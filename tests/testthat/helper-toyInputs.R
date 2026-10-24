@@ -93,7 +93,7 @@ toySim <- function(params = list(), objects = list()) {
   obj <- override(toyObjects(), objects)
   ## spreadLink and penaliseRunaways are the module's pre-2026-10-18 defaults here, so the tests keep testing those
   ## paths; a test of the new defaults sets them to NULL (removed: the module's default)
-  pars <- override(c(list(.runName = "toyRun", .useCache = FALSE, useCache_DE = FALSE, SNLL_FS_thresh = 500L,
+  pars <- override(c(list(.runName = "toyRun", .useCache = FALSE, useCache_DE = FALSE, firstBlockThresh = 500,
                           spreadLink = "ceiling", penaliseRunaways = TRUE), calParams), params)
   suppressMessages(
     SpaDES.core::simInit(times = list(start = 0, end = 1), modules = toyModule,

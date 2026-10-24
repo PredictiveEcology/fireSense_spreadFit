@@ -55,7 +55,7 @@ test_that("the simList's own covariate tables are not multiplied by 1000", {
 test_that("runDEoptim() receives the parameters, bounds, threshold and formula", {
   out <- fitted(list(iterDEoptim = 40L, nCoresNeeded = 12L, cores = c("hostA", "hostB"),
                      objfunFireReps = 9L, .rep = 3L, DEoptimControl = list(CR = 0.7), .c = 0.4,
-                     SNLL_FS_thresh = 321L))
+                     firstBlockThresh = 321L))
   a <- out$rec$deArgs
   expect_identical(a$itermax, 40L)
   expect_identical(a$nCoresNeeded, 12L)
@@ -64,7 +64,7 @@ test_that("runDEoptim() receives the parameters, bounds, threshold and formula",
   expect_identical(a$rep, 3L)
   expect_identical(a$DEoptimControl, list(CR = 0.7))
   expect_identical(a$.c, 0.4)
-  expect_identical(a$thresh, 321L)                       # SNLL_FS_thresh, not an estimate
+  expect_identical(a$thresh, 321L)                       # firstBlockThresh, not an estimate
   expect_identical(a$runName, "toyRun")
   expect_identical(a$formulaToFit, "~ 0 + CMDsm + youngAge + class1 + class2 + nf")
   expect_identical(a$lower, m(out$sim)$lower)
@@ -72,7 +72,7 @@ test_that("runDEoptim() receives the parameters, bounds, threshold and formula",
                                      "CMDsm", "youngAge", "class1", "class2", "nf", "yearSpreadSD"))
   expect_identical(a$mutuallyExclusive, list(youngAge = c("class", "nonForest", "class1", "class2", "nf")))
   expect_identical(a$covMinMax, out$sim$covMinMax_spread)
-  expect_identical(a$tests, c("adTest", "SNLL_FS"))
+  expect_identical(a$tests, "SNLL_FS")
   expect_identical(a$maxFireSpread, fireSenseUtils::spreadProbCeiling)
 })
 

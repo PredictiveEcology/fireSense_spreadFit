@@ -1,4 +1,4 @@
-## estimateSNLLThresholdPostLargeFires() cached runSpreadWithoutDEoptim() with
+## estimateFirstBlockThreshold() cached runSpreadWithoutDEoptim() with
 ## omitArgs = c("objfunFireReps", "mode"), but both change the result: `mode` picks a
 ## branch that returns a different type (a numeric threshold vs NULL), and
 ## `objfunFireReps` changes the threshold's value. Leaving them out of the key served a
@@ -9,7 +9,7 @@
 test_that("the SNLL threshold cache key does not omit mode or objfunFireReps", {
   exprs <- parse(testthat::test_path("..", "..", "fireSense_spreadFit.R"), keep.source = FALSE)
   def <- Filter(function(x) is.call(x) && identical(x[[1]], as.name("<-")) &&
-                  identical(x[[2]], as.name("estimateSNLLThresholdPostLargeFires")), exprs)
+                  identical(x[[2]], as.name("estimateFirstBlockThreshold")), exprs)
   expect_length(def, 1L)
   code <- paste(deparse(def[[1]][[3]]), collapse = "\n")
   expect_match(code, "runSpreadWithoutDEoptim", fixed = TRUE)
@@ -28,7 +28,7 @@ test_that("the DEoptim fit's cache key omits runawayEdgeFrac and runawayEdgeMin"
 test_that("the threshold calibration passes runawayEdgeFrac and runawayEdgeMin and omits them from its key", {
   exprs <- parse(testthat::test_path("..", "..", "fireSense_spreadFit.R"), keep.source = FALSE)
   def <- Filter(function(x) is.call(x) && identical(x[[1]], as.name("<-")) &&
-                  identical(x[[2]], as.name("estimateSNLLThresholdPostLargeFires")), exprs)
+                  identical(x[[2]], as.name("estimateFirstBlockThreshold")), exprs)
   code <- paste(deparse(def[[1]][[3]]), collapse = "\n")
   expect_match(code, "runawayEdgeFrac = P(sim)$runawayEdgeFrac", fixed = TRUE)
   expect_match(code, "runawayEdgeMin = P(sim)$runawayEdgeMin", fixed = TRUE)
@@ -41,7 +41,7 @@ test_that("the fit and the calibration pass runawayBufferMultiple, omitted from 
   fit <- paste(readLines(testthat::test_path("..", "..", "R", "fitSpread.R")), collapse = "\n")
   exprs <- parse(testthat::test_path("..", "..", "fireSense_spreadFit.R"), keep.source = FALSE)
   def <- Filter(function(x) is.call(x) && identical(x[[1]], as.name("<-")) &&
-                  identical(x[[2]], as.name("estimateSNLLThresholdPostLargeFires")), exprs)
+                  identical(x[[2]], as.name("estimateFirstBlockThreshold")), exprs)
   thr <- paste(deparse(def[[1]][[3]]), collapse = "\n")
   for (code in list(fit, thr)) {
     expect_match(code, "runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)", fixed = TRUE)

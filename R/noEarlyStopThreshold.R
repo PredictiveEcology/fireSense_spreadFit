@@ -2,7 +2,7 @@
 #'
 #' `pickThreshold()` returns `NA_real_` when every calibration trial failed. The threshold is only an
 #' early-stop speed-up, so the correct fallback is no early stop, `Inf`. An `NA` left in place reaches
-#' fireSenseUtils' objective, which compares `SNLL > thresh * 2` and dies on every cluster node with
+#' fireSenseUtils' objective, which compares the first block's value per fire with `thresh` and dies on every cluster node with
 #' "missing value where TRUE/FALSE needed" (ELF 6.2.1, heldOutFold 1). The conversion is done by the
 #' consumer, not inside the cached calibration, so a cached `NA` is converted too.
 #'
@@ -12,7 +12,7 @@
 #' @return `thresh`, or `Inf` if it is `NA`.
 noEarlyStopThreshold <- function(thresh, runName, nTrials) {
   if (!is.null(thresh) && length(thresh) == 1L && is.na(thresh)) {
-    message("no SNLL threshold calibrated for ", runName, ": every one of ", nTrials,
+    message("no early-stop threshold calibrated for ", runName, ": every one of ", nTrials,
             " trials failed; fitting without the early stop")
     return(Inf)
   }
