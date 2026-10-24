@@ -20,12 +20,45 @@
 #'   (`noEarlyStopThreshold()` turns that into `Inf`).
 pickThreshold <- function(perFire, saturated = FALSE, margin = 2, failVal = 1e6) {
   v <- suppressWarnings(as.numeric(perFire))
-  ok <- is.finite(v) & v < failVal & !(rep_len(saturated, length(v)) %in% TRUE)
+  ok <- usableTrials(v, saturated, failVal)
   if (!any(ok)) {
     warning("no threshold calibrated: no usable trial (", length(v), " tried)")
     return(NA_real_)
   }
   margin * min(v[ok])
+}
+
+#' Which calibration trials are usable: finite, below `failVal`, and not saturated
+#'
+#' The one definition of "usable", shared by `pickThreshold()` and `passingPars()`.
+#'
+#' @param v numeric; each trial's first-block value per fire.
+#' @param saturated logical, recycled to `v`.
+#' @param failVal numeric; values at or above this are failed trials.
+#' @return logical, one per trial.
+usableTrials <- function(v, saturated, failVal = 1e6) {
+  is.finite(v) & v < failVal & !(rep_len(saturated, length(v)) %in% TRUE)
+}
+
+#' The calibration's parameter sets that pass the threshold it chose
+#'
+#' DEoptim's starting population is drawn without knowing the threshold, and with weighted fits only a few
+#' percent of gate-passing sets score under it, so a start can have no member that does (ELF 6.6.1: every
+#' member held the fail value after generation 1, although the calibration had found 6 sets that pass).
+#' These are those sets: the usable trials (`usableTrials()`) whose value is at or below `thresh`, which is
+#' what the objective lets through (it bails above `thresh`).
+#'
+#' @param pars list of named parameter sets, one per trial.
+#' @param perFire,saturated the trials' first-block values per fire and saturation flags, as in
+#'   `pickThreshold()`.
+#' @param thresh numeric; the chosen threshold.
+#' @param parNames character; the columns, in the order DEoptim uses (`names(lower)`).
+#' @return a matrix with one row per passing set and columns `parNames`; `NULL` if none pass.
+passingPars <- function(pars, perFire, saturated, thresh, parNames, failVal = 1e6) {
+  v <- suppressWarnings(as.numeric(perFire))
+  keep <- which(usableTrials(v, saturated, failVal) & v <= thresh)
+  if (!length(keep)) return(NULL)
+  do.call(rbind, lapply(pars[keep], function(p) p[parNames]))
 }
 
 #' One calibration trial: the objective with no early stop, reporting its first block

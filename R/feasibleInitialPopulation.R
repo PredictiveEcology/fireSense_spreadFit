@@ -62,14 +62,41 @@ feasibleInitialPopulation <- function(n, lower, upper, gates, seed, minFeasible 
            ", median in range ", sum(counts$medianOK), ". Look at the covariate scales and bounds of this ELF.",
            call. = FALSE)
     }
-    fill <- lapply(seq_len(n - active$accepted), function(i) stats::setNames(runif(length(lower), lower, upper), names(lower)))
-    pop <- do.call(rbind, c(active$pars, fill))
+    pop <- do.call(rbind, c(active$pars, uniformSets(n - active$accepted, lower, upper)))
   })
   colnames(pop) <- names(lower)
   message("Starting population: ", active$accepted, " of ", n, " members pass the spreadProb gates (",
           active$drawn, " draws); the rest are uniform between the bounds")
   attr(pop, "feasible") <- active$accepted
   pop
+}
+
+## `m` parameter sets drawn uniformly between the bounds, as a list of named vectors
+uniformSets <- function(m, lower, upper)
+  lapply(seq_len(m), function(i) stats::setNames(runif(length(lower), lower, upper), names(lower)))
+
+#' Put the calibration's passing sets first in a starting population
+#'
+#' `passing` (`runSpreadWithoutDEoptim()`'s `passingPars`) are placed first and the rest of `pop` follows, cut to `pop`'s number of rows (`clusters::clusterSetup()` uses
+#' the first `NP`). They were drawn between `lower` and `upper`, so one outside them is a changed bound or a
+#' bug and stops, rather than being clamped.
+#'
+#' @param passing matrix of parameter sets with the columns of `lower`, or `NULL`.
+#' @param pop the starting population, `n` rows (`uniformSets()` or `feasibleInitialPopulation()`).
+#' @param lower,upper the bounds, named.
+#' @return `pop` if `passing` is `NULL`; otherwise `n` rows with attribute `feasible` (as `pop`'s, plus the
+#'   passing sets, at most `n`) when `pop` has one.
+withPassingFirst <- function(passing, pop, lower, upper) {
+  if (is.null(passing) || !nrow(passing)) return(pop)
+  stopifnot("the passing sets do not have the bounds' parameters" = setequal(colnames(passing), names(lower)))
+  passing <- passing[, names(lower), drop = FALSE]
+  if (any(sweep(passing, 2L, lower) < 0) || any(sweep(passing, 2L, upper) > 0))
+    stop("fireSense_spreadFit: a parameter set from the threshold calibration is outside lower/upper; ",
+         "the calibration and the fit use different bounds", call. = FALSE)
+  out <- rbind(passing, pop)[seq_len(nrow(pop)), , drop = FALSE]
+  colnames(out) <- names(lower)
+  if (!is.null(attr(pop, "feasible"))) attr(out, "feasible") <- min(nrow(pop), attr(pop, "feasible") + nrow(passing))
+  out
 }
 
 ## `DEoptimControl` with a starting population added; unchanged (same cache key) without one

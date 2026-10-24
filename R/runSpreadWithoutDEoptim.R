@@ -42,7 +42,9 @@
 #' @param sizeLik,sizeLikDf,adWeight,link,jumpTries,jumpMeanDist,yearAreaWeight,areaDistWeight,penaliseRunaways,runawayEdgeFrac,runawayEdgeMin,runawayBufferMultiple passed to
 #'   `.objfunSpreadFit()`, so the threshold is calibrated on the objective the fit uses. The defaults are
 #'   that function's.
-#' @return the calibrated threshold (numeric, or NA if no trial was usable); NULL in "debug" mode.
+#' @return in "debug" mode NULL. Otherwise `list(thresh =, passingPars =)`: the calibrated threshold (numeric,
+#'   or NA if no trial was usable) and the parameter sets that pass it (`passingPars()`; `NULL` if none). They
+#'   are separate so the threshold, which enters DEoptim's cache key, is a plain number.
 runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFormula, flammableRTM,
                                     annualDTx1000, nonAnnualDTx1000, fireBufferedListDT,
                                     mutuallyExclusive = list("youngAge" = "vegPC"),
@@ -156,7 +158,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
               maxDrawsPerTrial, " x iterThresh) that pass the spreadProb gates of the first block of years")
       if (!active$accepted) {
         message("  no draw passed the spreadProb gates; no threshold calibrated")
-        return(NA_real_)
+        return(list(thresh = NA_real_, passingPars = NULL))
       }
       pars <- namePars(active$pars)
     }
@@ -198,6 +200,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
     message("  ", nUsable, " of ", length(pars), " trials usable (first-block value per fire, no early stop: ",
             if (nUsable) paste0("best ", min(perFire[is.finite(perFire) & !saturated])) else "none",
             "); using firstBlockThresh value: ", threshToUse, " (thresholdMargin ", thresholdMargin, ")")
-    return(threshToUse)
+    return(list(thresh = threshToUse,
+                passingPars = passingPars(pars, perFire, saturated, threshToUse, parNames = names(lower))))
   }
 }

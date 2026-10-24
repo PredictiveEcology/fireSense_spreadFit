@@ -568,7 +568,9 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
     },
     estimateThreshold = {
       # Estimate threshold for .objFunSpreadFit
-      mod$thresh <- estimateFirstBlockThreshold(sim, mod$covsX1000)
+      calibration <- estimateFirstBlockThreshold(sim, mod$covsX1000)
+      mod$thresh <- calibration$thresh
+      mod$thresholdPassingPars <- calibration$passingPars
     },
     run = {
       if (mustFitThisPolygon(sim)) {
@@ -576,7 +578,8 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         if (!identical(basename(Par$visualizeDEoptim), currentModule(sim))) {
           params(sim)[[currentModule(sim)]][["visualizeDEoptim"]] <- figurePath(sim)
         }
-        DE <- fitSpread(sim, mod$covsX1000, mod$thresh, runName = P(sim)$.runName)
+        DE <- fitSpread(sim, mod$covsX1000, mod$thresh, runName = P(sim)$.runName,
+                        passingPars = mod$thresholdPassingPars)
         mod$fitDE <- DE # sim$DE is reordered below, which drops the attributes postFitDiagnostics reads
         sim$DE <- DE
         objFunVal <- vapply(sim$DE, function(D) D$member$bestvalit, FUN.VALUE = numeric(1))
@@ -1017,10 +1020,12 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 #'
 #' @param sim a `simList`, after `spreadFitPrep()`.
 #' @param covs `mod$covsX1000`, or the subset of its years that will be fitted.
-#' @return the threshold; `Inf` (no early stop) if every calibration trial failed, see
-#'   `noEarlyStopThreshold()`.
+#' @return `list(thresh =, passingPars =)`: the threshold (`Inf`, no early stop, if every calibration trial
+#'   failed, see `noEarlyStopThreshold()`) and the calibration's parameter sets that pass it (`passingPars()`),
+#'   `NULL` if there are none, if `firstBlockThresh` was supplied, or if the cached calibration predates them
+#'   (it is a bare number). Separate, so `thresh` stays the plain number in DEoptim's cache key.
 estimateFirstBlockThreshold <- function(sim, covs) {
-  thresh <- if (is.null(Par$firstBlockThresh) || is.na(Par$firstBlockThresh)) {
+  calibration <- if (is.null(Par$firstBlockThresh) || is.na(Par$firstBlockThresh)) {
     message("Estimating threshold for inside .objFunSpreadFit -- This can be supplied via firstBlockThresh parameter")
 
     runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)
@@ -1080,6 +1085,8 @@ estimateFirstBlockThreshold <- function(sim, covs) {
       ## rule only changes how quickly DEoptim moves away from an unlucky draw, so thresholds cached
       ## under the 1-cell rule stay valid and must not rerun.
       Cache(.cacheExtra = list(pickThreshold = deparse(pickThreshold),
+                               usableTrials = deparse(usableTrials),
+                               passingPars = deparse(passingPars),
                                trialFirstBlock = deparse(trialFirstBlock),
                                drawActivePars = deparse(drawActivePars),
                                spreadProbGates = deparse(fireSenseUtils::spreadProbGates),
@@ -1095,8 +1102,12 @@ estimateFirstBlockThreshold <- function(sim, covs) {
   } else {
     P(sim)$firstBlockThresh
   }
+  ## a calibration cached before the passing sets existed is a bare number
+  if (!is.list(calibration)) calibration <- list(thresh = calibration, passingPars = NULL)
   ## after Cache(), so a cached NA is converted too
-  noEarlyStopThreshold(thresh, runName = P(sim)$.runName, nTrials = P(sim)$iterThresh)
+  thresh <- calibration$thresh
+  list(thresh = noEarlyStopThreshold(thresh, runName = P(sim)$.runName, nTrials = P(sim)$iterThresh),
+       passingPars = calibration$passingPars)
 }
 
 #' Default `upper` or `lower` bounds for DEoptim
