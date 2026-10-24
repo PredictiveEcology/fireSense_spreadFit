@@ -104,17 +104,17 @@ omitArgsOf <- function(formula, params = list()) {
 }
 
 test_that("the fit's and the threshold's cache keys omit covCentre only when it is NULL", {
-  off <- omitArgsOf(formI, list(SNLL_FS_thresh = NULL, iterThresh = 3L))
+  off <- omitArgsOf(formI, list(firstBlockThresh = NULL, iterThresh = 3L))
   expect_true(all(vapply(off$omit, function(o) "covCentre" %in% o, logical(1))))
   expect_length(off$omit, 2L)                 # the threshold, then the fit
-  on <- omitArgsOf(formIcpt, list(SNLL_FS_thresh = NULL, iterThresh = 3L))
+  on <- omitArgsOf(formIcpt, list(firstBlockThresh = NULL, iterThresh = 3L))
   expect_false(any(vapply(on$omit, function(o) "covCentre" %in% o, logical(1))))
 })
 
 test_that("the threshold calibration is given the centre", {
-  on <- omitArgsOf(formIcpt, list(SNLL_FS_thresh = NULL, iterThresh = 3L))
+  on <- omitArgsOf(formIcpt, list(firstBlockThresh = NULL, iterThresh = 3L))
   expect_named(on$rswd$covCentre, c("CMDsm", "youngAge", "class1", "class2", "nf"))
-  off <- omitArgsOf(formI, list(SNLL_FS_thresh = NULL, iterThresh = 3L))
+  off <- omitArgsOf(formI, list(firstBlockThresh = NULL, iterThresh = 3L))
   expect_null(off$rswd$covCentre)
 })
 

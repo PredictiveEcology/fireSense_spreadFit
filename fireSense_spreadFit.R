@@ -28,7 +28,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.82)", # DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9121)",
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9123)", # the buffer-independent spread objective
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -61,9 +61,12 @@ defineModule(sim, list(
                                  "character vector of machine names, one element per core wanted on that machine.",
                                  "Not part of this module's cache keys: it changes where the work is done, not the result."),
                     cacheKey = FALSE),
-    defineParameter("DEoptimTests", "character", default = c("adTest", "SNLL_FS"),
-                    desc = paste("Currently either `'SNLL_FS'` or `'adTest'` or a length 2 character vector of both.",
-                                 "Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`.")),
+    defineParameter("DEoptimTests", "character", default = "SNLL_FS",
+                    desc = paste("`'SNLL_FS'`: the per-fire kernel log score of each fitted fire's observed size given",
+                                 "its simulated sizes, the objective. Passed to `tests` in",
+                                 "`fireSenseUtils::.objfunSpreadFit()`. `'adTest'` is retired: the objective has no",
+                                 "Anderson-Darling term (it depended on the fit buffers), and fireSenseUtils ignores it",
+                                 "with a warning.")),
     defineParameter("doFit", "logical", default = NA,
                     desc = paste("Whether to fit this polygon. NA (default): do whatever is needed -- use the ledger's",
                                  "fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any",
@@ -84,11 +87,12 @@ defineModule(sim, list(
                                  "A ceiling: clusters (>= 0.0.46) stops the fit earlier, once the population's",
                                  "median value has stopped improving.")),
     defineParameter("iterThresh", "integer", default = 96L,
-                    desc = "Number of random parameter sets tried when calibrating `SNLL_FS_thresh`."),
+                    desc = "Number of random parameter sets tried when calibrating `firstBlockThresh`."),
     defineParameter("thresholdMargin", "numeric", default = 2,
-                    desc = paste("When calibrating `SNLL_FS_thresh`, the threshold is this multiple of the best",
-                                 "usable trial's first-block average annual SNLL (trials run with no early stop;",
-                                 "a trial that saturates spreadProb is not usable). Must be >= 1.")),
+                    desc = paste("When calibrating `firstBlockThresh`, the threshold is this multiple of the best",
+                                 "usable trial's first-block value per fire (trials run with no early stop;",
+                                 "a trial that saturates spreadProb is not usable). Must be >= 1. With 2, known-truth",
+                                 "simulations of three ELFs never stopped a parameter set near the truth (2026-10-23).")),
     defineParameter("libPathDEoptim", "character", default = .libPaths()[1],
                     desc = paste("Absolute path specifying R package directory location to use when running DEotpim.",
                                  "NOTE: this path must be read/write accessible on ALL machines",
@@ -199,9 +203,9 @@ defineModule(sim, list(
                                  "for `sim$spreadFitSizes` and `sim$spreadFitLinkSaturation`; also the",
                                  "members each `crossValidate` fold predicts with. 0 skips it after the fit.")),
     defineParameter("sizeLik", "character", default = "t",
-                    desc = paste("Likelihood of fire size in the objective, 'kde' or 't', passed to",
-                                 "`fireSenseUtils::runDEoptim()`. 't' with `weighted = FALSE` predicted held-out",
-                                 "years best in the 2026-09-21 cross-validation.")),
+                    desc = paste("Retired: fireSenseUtils (>= 0.2.3.9123) ignores it. It chose the per-fire likelihood",
+                                 "('kde' or 't'); the objective is now the per-fire kernel log score on the log scale",
+                                 "(`DEoptimTests`).")),
     defineParameter("escapeSizeHa", "numeric", default = 50,
                     desc = paste("Size (ha) a fire must reach to count as escaped. The spread model is fitted to",
                                  "escaped fires only, and each simulated fire first grows to this size with its",
@@ -209,49 +213,41 @@ defineModule(sim, list(
                                  "then spreads normally. `NULL` or `NA` gives the old fit (any fire over 1",
                                  "pixel). Passed to `fireSenseUtils::runDEoptim()`.")),
     defineParameter("sizeLikDf", "numeric", default = 5,
-                    desc = "Degrees of freedom of the 't' size likelihood."),
+                    desc = "Retired: fireSenseUtils (>= 0.2.3.9123) ignores it. Degrees of freedom of the former 't' size likelihood."),
     defineParameter("weighted", "logical|character", default = FALSE,
-                    desc = paste("Weight of each fire in the size likelihood: FALSE (none), TRUE (log size) or",
+                    desc = paste("Weight of each fire's score in the objective: FALSE (none), TRUE (log size) or",
                                  "'sqrt'. Passed to `fireSenseUtils::runDEoptim()`.")),
     defineParameter("adWeight", "character|numeric", default = "auto",
-                    desc = paste("Weight of the Anderson-Darling term against the size likelihood; 'auto' is",
-                                 "`fireSenseUtils::adWeightAuto()`.")),
-    defineParameter("yearAreaWeight", "numeric|character", default = "auto",
-                    desc = paste("Weight of the annual-area term in the objective: each fit year's observed area",
-                                 "burned is scored against that year's simulated totals (one per replicate) with",
-                                 "the size likelihood. 0 leaves it out; 'auto' (default) is (number of fitted",
-                                 "fires) / (number of fit years), so the year view and the per-fire view weigh",
-                                 "the same. Passed to `fireSenseUtils::runDEoptim()`.")),
-    defineParameter("areaDistWeight", "numeric|character", default = "auto",
-                    desc = paste("Weight of the area-weighted size-distribution term: simulated and observed fires",
-                                 "compared by the share of area burned that fires up to each size make up",
-                                 "(`fireSenseUtils::areaWeightedCvM()`). 0 leaves it out; 'auto' (default) uses",
-                                 "the Anderson-Darling term's weight (`fireSenseUtils::adWeightAuto()`).")),
+                    desc = paste("Retired: fireSenseUtils (>= 0.2.3.9123) ignores it. It weighted the Anderson-Darling",
+                                 "term, which the objective no longer has.")),
+    defineParameter("yearAreaWeight", "numeric|character", default = 0,
+                    desc = paste("Retired: the objective no longer has the annual-area term. It scored years with",
+                                 "fires cut at the fit buffers at the size they had reached, so it depended on the",
+                                 "buffers. fireSenseUtils (>= 0.2.3.9123) ignores any value, with a warning unless 0.")),
+    defineParameter("areaDistWeight", "numeric|character", default = 0,
+                    desc = paste("Retired: the objective no longer has the area-weighted size-distribution term",
+                                 "(`fireSenseUtils::areaWeightedCvM()`, kept for diagnostics). It was biased by fires cut",
+                                 "at the fit buffers. fireSenseUtils (>= 0.2.3.9123) ignores any value, with a warning",
+                                 "unless 0.")),
     defineParameter("penaliseRunaways", "logical", default = FALSE,
-                    desc = paste("A simulated fire that burns its buffer's outer edge (see `runawayEdgeFrac`) is a",
-                                 "runaway, censored in the size likelihood: it has no density at the observed size.",
-                                 "The Anderson-Darling, annual-area and area-distribution terms count it as",
-                                 "`runawayBufferMultiple` times its own buffer's size (NA: the size it burned). Fires are",
-                                 "not capped at a size; spread is bounded by the buffers. FALSE scores the simulated",
-                                 "size in the likelihood too (default since 2026-10-17: simulated sizes are scored as burned, buffer-bounded",
-                                 "like the observed; the 2x-buffer runaway score shrank `yearSpreadSD` 3-4 times). Passed to",
-                                 "`fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting.")),
-    defineParameter("runawayBufferMultiple", "numeric", default = 2,
-                    desc = paste("With `penaliseRunaways`, a runaway counts in the size-based terms of the objective",
-                                 "(Anderson-Darling, annual area, area-weighted size distribution) as this multiple of",
-                                 "the size of its own fire's buffer: a fire that reaches the edge of its buffer would",
-                                 "have kept burning. A full-landscape hindcast of ELF 5.4 showed fits that matched the",
-                                 "observed area inside the buffers ran away on the whole landscape (fires of 3-6 Mha,",
-                                 "median 2-12 times the observed area). NA scores the size it burned before it was",
-                                 "stopped, the old behaviour. Passed to `fireSenseUtils::runDEoptim()` and the threshold",
-                                 "calibration.")),
+                    desc = paste("Retired as a choice of objective: a simulated fire that burns an open edge pixel of",
+                                 "its year's buffers (one next to flammable land outside every buffer,",
+                                 "`fireSenseUtils::bufferOpen()`) is always cut, i.e. it adds no density to its fire's",
+                                 "score, so the fit no longer depends on the buffers. TRUE only stops such a fire at the",
+                                 "first open pixel of its own buffer, which saves time and leaves the score as it is",
+                                 "(up to fires sharing a year's landscape). Passed to `fireSenseUtils::runDEoptim()`;",
+                                 "the threshold calibration uses the same setting.")),
+    defineParameter("runawayBufferMultiple", "numeric", default = NA_real_,
+                    desc = paste("Retired: a cut fire has no size in the objective. It set the size a runaway counted",
+                                 "as in the Anderson-Darling, annual-area and area-distribution terms, which are gone.",
+                                 "fireSenseUtils (>= 0.2.3.9123) ignores it, with a warning unless NA.")),
     defineParameter("runawayEdgeFrac", "numeric", default = fireSenseUtils::fireSenseRunawayEdgeFrac,
-                    desc = paste("A simulated fire is a runaway when it burns at least",
-                                 "`max(runawayEdgeMin, ceiling(runawayEdgeFrac * n))` of the `n` pixels of the edge ring of",
-                                 "its own buffer (never more than `n`); one touched pixel is luck. Passed to",
-                                 "`fireSenseUtils::runDEoptim()`. Not part of the DEoptim cache key.")),
+                    desc = paste("Retired: fireSenseUtils (>= 0.2.3.9123) ignores it. A fire was a runaway when it",
+                                 "burned at least `max(runawayEdgeMin, ceiling(runawayEdgeFrac * n))` of the `n` edge",
+                                 "pixels of its own buffer; it is now cut at the first open edge pixel.",
+                                 "Not part of the DEoptim cache key.")),
     defineParameter("runawayEdgeMin", "integer", default = fireSenseUtils::fireSenseRunawayEdgeMin,
-                    desc = "The least number of edge-ring pixels that makes a fire a runaway; see `runawayEdgeFrac`."),
+                    desc = "Retired: fireSenseUtils (>= 0.2.3.9123) ignores it; see `runawayEdgeFrac`."),
     defineParameter("jumpTries", "numeric", default = 20,
                     desc = paste("With `escapeSizeHa`: how many attempts a simulated fire that is still below the",
                                  "escape size, with no burnable neighbour left, may make to jump to burnable land",
@@ -305,8 +301,11 @@ defineModule(sim, list(
     defineParameter("strategy", "integer", default = 6L,
                     desc = paste("Passed to `DEoptim.control`. 6 (DE/current-to-p-best/1) with `p = 0.1` did best",
                                  "in a settings study (see NEWS).")),
-    defineParameter("SNLL_FS_thresh", "integer", default = NULL,
-                    desc = "Threshold multiplier used in objective function SNLL fire size test."),
+    defineParameter("firstBlockThresh", "numeric", default = NULL,
+                    desc = paste("The objective's early stop: a parameter set whose first block of years (the two with",
+                                 "the most area burned) scores above this per fire is abandoned. NULL (default)",
+                                 "calibrates it (`iterThresh`, `thresholdMargin`) once per ELF, and the",
+                                 "cross-validation folds reuse it. Replaces `SNLL_FS_thresh`, which was per year.")),
     defineParameter("refitExisting", "logical", NA, NA, NA,
                     paste("DEPRECATED, use `doFit`. TRUE is `doFit = TRUE`; NA (unset) and FALSE do nothing.")),
     defineParameter("stopIfNoPreRunFit", "logical", default = NA,
@@ -569,7 +568,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
     },
     estimateThreshold = {
       # Estimate threshold for .objFunSpreadFit
-      mod$thresh <- estimateSNLLThresholdPostLargeFires(sim, mod$covsX1000)
+      mod$thresh <- estimateFirstBlockThreshold(sim, mod$covsX1000)
     },
     run = {
       if (mustFitThisPolygon(sim)) {
@@ -994,7 +993,7 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 
 #' A seed that depends only on the ELF
 #'
-#' The SNLL threshold becomes `thresh` in `runDEoptim()`, so it is part of every cached DEoptim
+#' The early-stop threshold becomes `thresh` in `runDEoptim()`, so it is part of every cached DEoptim
 #' generation's key. Drawing the seed by chance meant a single cache miss on `estimateThreshold`
 #' re-drew the threshold and invalidated every cached generation for that ELF. Keyed on the ELF, a
 #' miss costs only the threshold estimate.
@@ -1009,20 +1008,20 @@ histOfCovariates <- function(annualList, nonAnnualList) {
   1L + as.integer(sum(bytes * seq_along(bytes) * 7919) %% 1e6)
 }
 
-#' The SNLL fire-size threshold of the objective function, for the years in `covs`
+#' The early-stop threshold of the objective function, calibrated on the years in `covs`
 #'
-#' Uses `SNLL_FS_thresh` if supplied; otherwise calibrates it with a cached
-#' `runSpreadWithoutDEoptim()` call on `covs`. The threshold bounds the summed SNLL of the two
-#' largest fire years of the data it is used on, so it belongs to those years: a cross-validation
-#' fold calibrates its own (`fitAndScoreFold()`).
+#' Uses `firstBlockThresh` if supplied; otherwise calibrates it with a cached
+#' `runSpreadWithoutDEoptim()` call on `covs`. The threshold bounds the per-fire score of the two
+#' largest fire years, per fire, so it does not depend on how many fires they hold: the
+#' cross-validation folds reuse the full data's (`fitAndScoreFold()`).
 #'
 #' @param sim a `simList`, after `spreadFitPrep()`.
 #' @param covs `mod$covsX1000`, or the subset of its years that will be fitted.
 #' @return the threshold; `Inf` (no early stop) if every calibration trial failed, see
 #'   `noEarlyStopThreshold()`.
-estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
-  thresh <- if (is.null(Par$SNLL_FS_thresh) || is.na(Par$SNLL_FS_thresh)) {
-    message("Estimating threshold for inside .objFunSpreadFit -- This can be supplied via SNLL_FS_thresh parameter")
+estimateFirstBlockThreshold <- function(sim, covs) {
+  thresh <- if (is.null(Par$firstBlockThresh) || is.na(Par$firstBlockThresh)) {
+    message("Estimating threshold for inside .objFunSpreadFit -- This can be supplied via firstBlockThresh parameter")
 
     runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)
     # Took 50 minutes using 10 cores for Taiga studyArea
@@ -1094,7 +1093,7 @@ estimateSNLLThresholdPostLargeFires <- function(sim, covs) {
                                                       climateRef = sim$climateRef_spread,
                                                       runawayBufferMultiple = runawayMultiple)))
   } else {
-    P(sim)$SNLL_FS_thresh
+    P(sim)$firstBlockThresh
   }
   ## after Cache(), so a cached NA is converted too
   noEarlyStopThreshold(thresh, runName = P(sim)$.runName, nTrials = P(sim)$iterThresh)

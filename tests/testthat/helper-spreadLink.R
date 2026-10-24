@@ -30,7 +30,7 @@ runCalibration <- function(FUN, ...) {
 ## what Cache(omitArgs =) the fit and the threshold calibration are given, and what the calibration receives
 omitArgsCO <- function(params = list()) {
   rec <- new.env()
-  sim <- toySim(c(list(SNLL_FS_thresh = NULL, iterThresh = 3L), params), toyObjectsCO())
+  sim <- toySim(c(list(firstBlockThresh = NULL, iterThresh = 3L), params), toyObjectsCO())
   mockFitAndLedger(sim, rec)
   mockInModule(sim,
     runSpreadWithoutDEoptim = function(...) { rec$rswd <- list(...); 777 },

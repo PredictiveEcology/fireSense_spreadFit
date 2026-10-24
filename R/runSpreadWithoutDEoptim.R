@@ -1,13 +1,14 @@
 #' Evaluate the spread objective function without DEoptim
 #'
 #' In "debug" mode, runs `fireSenseUtils::.objfunSpreadFit()` once per parameter set, with plots.
-#' Otherwise calibrates the SNLL threshold: evaluates `iterThresh` random parameter sets with no early
-#' stop, in forked processes (drawn from the logistic's active range, see `drawActivePars()`), and returns `pickThreshold()` of their first-block SNLLs: `thresholdMargin`
-#' times the best trial that did not saturate.
+#' Otherwise calibrates the early-stop threshold: evaluates `iterThresh` random parameter sets with no
+#' early stop, in forked processes (drawn from the logistic's active range, see `drawActivePars()`), and
+#' returns `pickThreshold()` of their first-block values per fire: `thresholdMargin` times the best trial
+#' that did not saturate.
 #'
 #' @param iterThresh integer; number of random parameter sets.
 #' @param thresholdMargin numeric; the threshold is this multiple of the best usable trial's first-block
-#'   average annual SNLL (the unit of `thresh` in the objective).
+#'   value per fire (the unit of `thresh` in the objective).
 #' @param lower,upper numeric; bounds the random parameter sets are drawn between.
 #' @param maxDrawsPerTrial integer; the calibration keeps only draws that pass the objective's spreadProb
 #'   gates in the first block of years (`fireSenseUtils::spreadProbGates()`), until `iterThresh` are
@@ -30,7 +31,7 @@
 #'   `link = "powerLaw"`. Passed to `.objfunSpreadFit()` and the gates.
 #' @param objfunFireReps integer; passed to `Nreps`, the replicates per fire.
 #' @param maxFireSpread numeric; upper limit on mean spread probability.
-#' @param weighted logical; weight the SNLL by log fire size. Also used in the rough threshold estimate.
+#' @param weighted logical; weight each fire's score by log fire size.
 #' @param tests character; objective function tests, e.g. "SNLL_FS", "adTest".
 #' @param formulaToFit character; the spread formula.
 #' @param pars optional numeric vector, or list of them, to evaluate instead of random sets.
@@ -123,7 +124,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
       )
     }
   } else {
-    message("SNLL_FS_thresh not specified. Self calibrating threshold value for runDEoptim (n=", n, ")")
+    message("firstBlockThresh not specified. Self calibrating threshold value for runDEoptim (n=", n, ")")
 
     # Check for being in a future
     a <- future::plan()
@@ -189,14 +190,14 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
     })
 
     stopIfTrialsErrored(objSpreadFit)
-    first <- lapply(objSpreadFit, function(x) if (is.list(x)) x else list(annual = NA_real_, saturated = NA))
-    annual <- vapply(first, function(x) as.numeric(x$annual)[1], numeric(1))
+    first <- lapply(objSpreadFit, function(x) if (is.list(x)) x else list(perFire = NA_real_, saturated = NA))
+    perFire <- vapply(first, function(x) as.numeric(x$perFire)[1], numeric(1))
     saturated <- vapply(first, function(x) isTRUE(x$saturated), logical(1))
-    threshToUse <- suppressWarnings(pickThreshold(annual, saturated, margin = thresholdMargin))
-    nUsable <- sum(is.finite(annual) & !saturated)
-    message("  ", nUsable, " of ", length(pars), " trials usable (first-block avg annual SNLL, no early stop: ",
-            if (nUsable) paste0("best ", min(annual[is.finite(annual) & !saturated])) else "none",
-            "); using SNLL_FS_thresh value: ", threshToUse, " (thresholdMargin ", thresholdMargin, ")")
+    threshToUse <- suppressWarnings(pickThreshold(perFire, saturated, margin = thresholdMargin))
+    nUsable <- sum(is.finite(perFire) & !saturated)
+    message("  ", nUsable, " of ", length(pars), " trials usable (first-block value per fire, no early stop: ",
+            if (nUsable) paste0("best ", min(perFire[is.finite(perFire) & !saturated])) else "none",
+            "); using firstBlockThresh value: ", threshToUse, " (thresholdMargin ", thresholdMargin, ")")
     return(threshToUse)
   }
 }

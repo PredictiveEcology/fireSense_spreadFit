@@ -18,7 +18,7 @@ test_that("every runSpreadWithoutDEoptim() call passes the DEoptimTests paramete
   }
   for (e in exprs) walk(e)
 
-  expect_gte(length(calls), 2L) # the debug event and estimateSNLLThresholdPostLargeFires()
+  expect_gte(length(calls), 2L) # the debug event and estimateFirstBlockThreshold()
   for (cl in calls)
     expect_identical(deparse(cl$tests), "P(sim)$DEoptimTests")
 })

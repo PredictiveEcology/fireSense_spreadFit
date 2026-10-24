@@ -133,8 +133,8 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
   ## fail values was never fitted; its "best" members are random draws.
   if (length(DE) && all(as.numeric(DE[[length(DE)]]$member$popval) >= 1e6))
     stop("fireSense_spreadFit: fit '", runName, "' failed: every member of the final DEoptim ",
-         "population has the fail value 1e6, i.e. no parameter set passed the SNLL threshold (",
-         thresh, ") on the first two fire years.")
+         "population has the fail value 1e6, i.e. no parameter set passed the early-stop threshold (",
+         thresh, " per fire) on the first two fire years.")
   DE
 }
 
@@ -147,7 +147,11 @@ objectiveBodies <- function()
        spreadProbFromCovs = deparse(fireSenseUtils::spreadProbFromCovs), # the spread link itself
        logisticAll = deparse(fireSenseUtils::logisticAll),
        powerLawLink = deparse(fireSenseUtils::powerLawLink),
-       dataYearBefore = deparse(fireSenseUtils::dataYearBefore))
+       dataYearBefore = deparse(fireSenseUtils::dataYearBefore),
+       kernelLogScore = deparse(utils::getFromNamespace("kernelLogScore", "fireSenseUtils")), # the per-fire score
+       addBufferEdge = deparse(fireSenseUtils::addBufferEdge), # which replicates are cut
+       bufferEdge = deparse(fireSenseUtils::bufferEdge),
+       bufferOpen = deparse(fireSenseUtils::bufferOpen))
 
 ## The `link` the objective is given, from the parameters `Par` (`P(sim)`): "powerLaw" for `spreadLink = "powerLaw"`,
 ## else the `link` parameter's "logistic3pUpper", else NULL, its default, logistic3p
@@ -236,10 +240,11 @@ cvFolds <- function(years) {
 #' `runName` (and so its `Cache` key, see `fitSpread()`) is suffixed by `k`, so fold 1, fold 2 and
 #' a full fit (plain `P(sim)$.runName`, no suffix) never share a cache entry.
 #'
-#' The SNLL threshold is calibrated on the fitted years (`estimateSNLLThresholdPostLargeFires()`), not
-#' taken from the full data: it bounds the SNLL of the two largest fire years, and a fold's two largest
-#' years are not the full data's. With the full data's threshold, held-out fits of ELFs 4.3 and 5.2.1
-#' (2026-09-29) never passed it and returned the fail value for all 5000 generations.
+#' The early-stop threshold is the full data's (`estimateFirstBlockThreshold()` on all years, the same
+#' cached calibration as the full fit's). It is per fire, so it does not depend on how many fires the
+#' two largest years of the fitted data hold. (It was a summed SNLL per year, which did: with the full
+#' data's threshold, held-out fits of ELFs 4.3 and 5.2.1 (2026-09-29) never passed it and returned the
+#' fail value for all 5000 generations, so each fold calibrated its own.)
 #'
 #' @param sim a `simList`.
 #' @param covs `mod$covsX1000`.
@@ -253,7 +258,7 @@ fitAndScoreFold <- function(sim, covs, fold, k) {
   fitCovs <- heldCovs <- covs
   fitCovs[yearLists] <- lapply(covs[yearLists], function(x) x[years[fold != k]])
   heldCovs[yearLists] <- lapply(covs[yearLists], function(x) x[years[fold == k]])
-  thresh <- estimateSNLLThresholdPostLargeFires(sim, fitCovs)
+  thresh <- estimateFirstBlockThreshold(sim, covs)
   DE <- fitSpread(sim, fitCovs, thresh, runName = paste0(P(sim)$.runName, "_cvFold", k), diagnostics = FALSE)
   best <- bestParamSets(DE, names(P(sim)$lower), n = max(1L, P(sim)$simulateMembers))
   s <- Cache(fireSenseUtils::simulateFireSizes, pop = best$params,

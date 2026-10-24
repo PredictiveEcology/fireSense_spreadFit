@@ -1,22 +1,22 @@
-## Choosing the calibrated SNLL threshold from the trials' own first-block SNLLs.
+## Choosing the calibrated early-stop threshold from the trials' own first-block values.
 ##
 ## FireSense, 2026-09-30: each trial used to be paired with an independent random threshold and the
 ## smallest passing one was kept, so the result was luck (ELF 6.2.1 fold 1: non-saturated trials scored
 ## 201, 212, 226 but the paired thresholds were 17, 209, 144 -> NA; 14.3 fold 1: 533/541 against a
 ## largest possible threshold of 381 -> NA). Now: threshold = margin x the best usable trial's
-## first-block average annual SNLL, the unit fireSenseUtils' objective compares `thresh` with:
-## it bails when  SNLL_FSTest > round(thresh) * numYrsDone  (R/objFunSpread.R), SNLL_FSTest being the
-## first block's summed SNLL, so the objective's `firstBlockSNLL` = SNLL_FSTest / numYrsDone.
+## first-block value per fire, the unit fireSenseUtils' objective compares `thresh` with: it bails when
+## the first block's per-fire term / its number of fires > thresh (R/objFunSpread.R), that ratio being
+## the objective's `firstBlockPerFire`. Each fire's score is about 1-3, so the threshold is not rounded.
 
 test_that("the threshold is 2 x the best usable value; saturated and failed trials are ignored", {
-  annual <- c(533, 541, 1e6, 80, NA, 900)
-  saturated <- c(FALSE, FALSE, FALSE, TRUE, FALSE, FALSE)    # 80 saturated (a floor score); 1e6 failed
-  expect_identical(pickThreshold(annual, saturated), 1066)
-  expect_identical(pickThreshold(annual, saturated, margin = 3), 1599)
+  perFire <- c(2.09, 2.4, 1e6, 0.5, NA, 3.1)
+  saturated <- c(FALSE, FALSE, FALSE, TRUE, FALSE, FALSE)    # 0.5 saturated; 1e6 failed
+  expect_identical(pickThreshold(perFire, saturated), 4.18)
+  expect_identical(pickThreshold(perFire, saturated, margin = 3), 3 * 2.09)
 })
 
-test_that("a non-integer product is rounded up, because the objective rounds thresh", {
-  expect_identical(pickThreshold(c(10.2, 50), margin = 2), 21)
+test_that("the threshold is not rounded: per fire, the values are about 1-3", {
+  expect_identical(pickThreshold(c(1.15, 50), margin = 2), 2.3)
 })
 
 test_that("no usable trial -> NA with a warning, which noEarlyStopThreshold() turns into Inf", {
@@ -32,13 +32,12 @@ test_that("failVal is the cutoff for a usable value, and is exclusive", {
 })
 
 test_that("the best usable trial does not bail under the derived threshold (the objective's own comparison)", {
-  ## the comparison in fireSenseUtils::.objfunSpreadFit(), first block: numYrsDone years, summed SNLL
-  bails <- function(SNLL_FSTest, thresh, numYrsDone) SNLL_FSTest > round(thresh, 0) * numYrsDone
-  for (numYrsDone in c(1L, 2L, 3L)) for (a in c(1, 201, 533.4, 1234)) {
+  ## the comparison in fireSenseUtils::.objfunSpreadFit(), first block of nFires fires: its summed term per fire
+  bails <- function(blockValue, thresh, nFires) blockValue / nFires > thresh
+  for (nFires in c(1L, 7L, 300L)) for (a in c(0.3, 1.15, 2.7, 60)) {
     thresh <- pickThreshold(c(a, 3 * a, 1e6), margin = 2)
-    SNLL_FSTest <- round(a * numYrsDone, 0)      # the best trial's first block, as the objective rounds it
-    expect_false(bails(SNLL_FSTest, thresh, numYrsDone))
-    expect_true(bails(round(2 * thresh * numYrsDone) + 1, thresh, numYrsDone))   # a worse set still bails
+    expect_false(bails(a * nFires, thresh, nFires))
+    expect_true(bails(2.01 * thresh * nFires, thresh, nFires))   # a worse set still bails
   }
 })
 
@@ -52,41 +51,41 @@ test_that("a trial's first block is read from the objective's returnTerms fields
   seen <- NULL
   fake <- function(par, thresh, returnTerms, ...) {
     seen <<- list(thresh = thresh, returnTerms = returnTerms, dots = list(...))
-    c(objective = 1533, firstBlockSNLL = 533, bailed = 1)
+    c(objective = 1533, firstBlockPerFire = 533, bailed = 1)
   }
   testthat::local_mocked_bindings(.objfunSpreadFit = fake)
   expect_identical(trialFirstBlock(c(a = 1), penaliseRunaways = FALSE),
-                   list(annual = 533, saturated = TRUE))
+                   list(perFire = 533, saturated = TRUE))
   expect_identical(seen$thresh, Inf)
   expect_true(seen$returnTerms)
   expect_identical(seen$dots, list(penaliseRunaways = FALSE))
-  testthat::local_mocked_bindings(.objfunSpreadFit = function(...) c(objective = 1, firstBlockSNLL = 80, bailed = 0))
-  expect_identical(trialFirstBlock(c(a = 1)), list(annual = 80, saturated = FALSE))
+  testthat::local_mocked_bindings(.objfunSpreadFit = function(...) c(objective = 1, firstBlockPerFire = 80, bailed = 0))
+  expect_identical(trialFirstBlock(c(a = 1)), list(perFire = 80, saturated = FALSE))
 })
 
 test_that("a crashed trial, or an objective without the fields, counts as failed", {
   testthat::local_mocked_bindings(.objfunSpreadFit = function(...) stop("boom"))
-  expect_identical(trialFirstBlock(c(a = 1)), list(annual = NA_real_, saturated = NA, error = "boom"))
+  expect_identical(trialFirstBlock(c(a = 1)), list(perFire = NA_real_, saturated = NA, error = "boom"))
   testthat::local_mocked_bindings(.objfunSpreadFit = function(...) 1234)
-  expect_match(trialFirstBlock(c(a = 1))$error, "firstBlockSNLL")
+  expect_match(trialFirstBlock(c(a = 1))$error, "firstBlockPerFire")
 })
 
 test_that("one errored trial among good ones stops the calibration with its message", {
-  good <- list(annual = 80, saturated = FALSE)
-  bad <- list(annual = NA_real_, saturated = NA, error = "no covariates")
+  good <- list(perFire = 80, saturated = FALSE)
+  bad <- list(perFire = NA_real_, saturated = NA, error = "no covariates")
   expect_error(stopIfTrialsErrored(list(good, bad, good, bad)), "2 of 4 calibration trials failed.*no covariates")
   expect_error(stopIfTrialsErrored(list(bad)), "1 of 1 calibration trials failed.*no covariates")
   ## trials that merely bailed (no error) are not an error
-  expect_null(stopIfTrialsErrored(list(good, list(annual = 1e6, saturated = TRUE))))
+  expect_null(stopIfTrialsErrored(list(good, list(perFire = 1e6, saturated = TRUE))))
 })
 
 test_that("trials whose process died are tolerated unless all died", {
-  good <- list(annual = 80, saturated = FALSE)
+  good <- list(perFire = 80, saturated = FALSE)
   dead <- structure("fork killed", class = "try-error")
   expect_null(stopIfTrialsErrored(list(good, dead, good)))
   expect_error(stopIfTrialsErrored(list(dead, dead)), "died")
   ## a real error still stops, even beside dead forks
-  expect_error(stopIfTrialsErrored(list(dead, list(annual = NA_real_, saturated = NA, error = "boom"))), "boom")
+  expect_error(stopIfTrialsErrored(list(dead, list(perFire = NA_real_, saturated = NA, error = "boom"))), "boom")
 })
 
 test_that("no printed output is parsed anywhere in the sources", {
