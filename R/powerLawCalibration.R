@@ -13,6 +13,7 @@ calibratePowerLawFor <- function(sim) {
   if (!inherits(sim$flammableRTM, "SpatRaster"))
     stop("fireSense_spreadFit: spreadLink = 'powerLaw' calibrates on `flammableRTM`, a SpatRaster (from fireSense_dataPrepFit); ",
          "supply it, or use spreadLink = 'ceiling'")
+  localSingleThreadBLAS()
   sim$powerLawCalibration <- Cache(
     fireSenseUtils::calibratePowerLaw,
     flammable = sim$flammableRTM, pGrid = P(sim)$powerLawPGrid, nFires = P(sim)$powerLawFires,

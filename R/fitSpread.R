@@ -121,6 +121,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
                          mutuallyExclusive = P(sim)$mutuallyExclusiveCols, maxFireSpread = P(sim)$maxFireSpread,
                          escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa), landscape = sim$rasterToMatch,
                          link = spreadLink(P(sim)), powerLawGamma = powerLawGammaOf(sim))
+    localSingleThreadBLAS()
     pop <- feasibleInitialPopulation(n, lower = lower, upper = P(sim)$upper, gates = gates,
                                      seed = .elfSeed(sim$.ELFind), cores = forkBudget(n))
     tryCatch(fit(initialpop = pop), deoptimNoFeasibleMember = function(e2)

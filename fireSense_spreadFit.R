@@ -23,7 +23,7 @@ defineModule(sim, list(
   loadOrder = list(after = c("fireSense_dataPrepFit", "fireSense_ignitionFit")),
   reqdPkgs = list("data.table", "DEoptim", "dplyr", "fpCompare", "future",
                   "ggplot2", "scales", "kSamples", "munsell",
-                  "logging", "magrittr", "parallel", "raster", "sf", "terra", "tidyr", "withr", ## TODO: remove magrittr
+                  "logging", "magrittr", "parallel", "raster", "RhpcBLASctl", "sf", "terra", "tidyr", "withr", ## TODO: remove magrittr
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.82)", # DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
