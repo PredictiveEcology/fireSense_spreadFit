@@ -72,7 +72,7 @@ test_that("runDEoptim() receives the parameters, bounds, threshold and formula",
                                      "CMDsm", "youngAge", "class1", "class2", "nf", "yearSpreadSD"))
   expect_identical(a$mutuallyExclusive, list(youngAge = c("class", "nonForest", "class1", "class2", "nf")))
   expect_identical(a$covMinMax, out$sim$covMinMax_spread)
-  expect_identical(a$tests, "SNLL_FS")
+  expect_identical(a$tests, c("adTest", "SNLL_FS"))
   expect_identical(a$maxFireSpread, fireSenseUtils::spreadProbCeiling)
 })
 
