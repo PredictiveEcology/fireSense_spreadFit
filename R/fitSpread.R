@@ -144,7 +144,8 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE) {
 objectiveBodies <- function() {
   fns <- c("spreadProbFromIntegerCovs", "spreadProbCovsOfYear", "spreadProbFromCovs", "logisticAll", "powerLawLink",
            "dataYearBefore", "addBufferEdge", "bufferEdge", "bufferOpen", "sizeLikT", "kernelLogScore",
-           "adStatistic", "adWeightAuto", "pooledFireSizes", "yearAreaNLL", "areaWeightedCvM")
+           "adStatistic", "adWeightAuto", "pooledFireSizes", "yearAreaNLL", "areaWeightedCvM",
+           "pitMidRank", "adUniform")
   c(list(objfunSpreadFit = deparse(fireSenseUtils::.objfunSpreadFit),
          objFunInner = deparse(utils::getFromNamespace("objFunInner", "fireSenseUtils"))),
     stats::setNames(lapply(fns, function(f) deparse(utils::getFromNamespace(f, "fireSenseUtils"))), fns))

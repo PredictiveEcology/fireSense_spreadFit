@@ -6,9 +6,11 @@ test_that("the fit's and the threshold calibration's cache keys include the obje
   expect_named(ob, c("objfunSpreadFit", "objFunInner", "spreadProbFromIntegerCovs", "spreadProbCovsOfYear",
                      "spreadProbFromCovs", "logisticAll", "powerLawLink", "dataYearBefore",
                      "addBufferEdge", "bufferEdge", "bufferOpen", "sizeLikT", "kernelLogScore",
-                     "adStatistic", "adWeightAuto", "pooledFireSizes", "yearAreaNLL", "areaWeightedCvM"))
+                     "adStatistic", "adWeightAuto", "pooledFireSizes", "yearAreaNLL", "areaWeightedCvM",
+                     "pitMidRank", "adUniform"))
   ## which replicates are cut at the buffers, the per-fire likelihood and score, and the terms added to them
-  for (f in c("kernelLogScore", "sizeLikT", "adStatistic", "yearAreaNLL", "areaWeightedCvM", "pooledFireSizes"))
+  for (f in c("kernelLogScore", "sizeLikT", "adStatistic", "yearAreaNLL", "areaWeightedCvM", "pooledFireSizes",
+              "pitMidRank", "adUniform"))
     expect_identical(ob[[f]], deparse(utils::getFromNamespace(f, "fireSenseUtils")), label = f)
   expect_identical(ob$bufferOpen, deparse(fireSenseUtils::bufferOpen))
   ## the power-law link, and the dispatcher that reaches it
