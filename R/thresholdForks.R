@@ -58,10 +58,11 @@ forkBudget <- function(nTasks) {
 #' caller exits.
 #'
 #' @param envir environment whose exit restores the previous number of BLAS threads.
+#' @param threads integer; BLAS threads until then (the emulator's GP fits take a few, `emulatorDefaults()`).
 #' @return `NULL`, invisibly.
-localSingleThreadBLAS <- function(envir = parent.frame()) {
+localSingleThreadBLAS <- function(envir = parent.frame(), threads = 1L) {
   previous <- RhpcBLASctl::blas_get_num_procs()
-  RhpcBLASctl::blas_set_num_threads(1L)
+  RhpcBLASctl::blas_set_num_threads(threads)
   withr::defer(RhpcBLASctl::blas_set_num_threads(previous), envir = envir)
   invisible(NULL)
 }
