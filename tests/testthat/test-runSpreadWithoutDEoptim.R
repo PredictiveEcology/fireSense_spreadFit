@@ -29,6 +29,12 @@ callIt <- function(mode, ..., iterThresh = 4L, seed = 42L, gate = gateRule) {
       maxFireSpread = 0.28, tests = "SNLL_FS", formulaToFit = "~ 0 + a + b", mode = mode, seed = seed,
       doObjFunAssertions = FALSE, ...)),
     message = function(m) { msgs <<- c(msgs, conditionMessage(m)); invokeRestart("muffleMessage") })
+  ## fit mode returns list(thresh, passingPars); the tests read the threshold, with the sets as an attribute
+  if (is.list(out) && "thresh" %in% names(out)) {
+    passing <- out$passingPars
+    out <- out$thresh
+    attr(out, "passingPars") <- passing
+  }
   if (!is.null(out)) attr(out, "messages") <- msgs
   out
 }
@@ -238,4 +244,41 @@ test_that("with a fixed seed the accepted draws, and so the threshold, are repro
   set.seed(7L); d2 <- drawActivePars(4L, lower, upper, 400L, gates, cores = 2L)
   expect_identical(d2, d1)
   expect_true(all(vapply(d1$pars, active, logical(1))))
+})
+
+test_that("fit mode also returns the passing sets: finite, unsaturated trials at or below the threshold", {
+  withr::local_options(mc.cores = 2L)
+  ## a trial with a non-finite first block, a saturated one, and usable ones above the threshold
+  annual <- function(par) if (par[["a"]] > 0.9) Inf else 100 + 400 * (par[["a"]] - 0.45)
+  rec <- new.env()
+  local_mocked_bindings(.objfunSpreadFit = recorder(rec, annual = annual, saturated = saturatedOf))
+  callIt("debug", iterThresh = 8L)                          # the 8 parameter sets seed 42 draws
+  trials <- lapply(rec$calls, `[[`, "par")
+  out <- callIt("fit", iterThresh = 8L)
+  value <- vapply(trials, annual, numeric(1))
+  usable <- is.finite(value) & !vapply(trials, saturatedOf, logical(1))
+  thresh <- 2 * min(value[usable])
+  expect_equal(as.numeric(out), thresh)                       # the threshold is what it was
+  passing <- attr(out, "passingPars")
+  want <- do.call(rbind, trials[usable & value <= thresh])
+  expect_true(any(usable & value > thresh) && any(!is.finite(value)) && any(vapply(trials, saturatedOf, logical(1))))
+  expect_identical(colnames(passing), names(lower))           # DEoptim's column order
+  expect_equal(unname(passing[order(passing[, "a"]), , drop = FALSE]), unname(want[order(want[, "a"]), , drop = FALSE]))
+  expect_lt(nrow(passing), sum(usable))
+})
+
+test_that("fit mode with no usable trial returns no passing sets", {
+  withr::local_options(mc.cores = 2L)
+  local_mocked_bindings(.objfunSpreadFit = recorder(new.env(), saturated = function(par) TRUE))
+  out <- callIt("fit", iterThresh = 3L)
+  expect_true(is.na(as.numeric(out)))
+  expect_null(attr(out, "passingPars"))
+})
+
+test_that("passingPars() orders the columns as `parNames` and returns NULL when none pass", {
+  pars <- list(c(b = 15, a = 0.2), c(b = 12, a = 0.9), c(b = 11, a = 0.5))
+  m <- passingPars(pars, perFire = c(1, 5, 2), saturated = c(FALSE, FALSE, TRUE), thresh = 2, parNames = c("a", "b"))
+  expect_identical(m, matrix(c(0.2, 15), 1, dimnames = list(NULL, c("a", "b"))))
+  expect_null(passingPars(pars, c(1, 5, 2), FALSE, thresh = 0.5, parNames = c("a", "b")))
+  expect_null(passingPars(pars, c(1, 5, 2), FALSE, thresh = NA_real_, parNames = c("a", "b")))
 })
