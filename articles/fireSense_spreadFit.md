@@ -1,6 +1,6 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9022"
+subtitle: "v.1.2.0.9023"
 date: "Last updated: 2026-10-26"
 output:
   bookdown::html_document2:
@@ -248,7 +248,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> adTest, .... </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Currently either `'SNLL_FS'` or `'adTest'` or a length 2 character vector of both. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. </td>
+   <td style="text-align:left;"> Any of `'SNLL_FS'`, `'adTest'` (pooled Anderson-Darling on fire sizes) and `'pitAD'` (rank-based Anderson-Darling: each fire's observed size ranked among its replicates; does not depend on the fit buffers). Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>

@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9022</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9023</span>
       </span>
     </div>
 
@@ -71,7 +71,7 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>fireSense_spreadFit Manual</h1>
-            <h3 data-toc-skip class="subtitle">v.1.2.0.9022</h3>
+            <h3 data-toc-skip class="subtitle">v.1.2.0.9023</h3>
             
             <h4 data-toc-skip class="date">Last updated: 2026-10-26</h4>
       
@@ -545,7 +545,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Currently either <code>'SNLL_FS'</code> or <code>'adTest'</code> or a length 2 character vector of both. Passed to <code>tests</code> in <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>.
+Any of <code>'SNLL_FS'</code>, <code>'adTest'</code> (pooled Anderson-Darling on fire sizes) and <code>'pitAD'</code> (rank-based Anderson-Darling: each fire’s observed size ranked among its replicates; does not depend on the fit buffers). Passed to <code>tests</code> in <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>.
 </td>
 <td style="text-align:left;">
 TRUE
