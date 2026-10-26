@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9022"
-date: "Last updated: 2026-10-24"
+date: "Last updated: 2026-10-26"
 output:
   bookdown::html_document2:
     toc: true
@@ -243,10 +243,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> DEoptimTests </td>
    <td style="text-align:left;"> character </td>
-   <td style="text-align:left;"> SNLL_FS </td>
+   <td style="text-align:left;"> adTest, .... </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> `'SNLL_FS'`: the per-fire kernel log score of each fitted fire's observed size given its simulated sizes, the objective. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. `'adTest'` is retired: the objective has no Anderson-Darling term (it depended on the fit buffers), and fireSenseUtils ignores it with a warning. </td>
+   <td style="text-align:left;"> Currently either `'SNLL_FS'` or `'adTest'` or a length 2 character vector of both. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -444,7 +444,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> t </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it. It chose the per-fire likelihood ('kde' or 't'); the objective is now the per-fire kernel log score on the log scale (`DEoptimTests`). </td>
+   <td style="text-align:left;"> Likelihood of fire size in the objective, 'kde' or 't' (or 'kernel', the kernel log score on the log scale, `fireSenseUtils::kernelLogScore()`), passed to `fireSenseUtils::runDEoptim()`. 't' with `weighted = FALSE` predicted held-out years best in the 2026-09-21 cross-validation. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -462,7 +462,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 5 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it. Degrees of freedom of the former 't' size likelihood. </td>
+   <td style="text-align:left;"> Degrees of freedom of the 't' size likelihood. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -471,7 +471,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Weight of each fire's score in the objective: FALSE (none), TRUE (log size) or 'sqrt'. Passed to `fireSenseUtils::runDEoptim()`. </td>
+   <td style="text-align:left;"> Weight of each fire in the size likelihood: FALSE (none), TRUE (log size) or 'sqrt'. Passed to `fireSenseUtils::runDEoptim()`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -480,25 +480,25 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> auto </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Retired: fireSenseUtils (&gt;= 0.2.3.9123) ignores it. It weighted the Anderson-Darling term, which the objective no longer has. </td>
+   <td style="text-align:left;"> Weight of the Anderson-Darling term against the size likelihood; 'auto' is `fireSenseUtils::adWeightAuto()`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> yearAreaWeight </td>
    <td style="text-align:left;"> numeric&amp;#124;.... </td>
-   <td style="text-align:left;"> 0 </td>
+   <td style="text-align:left;"> auto </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Retired: the objective no longer has the annual-area term. It scored years with fires cut at the fit buffers at the size they had reached, so it depended on the buffers. fireSenseUtils (&gt;= 0.2.3.9123) ignores any value, with a warning unless 0. </td>
+   <td style="text-align:left;"> Weight of the annual-area term in the objective: each fit year's observed area burned is scored against that year's simulated totals (one per replicate) with the size likelihood. 0 leaves it out; 'auto' (default) is (number of fitted fires) / (number of fit years), so the year view and the per-fire view weigh the same. Passed to `fireSenseUtils::runDEoptim()`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> areaDistWeight </td>
    <td style="text-align:left;"> numeric&amp;#124;.... </td>
-   <td style="text-align:left;"> 0 </td>
+   <td style="text-align:left;"> auto </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Retired: the objective no longer has the area-weighted size-distribution term (`fireSenseUtils::areaWeightedCvM()`, kept for diagnostics). It was biased by fires cut at the fit buffers. fireSenseUtils (&gt;= 0.2.3.9123) ignores any value, with a warning unless 0. </td>
+   <td style="text-align:left;"> Weight of the area-weighted size-distribution term: simulated and observed fires compared by the share of area burned that fires up to each size make up (`fireSenseUtils::areaWeightedCvM()`). 0 leaves it out; 'auto' (default) uses the Anderson-Darling term's weight (`fireSenseUtils::adWeightAuto()`). </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -507,7 +507,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Retired as a choice of objective: a simulated fire that burns an open edge pixel of its year's buffers (one next to flammable land outside every buffer, `fireSenseUtils::bufferOpen()`) is always cut, i.e. it adds no density to its fire's score, so the fit no longer depends on the buffers. TRUE only stops such a fire at the first open pixel of its own buffer, which saves time and leaves the score as it is (up to fires sharing a year's landscape). Passed to `fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting. </td>
+   <td style="text-align:left;"> A simulated fire that burns an open edge pixel of its year's buffers (one next to flammable land outside every buffer, `fireSenseUtils::bufferOpen()`) is cut: it has no density at the observed size in the size likelihood, and the other terms score the size it reached. TRUE also stops such a fire at the first open pixel of its own buffer, which saves time. Passed to `fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -516,7 +516,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Retired: a cut fire has no size in the objective. It set the size a runaway counted as in the Anderson-Darling, annual-area and area-distribution terms, which are gone. fireSenseUtils (&gt;= 0.2.3.9123) ignores it, with a warning unless NA. </td>
+   <td style="text-align:left;"> Retired: a cut fire is scored at the size it reached. It set the size a runaway counted as in the Anderson-Darling, annual-area and area-distribution terms. fireSenseUtils ignores it, with a warning unless NA. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
