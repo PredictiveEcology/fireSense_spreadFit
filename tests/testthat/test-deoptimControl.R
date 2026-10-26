@@ -13,21 +13,12 @@ test_that("DEoptimControl is a list parameter; by default it sets only p, for st
 })
 
 test_that("the fit passes DEoptimControl, strategy and .c to runDEoptim", {
-  ## The call needs a full simList, so this checks the parsed call instead of running it.
-  exprs <- moduleSource()
-  calls <- list()
-  walk <- function(x) {
-    if (is.call(x)) {
-      if (identical(x[[1]], as.name("runDEoptim"))) calls[[length(calls) + 1L]] <<- x
-      lapply(as.list(x), walk)
-    }
-    invisible(NULL)
-  }
-  invisible(lapply(exprs, walk))
-  expect_length(calls, 1L)
-  args <- as.list(calls[[1L]])
-  ## the parameter, plus a starting population only on the retry after a `deoptimNoFeasibleMember` stop
-  expect_identical(deparse(args$DEoptimControl), "deoptimControlStart(P(sim)$DEoptimControl, initialpop)")
-  expect_identical(deparse(args$strategy), "P(sim)$strategy")
-  expect_identical(deparse(args$.c), "P(sim)$.c")
+  sim <- toySim(list(DEoptimControl = list(p = 0.2, CR = 0.7), strategy = 3L, .c = 0.1))
+  rec <- mockFitAndLedger(sim)
+  suppressMessages(SpaDES.core::spades(sim))
+  ## the parameter as given (a starting population is added only with passing sets or on the retry after a
+  ## `deoptimNoFeasibleMember` stop, test-seedPopulation.R; toySim() has none)
+  expect_identical(rec$deArgs$DEoptimControl, list(p = 0.2, CR = 0.7))
+  expect_identical(rec$deArgs$strategy, 3L)
+  expect_identical(rec$deArgs$.c, 0.1)
 })
