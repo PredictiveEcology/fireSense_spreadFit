@@ -114,10 +114,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
   lower <- P(sim)$lower
   n <- max(10L * length(lower), as.integer(P(sim)$nCoresNeeded))
   if (!is.null(P(sim)$initialpop)) passingPars <- NULL
-  firstStart <- if (!is.null(passingPars) && nrow(passingPars))
-    withPassingFirst(passingPars,
-                     do.call(rbind, withr::with_seed(.elfSeed(sim$.ELFind), uniformSets(n, lower, P(sim)$upper))),
-                     lower, P(sim)$upper)
+  firstStart <- startPopulation(P(sim)$initialpop, passingPars, n, lower, P(sim)$upper, .elfSeed(sim$.ELFind))
   ## clusters stops after the first generation when every member holds the fail value: DEoptim's
   ## uniform start had no member the objective accepts, and DE cannot improve on a population of fail
   ## values (ELF 6.6.2, 2026-10-20). Start again from a population the gates accept
