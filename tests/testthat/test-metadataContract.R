@@ -65,7 +65,7 @@ test_that("defaults that decide whether and how a fit runs", {
   expect_identical(def$stopIfNoPreRunFit, NA)
   expect_identical(def$refitExisting, NA)
   expect_identical(def$mode, "fit")
-  expect_identical(def$DEoptimTests, "SNLL_FS")   # no "adTest": the objective has no Anderson-Darling term
+  expect_identical(def$DEoptimTests, c("adTest", "SNLL_FS"))
   expect_identical(def$rescaleAll, TRUE)
   ## diagnostics inside the objective are slow: off unless options(fireSenseUtils.assertions = TRUE)
   expect_identical(def$doObjFunAssertions, getOption("fireSenseUtils.assertions", FALSE))
@@ -101,9 +101,9 @@ test_that("defaults of the objective and of the post-fit diagnostics", {
   expect_identical(def$sizeLikDf, 5)
   expect_identical(def$weighted, FALSE)
   expect_identical(def$adWeight, "auto")
-  ## jumping is on by default; the retired annual-area and area-distribution terms are off
-  expect_identical(def$yearAreaWeight, 0)
-  expect_identical(def$areaDistWeight, 0)
+  ## the annual-area and area-distribution terms and jumping are on by default
+  expect_identical(def$yearAreaWeight, "auto")
+  expect_identical(def$areaDistWeight, "auto")
   expect_identical(def$jumpTries, 20)
   expect_identical(def$jumpMeanDist, 3)
   expect_identical(def$link, "logistic3p")

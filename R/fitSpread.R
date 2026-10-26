@@ -148,20 +148,18 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
   DE
 }
 
-## The spread objective's bodies, for the Cache keys of the fit and the threshold calibration
-objectiveBodies <- function()
-  list(objfunSpreadFit = deparse(fireSenseUtils::.objfunSpreadFit),
-       objFunInner = deparse(utils::getFromNamespace("objFunInner", "fireSenseUtils")),
-       spreadProbFromIntegerCovs = deparse(fireSenseUtils::spreadProbFromIntegerCovs),
-       spreadProbCovsOfYear = deparse(utils::getFromNamespace("spreadProbCovsOfYear", "fireSenseUtils")),
-       spreadProbFromCovs = deparse(fireSenseUtils::spreadProbFromCovs), # the spread link itself
-       logisticAll = deparse(fireSenseUtils::logisticAll),
-       powerLawLink = deparse(fireSenseUtils::powerLawLink),
-       dataYearBefore = deparse(fireSenseUtils::dataYearBefore),
-       kernelLogScore = deparse(utils::getFromNamespace("kernelLogScore", "fireSenseUtils")), # the per-fire score
-       addBufferEdge = deparse(fireSenseUtils::addBufferEdge), # which replicates are cut
-       bufferEdge = deparse(fireSenseUtils::bufferEdge),
-       bufferOpen = deparse(fireSenseUtils::bufferOpen))
+## The spread objective's bodies, for the Cache keys of the fit and the threshold calibration: the objective and
+## everything it calls that decides its value (the spread link, which replicates are cut, the per-fire likelihood
+## and score, and the terms added to it)
+objectiveBodies <- function() {
+  fns <- c("spreadProbFromIntegerCovs", "spreadProbCovsOfYear", "spreadProbFromCovs", "logisticAll", "powerLawLink",
+           "dataYearBefore", "addBufferEdge", "bufferEdge", "bufferOpen", "sizeLikT", "kernelLogScore",
+           "adStatistic", "adWeightAuto", "pooledFireSizes", "yearAreaNLL", "areaWeightedCvM",
+           "pitMidRank", "adUniform")
+  c(list(objfunSpreadFit = deparse(fireSenseUtils::.objfunSpreadFit),
+         objFunInner = deparse(utils::getFromNamespace("objFunInner", "fireSenseUtils"))),
+    stats::setNames(lapply(fns, function(f) deparse(utils::getFromNamespace(f, "fireSenseUtils"))), fns))
+}
 
 ## The `link` the objective is given, from the parameters `Par` (`P(sim)`): "powerLaw" for `spreadLink = "powerLaw"`,
 ## else the `link` parameter's "logistic3pUpper", else NULL, its default, logistic3p

@@ -19,7 +19,7 @@ test_that("without firstBlockThresh the threshold is calibrated, seeded by the p
   expect_identical(rec$args$seed, .elfSeed("9.9"))
   expect_identical(rec$args$iterThresh, 6L)
   expect_identical(rec$args$objfunFireReps, 8L)
-  expect_identical(rec$args$tests, "SNLL_FS")
+  expect_identical(rec$args$tests, c("adTest", "SNLL_FS"))
   expect_identical(rec$args$mode, "fit")
   expect_identical(rec$args$lower, SpaDES.core::params(sim)[[moduleName]]$lower)
   expect_identical(rec$args$annualDTx1000$year2002$CMDsm, c(12000L, 22000L, 32000L))

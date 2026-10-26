@@ -51,15 +51,15 @@ test_that("runSpreadWithoutDEoptim() hands the settings to the objective", {
   expect_true(all(vapply(seen, function(a) identical(a$link, "logistic3pUpper"), logical(1))))
 })
 
-test_that("jumping is on by default; the retired objective terms are off", {
+test_that("the new terms and jumping are on by default", {
   rec <- new.env(); fitRec <- new.env()
   sim <- toySim(list(firstBlockThresh = NULL))
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
   sim <- suppressMessages(SpaDES.core::spades(sim))
   for (a in list(rec$args, fitRec$deArgs)) {
-    expect_identical(a$yearAreaWeight, 0)
-    expect_identical(a$areaDistWeight, 0)
+    expect_identical(a$yearAreaWeight, "auto")
+    expect_identical(a$areaDistWeight, "auto")
     expect_identical(a$jumpTries, 20)
     expect_identical(a$jumpMeanDist, 3)
     expect_identical(a$penaliseRunaways, TRUE)
@@ -88,7 +88,7 @@ test_that("runawayBufferMultiple = NA reaches the fit and the calibration as NUL
 })
 
 test_that("penaliseRunaways = FALSE reaches the fit, the calibration and the objective", {
-  ## FALSE only: the default TRUE is asserted in "jumping is on by default; the retired objective terms are off", and a
+  ## FALSE only: the default TRUE is asserted in "the new terms and jumping are on by default", and a
   ## second TRUE call here would hit that test's cached threshold and never reach the mock
   for (value in list(FALSE)) {
     rec <- new.env(); fitRec <- new.env()
