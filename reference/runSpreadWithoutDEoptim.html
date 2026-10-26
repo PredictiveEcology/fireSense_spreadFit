@@ -221,7 +221,9 @@ parameter. With none kept the result is <code>NA</code> (no early stop, see <cod
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>the calibrated threshold (numeric, or NA if no trial was usable); NULL in "debug" mode.</p>
+    <p>in "debug" mode NULL. Otherwise <code>list(thresh =, passingPars =)</code>: the calibrated threshold (numeric,
+or NA if no trial was usable) and the parameter sets that pass it (<code><a href="passingPars.html">passingPars()</a></code>; <code>NULL</code> if none). They
+are separate so the threshold, which enters DEoptim's cache key, is a plain number.</p>
     </div>
 
   </div>

@@ -33,6 +33,7 @@
 <url><loc>/reference/mustFitThisPolygon.html</loc></url>
 <url><loc>/reference/needsPowerLawCalibration.html</loc></url>
 <url><loc>/reference/noEarlyStopThreshold.html</loc></url>
+<url><loc>/reference/passingPars.html</loc></url>
 <url><loc>/reference/pickThreshold.html</loc></url>
 <url><loc>/reference/powerLawGammaOf.html</loc></url>
 <url><loc>/reference/runSpreadWithoutDEoptim.html</loc></url>
@@ -43,5 +44,7 @@
 <url><loc>/reference/stopIfTrialsErrored.html</loc></url>
 <url><loc>/reference/thresholdForks.html</loc></url>
 <url><loc>/reference/trialFirstBlock.html</loc></url>
+<url><loc>/reference/usableTrials.html</loc></url>
+<url><loc>/reference/withPassingFirst.html</loc></url>
 </urlset>
 

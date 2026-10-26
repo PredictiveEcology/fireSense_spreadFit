@@ -80,8 +80,10 @@ cross-validation folds reuse the full data's (<code><a href="fitAndScoreFold.htm
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>the threshold; <code>Inf</code> (no early stop) if every calibration trial failed, see
-<code><a href="noEarlyStopThreshold.html">noEarlyStopThreshold()</a></code>.</p>
+    <p><code>list(thresh =, passingPars =)</code>: the threshold (<code>Inf</code>, no early stop, if every calibration trial
+failed, see <code><a href="noEarlyStopThreshold.html">noEarlyStopThreshold()</a></code>) and the calibration's parameter sets that pass it (<code><a href="passingPars.html">passingPars()</a></code>),
+<code>NULL</code> if there are none, if <code>firstBlockThresh</code> was supplied, or if the cached calibration predates them
+(it is a bare number). Separate, so <code>thresh</code> stays the plain number in DEoptim's cache key.</p>
     </div>
 
   </div>
