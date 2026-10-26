@@ -103,3 +103,32 @@ withPassingFirst <- function(passing, pop, lower, upper) {
 deoptimControlStart <- function(control, initialpop = NULL) {
   if (is.null(initialpop)) control else c(control, list(initialpop = initialpop))
 }
+
+#' The population DEoptim starts from
+#'
+#' The `initialpop` parameter's rows first, then uniform draws up to `n` rows, when it is given (it used to be dropped: `runDEoptim()` ignores its own `initialpop`
+#' argument, and with the parameter set the passing sets were cleared and DEoptim drew its own start, so a
+#' population seeded from elsewhere never reached it, 2026-10-26); otherwise the calibration's passing sets first,
+#' then uniform draws; otherwise `NULL`, DEoptim's own draw.
+#'
+#' @param initialpop the `initialpop` parameter: a matrix with the columns of `lower`, or `NULL`.
+#' @param passingPars the calibration's passing sets, or `NULL`.
+#' @param n rows of the population (at least the rows of `initialpop`).
+#' @param lower,upper the bounds, named.
+#' @param seed seed for the uniform draws.
+#' @return A matrix or `NULL`.
+startPopulation <- function(initialpop, passingPars, n, lower, upper, seed) {
+  if (!is.null(initialpop)) {
+    pop <- as.matrix(initialpop)
+    if (!is.null(colnames(pop)) && !identical(colnames(pop), names(lower)))
+      stop("initialpop's columns (", paste(colnames(pop), collapse = ", "), ") are not names(lower) in that order",
+           call. = FALSE)
+    if (ncol(pop) != length(lower)) stop("initialpop has ", ncol(pop), " columns; lower has ", length(lower), call. = FALSE)
+    colnames(pop) <- names(lower)
+    passingPars <- pop
+  }
+  if (!is.null(passingPars) && nrow(passingPars))
+    return(withPassingFirst(passingPars, do.call(rbind, withr::with_seed(seed, uniformSets(max(n, nrow(passingPars)), lower, upper))),
+                            lower, upper))
+  NULL
+}
