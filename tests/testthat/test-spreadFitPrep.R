@@ -109,6 +109,23 @@ test_that("lociList: one table per year, fire size in pixels, ignition cell from
                data.frame(size = 3L, date = "year2002", ids = 21L, cells = 89L))
 })
 
+## ELF 10.3.1_2, 2012: a 7,516 ha polygon with 397 ha on burnable pixels. The fit's landscape is the burnable pixels
+## only, so the polygon area was a target size no simulated fire could reach.
+test_that("each fire's target size is its area on burnable pixels, not its polygon area", {
+  pts <- toyObjects()$spreadFirePoints
+  pts$year2001 <- toyPoints(c(250, 550), c(950, 450), c(11L, 12L), 2001L, ha = c(500, 12), burnableHa = c(5, 12))
+  ll <- prepared(objects = list(spreadFirePoints = pts))$lociList
+  expect_identical(ll$year2001$size, c(5L, 12L))
+})
+
+test_that("a fire without buffers (left out of the spread fit by fireSense_dataPrepFit) has no locus", {
+  fb <- toyObjects()$fireBufferedListDT
+  fb$year2001 <- fb$year2001[fb$year2001$ids == 12L, ]
+  ll <- prepared(objects = list(fireBufferedListDT = fb))$lociList
+  expect_identical(ll$year2001$ids, 12L)
+  expect_identical(ll$year2002$ids, 21L)
+})
+
 test_that("fire size is in pixels of the raster, not hectares", {
   ## same fires on 200 m pixels (4 ha each): 12 ha = 3 pixels, 5 ha = 1.25 -> 1, 3 ha = 0.75 -> 1
   rtm <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 1000, ymin = 0, ymax = 1000, crs = toyCRS, vals = 1L)

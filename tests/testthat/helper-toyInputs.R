@@ -33,9 +33,11 @@ toyStudyArea <- function() {
   sf::st_as_sf(sf::st_as_sfc(bb))
 }
 
-toyPoints <- function(x, y, id, yr, ha) {
-  sf::st_as_sf(data.frame(x = x, y = y, FIRE_ID = id, YEAR = yr, POLY_HA = ha),
-               coords = c("x", "y"), crs = toyCRS)
+## `burnableHa`: the fire's area on burnable pixels (fireSense_dataPrepFit's `BURNABLE_HA`), the fit's target size
+toyPoints <- function(x, y, id, yr, ha, burnableHa = ha) {
+  d <- data.frame(x = x, y = y, FIRE_ID = id, YEAR = yr, POLY_HA = ha)
+  d[[fireSenseUtils::burnableHaTxt]] <- burnableHa
+  sf::st_as_sf(d, coords = c("x", "y"), crs = toyCRS)
 }
 
 ## A flammable map for the powerLaw calibration (81 x 81, all flammable), and the settings that keep the
