@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9024"
-date: "Last updated: 2026-10-26"
+date: "Last updated: 2026-10-27"
 output:
   bookdown::html_document2:
     toc: true
@@ -274,6 +274,33 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> A numeric matrix of dimensions `NCOL = length(lower)` and `NROW = NP`. This will be passed into DEoptim through `control$initialpop = P(sim)$initialpop` if it is not NULL </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> initialPopMethod </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> calibration </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Where DEoptim's starting population comes from. 'calibration' (default): the threshold calibration's passing sets, then uniform draws, or DEoptim's own draw when there are none. 'emulator': the `nCoresNeeded` best distinct points of a Gaussian-process emulator search of the fit's objective (~1,000-1,600 real evaluations on the fit's `cores`, in a box around the passing sets, or between `lower` and `upper` without them; see `emulatorControl`). The search is cached. A fit seeded this way stops sooner: `convergence` defaults to `minGenerations = 100` and `window = 100` (elements of the `convergence` parameter win). The `initialpop` parameter, when set, wins over both. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> emulatorControl </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Settings of the emulator search (`initialPopMethod = 'emulator'`), by name; what is missing comes from `emulatorDefaults()`: the design size (`designPerParam`, 20), the budget (`globalMaxEvals` 1000, `maxEvals` 1600, `minEvals` 600), the stopping rule (`globalWindow`, `localWindow`, `relTol`), the response caps (`globalCapRatio`, `localCapRatio`) and the search box (`boxWiden`, `boxMinWidthFrac`). Part of the search's cache key. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> emulatorMaxParams </td>
+   <td style="text-align:left;"> integer </td>
+   <td style="text-align:left;"> 18 </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> With more fitted parameters than this, `initialPopMethod = 'emulator'` falls back to 'calibration', with a message: a GP in that many dimensions needs more evaluations than the search saves. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
