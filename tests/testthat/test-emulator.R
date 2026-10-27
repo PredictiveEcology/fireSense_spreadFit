@@ -228,7 +228,8 @@ test_that("the local phase is trust rounds that shrink around the minimum and st
   ## two global batches already find it: the rounds improve less than the noise, and the search stops
   res <- quadEmulate(utils::modifyList(quadCtl, list(globalMaxEvals = 88L, maxEvals = 2000L)))
   expect_identical(res$stopReason, "improvement below noise")
-  expect_identical(max(res$status$round, na.rm = TRUE), 2L)
+  expect_lte(max(res$status$round, na.rm = TRUE), 3L)                    # 2 here, 3 on CI's BLAS
+  expect_lt(res$nEvaluated, 300L)
   expect_lt(min(quadValue(res$pop)) - 100, 5)
 })
 
