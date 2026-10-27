@@ -13,7 +13,8 @@
 #' @param diagnostics logical; `FALSE` skips the profile and the simulations.
 #' @param passingPars matrix or `NULL`; the threshold calibration's parameter sets that pass `thresh`
 #'   (`mod$thresholdPassingPars`). They are the first members of DEoptim's starting population, on the first
-#'   attempt and on the retry (`withPassingFirst()`), unless the `initialpop` parameter is set. The folds
+#'   attempt and on the retry (`withPassingFirst()`), unless the `initialpop` parameter is set or the emulator
+#'   chose the start (`initialPopMethod = "emulator"`; they then centre its search box, `emulatorBox()`). The folds
 #'   pass none: their first block is other years.
 #' @return the `runDEoptim()` result. Stops if every member of the final population has the
 #'   objective's fail value: no parameter set ever passed `thresh`, so there is no fit.
@@ -32,12 +33,9 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
   ## one progress file per fit (the main fit, each fold), in the run's own output folder
   progressFile <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
                             paste0("DEoptimProgress_", runName, ".csv"))
-  ## the early-stop rule in full (parameter, else options, else clusters' defaults), so it is in the fit's key
-  convergence <- clusters::deoptimConvergence(P(sim)$convergence)
-  ## `initialpop` is NULL when there are no passing sets: DEoptim draws its start, and nothing in the cache
-  ## key changes. With them it is a matrix (the passing sets, then uniform draws), a new fit with its own key,
-  ## as is the retry below.
-  fit <- function(initialpop = NULL) Cache(runDEoptim(landscape = sim$rasterToMatch,
+  ## runDEoptim()'s arguments, once: the fit gets them, and the emulator (`initialPopMethod = "emulator"`)
+  ## evaluates the objective they define
+  deArgs <- list(landscape = sim$rasterToMatch,
                    annualDTx1000 = covs$annualDTx1000,
                    nonAnnualDTx1000 = covs$nonAnnualDTx1000,
                    fireBufferedListDT = covs$fireBufferedListDT,
@@ -67,7 +65,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
                    Nreps = P(sim)$objfunFireReps,
                    thresh = thresh,
                    .c = P(sim)$.c,
-                   DEoptimControl = deoptimControlStart(P(sim)$DEoptimControl, initialpop),
+                   DEoptimControl = P(sim)$DEoptimControl,
                    .verbose = P(sim)$verbose,
                    visualizeDEoptim = P(sim)$visualizeDEoptim,
                    .plotSize = P(sim)$.plotSize,
@@ -76,7 +74,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
                    rep = P(sim)$.rep,
                    runName = runName,
                    progressFile = progressFile,
-                   convergence = convergence,
+                   convergence = NULL, # set below: it depends on the start
                    sizeLik = P(sim)$sizeLik,
                    sizeLikDf = P(sim)$sizeLikDf,
                    weighted = P(sim)$weighted,
@@ -93,7 +91,34 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
                    runawayEdgeMin = P(sim)$runawayEdgeMin,
                    runawayBufferMultiple = runawayMultiple,
                    profileReps = if (diagnostics) P(sim)$profileReps else 0L,
-                   simulateMembers = if (diagnostics) P(sim)$simulateMembers else 0L),
+                   simulateMembers = if (diagnostics) P(sim)$simulateMembers else 0L)
+  lower <- P(sim)$lower
+  n <- max(10L * length(lower), as.integer(P(sim)$nCoresNeeded))
+  ## forced only when a start is drawn: a bad .ELFind is reported by the ledger's check, after the fit
+  delayedAssign("seed", .elfSeed(sim$.ELFind))
+  ## the population size runDEoptim() asks clusters for
+  NP <- if (is.null(P(sim)$nCoresNeeded)) fireSenseUtils::deoptimPopulationSize(length(lower)) else
+    as.integer(P(sim)$nCoresNeeded)
+  emulated <- if (useEmulator(P(sim), length(lower)))
+    Cache(emulatorStartPopulation, objArgs = emulatorObjectiveArgs(deArgs), lower = lower, upper = P(sim)$upper,
+          passingPars = passingPars, NP = NP, control = P(sim)$emulatorControl, seed = seed,
+          cores = best$cluster, nCoresNeeded = NP, libPath = deArgs$libPath, logPath = deArgs$logPath, runName = runName,
+          .functionName = paste0("emulatorStartPopulation_", runName),
+          ## the emulator's own code and the objective's, which Cache() does not digest
+          .cacheExtra = list(emulatorBodies(), objectiveBodies()),
+          omitArgs = c("cores", "libPath", "logPath", "runName"),
+          useCache = P(sim)$useCache_DE)
+  seedPop <- if (is.null(emulated)) P(sim)$initialpop else emulated$pop
+  ## the early-stop rule in full (parameter, else options, else clusters' defaults; shorter from the emulator's
+  ## start, convergenceOf()), so it is in the fit's key
+  deArgs$convergence <- convergenceOf(P(sim)$convergence, seeded = !is.null(emulated))
+  ## `initialpop` is NULL when there are no passing sets: DEoptim draws its start, and nothing in the cache
+  ## key changes. With them it is a matrix (the passing sets, then uniform draws), a new fit with its own key,
+  ## as is the retry below.
+  fit <- function(initialpop = NULL) {
+    args <- deArgs
+    args$DEoptimControl <- deoptimControlStart(args$DEoptimControl, initialpop)
+    Cache(do.call(runDEoptim, args),
         .functionName = fnName,
         ## The objective is a callee Cache() does not digest; its bodies are in the key, so a change in
         ## how fits are scored (e.g. fireSenseUtils' runaway censoring, 2026-10-01) is a cache miss,
@@ -110,14 +135,10 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
                                                   climateRef = sim$climateRef_spread,
                                                   runawayBufferMultiple = runawayMultiple)),
         useCache = P(sim)$useCache_DE
-  )
-  lower <- P(sim)$lower
-  n <- max(10L * length(lower), as.integer(P(sim)$nCoresNeeded))
-  if (!is.null(P(sim)$initialpop)) passingPars <- NULL
-  firstStart <- if (!is.null(passingPars) && nrow(passingPars))
-    withPassingFirst(passingPars,
-                     do.call(rbind, withr::with_seed(.elfSeed(sim$.ELFind), uniformSets(n, lower, P(sim)$upper))),
-                     lower, P(sim)$upper)
+    )
+  }
+  if (!is.null(seedPop)) passingPars <- NULL
+  firstStart <- startPopulation(seedPop, passingPars, n, lower, P(sim)$upper, seed)
   ## clusters stops after the first generation when every member holds the fail value: DEoptim's
   ## uniform start had no member the objective accepts, and DE cannot improve on a population of fail
   ## values (ELF 6.6.2, 2026-10-20). Start again from a population the gates accept
@@ -132,7 +153,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
                          link = spreadLink(P(sim)), powerLawGamma = powerLawGammaOf(sim))
     localSingleThreadBLAS()
     pop <- feasibleInitialPopulation(n, lower = lower, upper = P(sim)$upper, gates = gates,
-                                     seed = .elfSeed(sim$.ELFind), cores = forkBudget(n))
+                                     seed = seed, cores = forkBudget(n))
     pop <- withPassingFirst(passingPars, pop, lower, P(sim)$upper)
     tryCatch(fit(initialpop = pop), deoptimNoFeasibleMember = function(e2)
       stop("fireSense_spreadFit: fit '", runName, "' failed again from a starting population of which ",

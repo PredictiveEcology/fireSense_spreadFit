@@ -13,7 +13,8 @@ test_that("parameter classes", {
     (function(x) x[sort(names(x), method = "radix")])(c(.c = "numeric", convergence = "list", .plotInterval = "numeric", .plots = "character|logical", .plotSize = "list", .runInitialTime = "numeric", .runName = "character",
       .studyAreaName = "character", .useCache = "logical|character",
       cores = "integer", DEoptimControl = "list", DEoptimTests = "character",
-      doFit = "logical", doObjFunAssertions = "logical", heldOutFold = "integer", initialpop = "numeric", iterDEoptim = "integer",
+      doFit = "logical", doObjFunAssertions = "logical", heldOutFold = "integer", initialpop = "numeric", initialPopMethod = "character",
+      emulatorControl = "list", emulatorMaxParams = "integer", iterDEoptim = "integer",
       iterThresh = "integer", thresholdMargin = "numeric", libPathDEoptim = "character", lower = "numeric",
       maxFireSpread = "numeric", mode = "character", mutuallyExclusiveCols = "list",
       nCoresNeeded = "integer", objFunCoresInternal = "integer",
@@ -72,6 +73,10 @@ test_that("defaults that decide whether and how a fit runs", {
   expect_identical(def$useCache_DE, TRUE)
   expect_identical(def$.useCache, "init")
   expect_identical(def$mutuallyExclusiveCols, list(youngAge = c("class", "nonForest")))
+  ## DEoptim starts from the calibration's passing sets unless the emulator is asked for
+  expect_identical(def$initialPopMethod, "calibration")
+  expect_identical(def$emulatorControl, list())
+  expect_identical(def$emulatorMaxParams, 18L)
 })
 
 test_that("the retired runaway rule's parameters exist with their defaults", {

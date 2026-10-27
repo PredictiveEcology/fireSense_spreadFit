@@ -15,19 +15,24 @@ test_that("the fit and both threshold calibrations pass escapeSizeHa", {
   calls <- list()
   walk <- function(x) {
     if (is.call(x)) {
-      if (identical(x[[1]], as.name("runDEoptim")) || identical(x[[1]], as.name("runSpreadWithoutDEoptim")))
+      if (identical(x[[1]], as.name("runSpreadWithoutDEoptim")))
         calls[[length(calls) + 1L]] <<- x
       lapply(as.list(x), walk)
     }
     invisible(NULL)
   }
   invisible(lapply(exprs, walk))
-  ## the fit, the `debug` event and the `estimateThreshold` event (a packaged module may list a call twice)
-  fns <- vapply(calls, function(cl) deparse(cl[[1]]), character(1))
-  expect_true(all(c("runDEoptim", "runSpreadWithoutDEoptim") %in% fns))
-  expect_gte(sum(fns == "runSpreadWithoutDEoptim"), 2L)
+  ## the `debug` event and the `estimateThreshold` event (a packaged module may list a call twice)
+  expect_gte(length(calls), 2L)
   for (cl in calls)
     expect_identical(deparse(as.list(cl)$escapeSizeHa), "escapeSizeHaOrNULL(P(sim)$escapeSizeHa)")
+  ## the fit
+  for (esc in list(30, NA)) {
+    sim <- toySim(list(escapeSizeHa = esc))
+    rec <- mockFitAndLedger(sim)
+    suppressMessages(SpaDES.core::spades(sim))
+    expect_identical(rec$deArgs$escapeSizeHa, escapeSizeHaOrNULL(esc))
+  }
 })
 
 test_that("NULL or NA means the old fit", {

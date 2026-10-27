@@ -2,45 +2,6 @@
 ## ~96 gate-passing sets). DEoptim's own start was drawn blind, twice had no member under the threshold, and
 ## clusters stopped the fit after generation 1. The fit now starts from the calibration's passing sets.
 
-## three sets inside the bounds, columns as DEoptim uses them (the bounds are made by spreadFitPrepare, so the
-## mocked calibration builds them from the bounds it is given)
-passingSets <- function(lo, up) {
-  m <- rbind(lo + 0.25 * (up - lo), lo + 0.5 * (up - lo), lo + 0.75 * (up - lo))
-  colnames(m) <- names(lo)
-  m
-}
-
-noFeasible <- function() structure(class = c("deoptimNoFeasibleMember", "error", "condition"),
-                                   list(message = "every member of the population holds the fail value", call = NULL))
-
-## The run event with the calibration and runDEoptim() replaced. `calibration` is what the cached
-## calibration returns; `failFirst` makes the first fit stop as clusters does.
-seededRun <- function(calibration, failFirst = FALSE, params = list()) {
-  ## the module's Cache() of the calibration would serve the previous test's mocked result
-  withr::local_options(reproducible.useCache = FALSE)
-  rec <- new.env(); rec$calls <- list()
-  sim <- toySim(c(list(firstBlockThresh = NULL), params))
-  mockFitAndLedger(sim, rec)
-  mockInModule(sim,
-    runSpreadWithoutDEoptim = function(lower, upper, ...) {
-      rec$lower <- lower; rec$upper <- upper; rec$passing <- passingSets(lower, upper)
-      if (is.function(calibration)) calibration(rec) else calibration
-    },
-    runDEoptim = function(...) {
-      args <- list(...)
-      rec$calls <- c(rec$calls, list(args))
-      if (failFirst && length(rec$calls) == 1L) stop(noFeasible())
-      toyDE(length(args$lower))
-    },
-    feasibleInitialPopulation = function(n, lower, upper, gates, seed, ...) {
-      m <- matrix(rep(lower, each = n) + 0.1, n, length(lower), dimnames = list(NULL, names(lower)))
-      attr(m, "feasible") <- 5L
-      m
-    })
-  suppressMessages(SpaDES.core::spades(sim))
-  rec
-}
-
 test_that("the first fit starts from the calibration's passing sets, then uniform draws inside the bounds", {
   rec <- seededRun(function(r) list(thresh = 777, passingPars = r$passing))
   pop <- rec$calls[[1]]$DEoptimControl$initialpop
@@ -78,9 +39,16 @@ test_that("with no passing sets the fit is as before: no starting population on 
   expect_equal(unname(rec$calls[[2]]$DEoptimControl$initialpop[1, ]), unname(rec$lower + 0.1))
 })
 
-test_that("a user-supplied initialpop is not replaced", {
-  rec <- seededRun(function(r) list(thresh = 777, passingPars = r$passing), params = list(initialpop = matrix(0, 2, 8)))
-  expect_null(rec$calls[[1]]$DEoptimControl$initialpop)
+test_that("a user-supplied initialpop reaches DEoptim, first, instead of the calibration's passing sets", {
+  ## the old test expected no initialpop in DEoptimControl, relying on runDEoptim()'s own initialpop argument,
+  ## which runDEoptim() ignores: the given population never reached DEoptim (2026-10-26)
+  first <- seededRun(function(r) list(thresh = 777, passingPars = r$passing))
+  given <- passingSets(first$lower, first$upper)[3:1, , drop = FALSE]
+  rec <- seededRun(function(r) list(thresh = 777, passingPars = r$passing), params = list(initialpop = given))
+  pop <- rec$calls[[1]]$DEoptimControl$initialpop
+  expect_false(is.null(pop))
+  expect_equal(unname(pop[1:3, ]), unname(given))
+  expect_identical(colnames(pop), names(first$lower))
 })
 
 test_that("a cross-validation fold uses the full data's threshold and no starting population", {
@@ -112,4 +80,24 @@ test_that("withPassingFirst() keeps the population's size and bounds, and is the
   expect_identical(colnames(out), c("a", "b"))
   expect_identical(attr(out, "feasible"), 3L)           # cut to the population's 3 rows
   expect_identical(withPassingFirst(NULL, pop, lo, up), pop)
+})
+
+## 2026-10-26: a population given as the initialpop parameter (an emulator's best points) never reached DEoptim:
+## the fit started from DEoptim's own random draw (generation 1 median at the fail value).
+test_that("startPopulation() gives DEoptim the initialpop parameter when it is set", {
+  lo <- c(a = 0, b = -1); up <- c(a = 1, b = 1)
+  given <- matrix(c(0.1, 0.2, 0.3, 0, 0.5, -0.5), ncol = 2, dimnames = list(NULL, c("a", "b")))
+  s <- startPopulation(given, NULL, 10, lo, up, 1)
+  expect_equal(nrow(s), 10); expect_equal(unname(s[1:3, ]), unname(given))   # its rows first, then uniform draws
+  expect_true(all(s[, "a"] >= 0 & s[, "a"] <= 1))
+  expect_equal(unname(startPopulation(given, NULL, 2, lo, up, 1)), unname(given))  # n below its rows: all kept
+  ## it wins over passing sets
+  expect_equal(unname(startPopulation(given, given[3:1, , drop = FALSE], 10, lo, up, 1)[1:3, ]), unname(given))
+  ## and reaches DEoptim's control
+  expect_equal(deoptimControlStart(list(NP = 3), s)$initialpop, s)
+  expect_error(startPopulation(given[, 2:1], NULL, 10, lo, up, 1), "not names\\(lower\\)")
+  ## without it: passing sets first, then uniform draws; without either, NULL (DEoptim draws)
+  s <- startPopulation(NULL, given[1, , drop = FALSE], 10, lo, up, 1)
+  expect_equal(nrow(s), 10); expect_equal(unname(s[1, ]), unname(given[1, ]))
+  expect_null(startPopulation(NULL, NULL, 10, lo, up, 1))
 })

@@ -18,17 +18,10 @@ test_that("the module declares an nCoresNeeded parameter", {
 })
 
 test_that("the runDEoptim() call passes nCoresNeeded from the parameter", {
-  ## Parsed, not run: the call needs a full simList.
-  exprs <- moduleSource()
-  calls <- list()
-  walk <- function(x) {
-    if (is.call(x)) {
-      if (identical(x[[1]], as.name("runDEoptim"))) calls[[length(calls) + 1L]] <<- x
-      for (i in seq_along(x)[-1L]) if (is.call(x[[i]])) walk(x[[i]])
-    }
+  for (nc in list(30L, NULL)) {
+    sim <- toySim(list(nCoresNeeded = nc))
+    rec <- mockFitAndLedger(sim)
+    suppressMessages(SpaDES.core::spades(sim))
+    expect_identical(rec$deArgs$nCoresNeeded, nc)
   }
-  for (e in exprs) walk(e)
-  expect_gte(length(calls), 1L)
-  for (cl in calls)
-    expect_identical(deparse(cl$nCoresNeeded), "P(sim)$nCoresNeeded")
 })
