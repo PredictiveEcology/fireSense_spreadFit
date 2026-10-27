@@ -1,6 +1,6 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9024"
+subtitle: "v.1.2.0.9027"
 date: "Last updated: 2026-10-27"
 output:
   bookdown::html_document2:
@@ -767,10 +767,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> yearSpreadSDBounds </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 0, 5 </td>
+   <td style="text-align:left;"> 0, 10 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Bounds of `yearSpreadSD`, the sd of a per-year random effect on spread (`fireSenseUtils::.objfunSpreadFit()`), when `lower`/`upper` are not supplied. It is added to the linear predictor with `spreadLink = 'powerLaw'` (one unit there scales a year's mean fire size by about e) and to the logit of spread probability with the other links. A seasonal departure: each year draws one eps, so all of a year's fires burn hotter or cooler together, which widens the simulated fire-size distribution. The upper bound is wide so it never binds: power-law fits reached the former bound of 1. `NA` turns it off. </td>
+   <td style="text-align:left;"> Bounds of `yearSpreadSD`, the sd of a per-year random effect on spread (`fireSenseUtils::.objfunSpreadFit()`), when `lower`/`upper` are not supplied. It is added to the linear predictor with `spreadLink = 'powerLaw'` (one unit there scales a year's mean fire size by about e) and to the logit of spread probability with the other links. A seasonal departure: each year draws one eps, so all of a year's fires burn hotter or cooler together, which widens the simulated fire-size distribution. The upper bound is wide so it never binds: power-law fits reached the former bounds of 1 and then 5 (6.6.1, 6.1.3, 6.2.3). `NA` turns it off. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
