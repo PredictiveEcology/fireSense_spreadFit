@@ -94,7 +94,8 @@ members' fires, on the same workers; <code><a href="makeFitDiagnostics.html">mak
 <dt id="arg-passingpars">passingPars<a class="anchor" aria-label="anchor" href="#arg-passingpars"></a></dt>
 <dd><p>matrix or <code>NULL</code>; the threshold calibration's parameter sets that pass <code>thresh</code>
 (<code>mod$thresholdPassingPars</code>). They are the first members of DEoptim's starting population, on the first
-attempt and on the retry (<code><a href="withPassingFirst.html">withPassingFirst()</a></code>), unless the <code>initialpop</code> parameter is set. The folds
+attempt and on the retry (<code><a href="withPassingFirst.html">withPassingFirst()</a></code>), unless the <code>initialpop</code> parameter is set or the emulator
+chose the start (<code>initialPopMethod = "emulator"</code>; they then centre its search box, <code><a href="emulatorBox.html">emulatorBox()</a></code>). The folds
 pass none: their first block is other years.</p></dd>
 
 </dl></div>

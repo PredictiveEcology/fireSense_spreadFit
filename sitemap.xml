@@ -10,6 +10,7 @@
 <url><loc>/reference/addFixedParsToLedger.html</loc></url>
 <url><loc>/reference/bestParamSets.html</loc></url>
 <url><loc>/reference/calibratePowerLawFor.html</loc></url>
+<url><loc>/reference/convergenceOf.html</loc></url>
 <url><loc>/reference/crossValidateSpread.html</loc></url>
 <url><loc>/reference/crossValidateSpreadOneFold.html</loc></url>
 <url><loc>/reference/deriveCovMinMax.html</loc></url>
@@ -17,6 +18,11 @@
 <url><loc>/reference/dot-elfSeed.html</loc></url>
 <url><loc>/reference/dot-inputObjects.html</loc></url>
 <url><loc>/reference/drawActivePars.html</loc></url>
+<url><loc>/reference/emulateObjective.html</loc></url>
+<url><loc>/reference/emulatorBox.html</loc></url>
+<url><loc>/reference/emulatorDefaults.html</loc></url>
+<url><loc>/reference/emulatorObjectiveArgs.html</loc></url>
+<url><loc>/reference/emulatorStartPopulation.html</loc></url>
 <url><loc>/reference/estimateFirstBlockThreshold.html</loc></url>
 <url><loc>/reference/estimateSpreadParams.html</loc></url>
 <url><loc>/reference/feasibleInitialPopulation.html</loc></url>
@@ -37,6 +43,7 @@
 <url><loc>/reference/pickThreshold.html</loc></url>
 <url><loc>/reference/powerLawGammaOf.html</loc></url>
 <url><loc>/reference/runSpreadWithoutDEoptim.html</loc></url>
+<url><loc>/reference/selectEmulatorBatch.html</loc></url>
 <url><loc>/reference/spreadFitLedgerRow.html</loc></url>
 <url><loc>/reference/spreadFitPrep.html</loc></url>
 <url><loc>/reference/spreadFitValidationFigures.html</loc></url>
@@ -46,6 +53,7 @@
 <url><loc>/reference/thresholdForks.html</loc></url>
 <url><loc>/reference/trialFirstBlock.html</loc></url>
 <url><loc>/reference/usableTrials.html</loc></url>
+<url><loc>/reference/useEmulator.html</loc></url>
 <url><loc>/reference/withPassingFirst.html</loc></url>
 </urlset>
 
