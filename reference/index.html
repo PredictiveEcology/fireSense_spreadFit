@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9027</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9029</span>
       </span>
     </div>
 
@@ -103,21 +103,37 @@
         </td>
         <td><p>Search a noisy objective with a Gaussian-process emulator and return its best evaluated points</p></td>
       </tr><tr><td>
-          <p><code><a href="emulatorBox.html">emulatorBox()</a></code> </p>
-        </td>
-        <td><p>The box the emulator searches</p></td>
-      </tr><tr><td>
           <p><code><a href="emulatorDefaults.html">emulatorDefaults()</a></code> </p>
         </td>
         <td><p>The emulator's settings and their defaults</p></td>
+      </tr><tr><td>
+          <p><code><a href="emulatorNoiseSD.html">emulatorNoiseSD()</a></code> </p>
+        </td>
+        <td><p>The objective's noise near the best points</p></td>
       </tr><tr><td>
           <p><code><a href="emulatorObjectiveArgs.html">emulatorObjectiveArgs()</a></code> </p>
         </td>
         <td><p>The objective's arguments, from the fit's <code>runDEoptim()</code> arguments</p></td>
       </tr><tr><td>
+          <p><code><a href="emulatorSpace.html">emulatorSpace()</a></code> </p>
+        </td>
+        <td><p>The space the emulator searches: the full bounds, as a unit cube</p></td>
+      </tr><tr><td>
+          <p><code><a href="emulatorSpreadPopulation.html">emulatorSpreadPopulation()</a></code> </p>
+        </td>
+        <td><p>The starting population: good evaluated points, spread out</p></td>
+      </tr><tr><td>
           <p><code><a href="emulatorStartPopulation.html">emulatorStartPopulation()</a></code> </p>
         </td>
         <td><p>Run the emulator on the fit's objective, on a cluster built as the fit's is</p></td>
+      </tr><tr><td>
+          <p><code><a href="emulatorTrustBox.html">emulatorTrustBox()</a></code> </p>
+        </td>
+        <td><p>The local phase's trust region</p></td>
+      </tr><tr><td>
+          <p><code><a href="emulatorTrustStep.html">emulatorTrustStep()</a></code> </p>
+        </td>
+        <td><p>One trust-region round's outcome</p></td>
       </tr><tr><td>
           <p><code><a href="estimateFirstBlockThreshold.html">estimateFirstBlockThreshold()</a></code> </p>
         </td>

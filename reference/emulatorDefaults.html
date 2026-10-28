@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9027</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9029</span>
       </span>
     </div>
 
@@ -68,10 +68,10 @@ points per parameter, each evaluated once;</p></li>
 more, so the GP sees the noise away from the optimum;</p></li>
 <li><p><code>globalMaxEvals</code> (1000), <code>maxEvals</code> (1600): the budget of real evaluations of the global phase, and of both
 phases together;</p></li>
-<li><p><code>minEvals</code> (600): no phase stops for lack of improvement before this many evaluations;</p></li>
-<li><p><code>globalWindow</code> (6), <code>localWindow</code> (5), <code>relTol</code> (0.002): a phase stops when the GP's best mean (at an
-evaluated point) improved by less than <code>relTol</code> times itself over its last <code>globalWindow</code>/<code>localWindow</code>
-batches (the prototype: 2 objective units at ~938);</p></li>
+<li><p><code>minEvals</code> (600): the global phase does not stop for lack of improvement before this many evaluations;</p></li>
+<li><p><code>globalWindow</code> (6), <code>relTol</code> (0.002): the global phase stops when the GP's best mean (at an evaluated point)
+improved by less than <code>relTol</code> times itself over its last <code>globalWindow</code> batches (the prototype: 2 objective
+units at ~938);</p></li>
 <li><p><code>batchSize</code> (<code>NULL</code>): evaluations per batch; <code>NULL</code> is the cluster's number of workers, or 48 without one;</p></li>
 <li><p><code>floorFrac</code> (0.8), <code>globalCapRatio</code> (10), <code>localCapRatio</code> (1.18): the GP models
 <code>log(min(y, cap) - floorFrac * min(y))</code>, with <code>cap</code> <code>globalCapRatio</code> times the best value seen in the global
@@ -79,15 +79,27 @@ phase and <code>localCapRatio</code> times the GP's best mean in the local phase
 value, and runaway sets scored in the millions) sit on a plateau instead of dominating the fit;</p></li>
 <li><p><code>nCandidates</code> (4000), <code>nPerturb</code> (3000), <code>perturbSD</code> (c(0.005, 0.015, 0.04, 0.1)), <code>nTop</code> (20): each batch
 is chosen from <code>nCandidates</code> Latin-hypercube points (in the trust region in the local phase) and <code>nPerturb</code>
-Gaussian perturbations, at each <code>perturbSD</code> (unit-box scale), of the <code>nTop</code> best points by GP mean;</p></li>
+Gaussian perturbations, at each <code>perturbSD</code> (unit-cube scale), of the <code>nTop</code> best points by GP mean;</p></li>
 <li><p><code>exclusion</code> (0.25): batch members are at least this far apart in lengthscale units;</p></li>
 <li><p><code>lcbSD</code> (2): the exploration picks minimise the GP mean minus this many standard deviations;</p></li>
-<li><p><code>trustTop</code> (40): the local phase's trust region is the box around the <code>trustTop</code> best points by GP mean,
-widened by half its width each side;</p></li>
-<li><p><code>boxWiden</code> (1), <code>boxMinWidthFrac</code> (0.1): the search box is the range of the threshold calibration's passing
-sets widened by <code>boxWiden</code> times that range each side, at least <code>boxMinWidthFrac</code> of <code>upper - lower</code> wide,
-clipped to <code>lower</code>/<code>upper</code>;</p></li>
-<li><p><code>thetaBounds</code> (c(0.01, 5)), <code>gpMaxit</code> (200), <code>gpThreads</code> (6): the GP's lengthscale bounds (unit box),
+<li><p><code>logSpanMin</code> (20): the search space (<code><a href="emulatorSpace.html">emulatorSpace()</a></code>) puts a parameter on a signed log1p scale when one of
+its bounds is 0 and the other is at least this far from 0; the others are linear;</p></li>
+<li><p>the local phase, trust-region rounds of <code>trustRoundBatches</code> (2) batches each: the region is the box around
+the best <code>localTopFrac</code> (0.1) of all distinct evaluated points by GP mean, widened by <code>localWiden</code> (0.5) of
+its width each side, times the round's scale (<code><a href="emulatorTrustBox.html">emulatorTrustBox()</a></code>). After each round (<code><a href="emulatorTrustStep.html">emulatorTrustStep()</a></code>),
+an improvement of the GP's best mean by more than <code>trustTolSD</code> (1) times the objective's noise SD
+(<code><a href="emulatorNoiseSD.html">emulatorNoiseSD()</a></code>), and by more than <code>relTol</code> times the best mean (the floor while there are few or no
+replicates near it), is a success, else
+a failure; <code>trustSuccessTol</code> (1) successes in a row multiply the scale by <code>trustShrink</code> (0.5),
+a failure multiplies it by <code>trustExpand</code> (1.25, at most 1), and <code>trustFailureTol</code> (2) failures in a row stop
+the search. It also stops when the region's widest side is narrower than <code>trustMinWidth</code> (0.01 of the unit
+cube; not relative to the GP's lengthscales, which reach their upper bound when the local cap flattens the
+response), or at <code>maxEvals</code>;</p></li>
+<li><p><code>popPoolFrac</code> (0.2), <code>popMinDist</code> (1): the starting population is picked from the best <code>popPoolFrac</code> of the
+distinct evaluated points (by their mean value; at least <code>NP</code> of them), best first, skipping a point closer
+than <code>popMinDist</code> GP lengthscales to one already picked, the distance halved until <code>NP</code> are picked
+(<code><a href="emulatorSpreadPopulation.html">emulatorSpreadPopulation()</a></code>), so separate good regions are all in it;</p></li>
+<li><p><code>thetaBounds</code> (c(0.01, 5)), <code>gpMaxit</code> (200), <code>gpThreads</code> (6): the GP's lengthscale bounds (unit cube),
 optimiser iterations (<code><a href="https://rdrr.io/pkg/hetGP/man/mleHetGP.html" class="external-link">hetGP::mleHetGP()</a></code>) and BLAS threads (the rest of the search runs on one).</p></li>
 </ul></div>
 

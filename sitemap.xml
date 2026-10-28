@@ -19,10 +19,14 @@
 <url><loc>/reference/dot-inputObjects.html</loc></url>
 <url><loc>/reference/drawActivePars.html</loc></url>
 <url><loc>/reference/emulateObjective.html</loc></url>
-<url><loc>/reference/emulatorBox.html</loc></url>
 <url><loc>/reference/emulatorDefaults.html</loc></url>
+<url><loc>/reference/emulatorNoiseSD.html</loc></url>
 <url><loc>/reference/emulatorObjectiveArgs.html</loc></url>
+<url><loc>/reference/emulatorSpace.html</loc></url>
+<url><loc>/reference/emulatorSpreadPopulation.html</loc></url>
 <url><loc>/reference/emulatorStartPopulation.html</loc></url>
+<url><loc>/reference/emulatorTrustBox.html</loc></url>
+<url><loc>/reference/emulatorTrustStep.html</loc></url>
 <url><loc>/reference/estimateFirstBlockThreshold.html</loc></url>
 <url><loc>/reference/estimateSpreadParams.html</loc></url>
 <url><loc>/reference/feasibleInitialPopulation.html</loc></url>
