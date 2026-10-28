@@ -14,7 +14,7 @@
 #' @param passingPars matrix or `NULL`; the threshold calibration's parameter sets that pass `thresh`
 #'   (`mod$thresholdPassingPars`). They are the first members of DEoptim's starting population, on the first
 #'   attempt and on the retry (`withPassingFirst()`), unless the `initialpop` parameter is set or the emulator
-#'   chose the start (`initialPopMethod = "emulator"`; they then centre its search box, `emulatorBox()`). The folds
+#'   chose the start (`initialPopMethod = "emulator"`). The folds
 #'   pass none: their first block is other years.
 #' @return the `runDEoptim()` result. Stops if every member of the final population has the
 #'   objective's fail value: no parameter set ever passed `thresh`, so there is no fit.
@@ -101,7 +101,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
     as.integer(P(sim)$nCoresNeeded)
   emulated <- if (useEmulator(P(sim), length(lower)))
     Cache(emulatorStartPopulation, objArgs = emulatorObjectiveArgs(deArgs), lower = lower, upper = P(sim)$upper,
-          passingPars = passingPars, NP = NP, control = P(sim)$emulatorControl, seed = seed,
+          NP = NP, control = P(sim)$emulatorControl, seed = seed,
           cores = best$cluster, nCoresNeeded = NP, libPath = deArgs$libPath, logPath = deArgs$logPath, runName = runName,
           .functionName = paste0("emulatorStartPopulation_", runName),
           ## the emulator's own code and the objective's, which Cache() does not digest
