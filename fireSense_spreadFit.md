@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9027"
-date: "Last updated: 2026-10-27"
+subtitle: "v.1.2.0.9029"
+date: "Last updated: 2026-10-28"
 output:
   bookdown::html_document2:
     toc: true
@@ -282,7 +282,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> calibration </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Where DEoptim's starting population comes from. 'calibration' (default): the threshold calibration's passing sets, then uniform draws, or DEoptim's own draw when there are none. 'emulator': the `nCoresNeeded` best distinct points of a Gaussian-process emulator search of the fit's objective (~1,000-1,600 real evaluations on the fit's `cores`, in a box around the passing sets, or between `lower` and `upper` without them; see `emulatorControl`). The search is cached. A fit seeded this way stops sooner: `convergence` defaults to `minGenerations = 100` and `window = 100` (elements of the `convergence` parameter win). The `initialpop` parameter, when set, wins over both. </td>
+   <td style="text-align:left;"> Where DEoptim's starting population comes from. 'calibration' (default): the threshold calibration's passing sets, then uniform draws, or DEoptim's own draw when there are none. 'emulator': `nCoresNeeded` good, spread-out points evaluated by a Gaussian-process emulator search of the fit's objective (~1,000-1,600 real evaluations on the fit's `cores`, between `lower` and `upper`, wide one-sided parameters on a log1p scale; a global phase, then trust-region rounds; see `emulatorControl`). The search is cached. A fit seeded this way stops sooner: `convergence` defaults to `minGenerations = 200` and `window = 200` (elements of the `convergence` parameter win). The `initialpop` parameter, when set, wins over both. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -291,7 +291,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;">  </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Settings of the emulator search (`initialPopMethod = 'emulator'`), by name; what is missing comes from `emulatorDefaults()`: the design size (`designPerParam`, 20), the budget (`globalMaxEvals` 1000, `maxEvals` 1600, `minEvals` 600), the stopping rule (`globalWindow`, `localWindow`, `relTol`), the response caps (`globalCapRatio`, `localCapRatio`) and the search box (`boxWiden`, `boxMinWidthFrac`). Part of the search's cache key. </td>
+   <td style="text-align:left;"> Settings of the emulator search (`initialPopMethod = 'emulator'`), by name; what is missing comes from `emulatorDefaults()`: the design size (`designPerParam`, 20), the budget (`globalMaxEvals` 1000, `maxEvals` 1600, `minEvals` 600), the global phase's stopping rule (`globalWindow`, `relTol`), the response caps (`globalCapRatio`, `localCapRatio`), the log1p rule (`logSpanMin`), the trust-region rounds (`trustRoundBatches`, `localTopFrac`, `localWiden`, `trustTolSD`, `trustShrink`, `trustExpand`, `trustSuccessTol`, `trustFailureTol`, `trustMinWidth`) and the starting population's pool and spacing (`popPoolFrac`, `popMinDist`). Part of the search's cache key. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -336,8 +336,8 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> /home/ru.... </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Absolute path specifying R package directory location to use when running DEotpim. NOTE: this path must be read/write accessible on ALL machines used for fitting (identified in cores). Therefore, it's best use a directory in your user's `~` directory. If the directory does not exist at this path, will attempt to create it. </td>
-   <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> Absolute path specifying R package directory location to use when running DEotpim. NOTE: this path must be read/write accessible on ALL machines used for fitting (identified in cores). Therefore, it's best use a directory in your user's `~` directory. If the directory does not exist at this path, will attempt to create it. Not part of this module's cache keys: it says where the workers load packages from, not what they compute, and its default is a machine-specific path. </td>
+   <td style="text-align:left;"> FALSE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> lower </td>
@@ -588,8 +588,8 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Integer defining the number of cores to pass to `mcmapply(mc.cores = ...)` This will fork this many to do the years loop internally. This would be in addition to `cores` and is effecively a multiplier. The computer needs to have `cores objFunCoresInternal` threads or it will stall. </td>
-   <td style="text-align:left;"> TRUE </td>
+   <td style="text-align:left;"> Integer defining the number of cores to pass to `mcmapply(mc.cores = ...)` This will fork this many to do the years loop internally. This would be in addition to `cores` and is effecively a multiplier. The computer needs to have `cores objFunCoresInternal` threads or it will stall. Not part of this module's cache keys: it sets how many forks the objective uses, not its result. </td>
+   <td style="text-align:left;"> FALSE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> objfunFireReps </td>

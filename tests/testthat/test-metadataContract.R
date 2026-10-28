@@ -33,11 +33,15 @@ test_that("parameter classes", {
   )
 })
 
-test_that("`cores` is not part of the module's cache keys", {
+test_that("`cores`, `libPathDEoptim` and `objFunCoresInternal` are not part of the module's cache keys", {
   ## adding a host to `cores` (2026-10-20: "mega") re-ran every cached spreadFit event, although the
-  ## fit's own Cache() calls already leave `cores` out; needs SpaDES.core >= 3.2.1.9045
-  expect_identical(p$cacheKey[p$paramName == "cores"], FALSE)
-  expect_true(all(p$cacheKey[p$paramName != "cores"]))
+  ## fit's own Cache() calls already leave `cores` out; needs SpaDES.core >= 3.2.1.9045.
+  ## `libPathDEoptim` (default `.libPaths()[1]`, a machine's path) made the estimateThreshold entry of one
+  ## machine miss on another (2026-10-28, 1 of 979 digests differed); it and `objFunCoresInternal` only say
+  ## where and how wide the objective runs, and the fit's own Cache() calls already leave them out.
+  notKeyed <- c("cores", "libPathDEoptim", "objFunCoresInternal")
+  expect_identical(p$cacheKey[match(notKeyed, p$paramName)], rep(FALSE, length(notKeyed)))
+  expect_true(all(p$cacheKey[!p$paramName %in% notKeyed]))
 })
 
 test_that("the defunct DEoptim-retrieval parameters and output are gone", {
