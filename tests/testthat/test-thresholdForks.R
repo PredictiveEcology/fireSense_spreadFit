@@ -60,3 +60,25 @@ test_that("localSingleThreadBLAS() gives one BLAS thread until the caller return
   expect_equal(inside, 1L)
   expect_equal(RhpcBLASctl::blas_get_num_procs(), before)
 })
+
+test_that("forkBudget() sizes the forks by the CPUs the job was given, not the node's", {
+  # 2026-10-28: a Slurm job of part of a 64-CPU node forked 32 children (half the node's cores).
+  # parallelly reads the environment once per session, so ask a fresh R process that starts inside the "job".
+  skip_if_not_installed("callr")
+  skip_if(parallel::detectCores() <= 2L, "needs a machine with more than 2 cores")
+  forks <- callr::r(function(src) {
+    options(mc.cores = NULL)
+    source(src)
+    forkBudget(10000L)
+  }, args = list(testthat::test_path("..", "..", "R", "thresholdForks.R")),
+  env = c(callr::rcmd_safe_env(), SLURM_JOB_ID = "1", SLURM_CPUS_ON_NODE = "2", SLURM_CPUS_PER_TASK = "2"))
+  expect_lte(forks, 2L)
+})
+
+test_that("forkBudget() does not exceed the memory the job was given", {
+  withr::local_options(mc.cores = NULL)
+  heapMB <- sum(gc()[, 2])
+  testthat::local_mocked_bindings(.slurmAllocation = function(...) list(memLimitGB = 1, memAvailableGB = 1),
+                                  .package = "clusters")
+  expect_lte(forkBudget(10000L), max(1L, floor(1024 / heapMB)))
+})
