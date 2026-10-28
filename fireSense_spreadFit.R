@@ -28,7 +28,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.82)", # DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9125)", # the quantitative spread objective with m4 buffers and open-edge cut (#184), tests = "pitAD" (#185)
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9128)", # burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -426,7 +426,8 @@ defineModule(sim, list(
                  desc = paste("Flammable (1) land of `rasterToMatch` in the latest vegetation year, from `fireSense_dataPrepFit`.",
                               "The `\"powerLaw\"` link is calibrated on it. Not used with the other links.")),
     expectsInput("spreadFirePoints", "sf",
-                 desc = "list of `sf` points, one element per year, of fire ignition locations"),
+                 desc = paste("list of `sf` points, one element per year, of fire ignition locations, with each fire's",
+                              "area on burnable pixels (column `fireSenseUtils::burnableHaTxt`), its target size.")),
     expectsInput("studyAreaWithSpreadParams", "sf",
                  desc = paste("Rows of the shared fit ledger, set by `fireSense_dataPrepFit`; `init` checks them for a",
                               "fit of this polygon. Declared as an input so the event's cache key includes it,",
@@ -463,7 +464,8 @@ defineModule(sim, list(
     createsOutput("fsSpreadFit_hists", "ggplot",
                   desc = "histograms of each parameter used in `DEoptim` fitting."),
     createsOutput("lociList", "list",
-                  desc = "per-year `data.table`s of fire start cells and sizes, from `fireSenseUtils::makeLociList()`"),
+                  desc = paste("per-year `data.table`s of fire start cells and sizes (area on burnable pixels), of the fires",
+                               "in `fireBufferedListDT`, from `fireSenseUtils::makeLociList()`")),
     createsOutput("spreadFitConvergence", "data.table",
                   desc = "The objective across the fit's generations (`fireSenseUtils::fitConvergence()`)."),
     createsOutput("spreadFitRescore", "data.table",
@@ -804,9 +806,7 @@ spreadFitPrep <- function(sim) {
     Plots(histOuts[["nonAnnual"]], filename = "Histograms of FuelLayers", useCache = "png") 
   }
 
-  IDvar <- grep("ID", names(sim$spreadFirePoints[[1]]), value = TRUE) |> setdiff("GID")
-  sim$lociList <- makeLociList(ras = sim$rasterToMatch, pts = sim$spreadFirePoints, idsCol = IDvar,
-                               yearPrefix = fireSenseUtils::yearTxt)
+  sim$lociList <- spreadFitLoci(sim$rasterToMatch, sim$spreadFirePoints, sim$fireBufferedListDT)
 
   keepNames <- intersect(names(sim$fireSense_annualSpreadFitCovariates), names(sim$fireBufferedListDT))
   mod$covsX1000 <- covsX1000AndSetDF(
