@@ -2994,7 +2994,7 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">fireSense_spreadFit Manual</h1>
-<h3 class="subtitle">v.1.2.0.9027</h3>
+<h3 class="subtitle">v.1.2.0.9029</h3>
 <h4 class="date">Last updated: 2026-10-28</h4>
 
 </div>
@@ -3551,7 +3551,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Where DEoptim’s starting population comes from. ‘calibration’ (default): the threshold calibration’s passing sets, then uniform draws, or DEoptim’s own draw when there are none. ‘emulator’: the <code>nCoresNeeded</code> best distinct points of a Gaussian-process emulator search of the fit’s objective (~1,000-1,600 real evaluations on the fit’s <code>cores</code>, in a box around the passing sets, or between <code>lower</code> and <code>upper</code> without them; see <code>emulatorControl</code>). The search is cached. A fit seeded this way stops sooner: <code>convergence</code> defaults to <code>minGenerations = 100</code> and <code>window = 100</code> (elements of the <code>convergence</code> parameter win). The <code>initialpop</code> parameter, when set, wins over both.
+Where DEoptim’s starting population comes from. ‘calibration’ (default): the threshold calibration’s passing sets, then uniform draws, or DEoptim’s own draw when there are none. ‘emulator’: <code>nCoresNeeded</code> good, spread-out points evaluated by a Gaussian-process emulator search of the fit’s objective (~1,000-1,600 real evaluations on the fit’s <code>cores</code>, between <code>lower</code> and <code>upper</code>, wide one-sided parameters on a log1p scale; a global phase, then trust-region rounds; see <code>emulatorControl</code>). The search is cached. A fit seeded this way stops sooner: <code>convergence</code> defaults to <code>minGenerations = 200</code> and <code>window = 200</code> (elements of the <code>convergence</code> parameter win). The <code>initialpop</code> parameter, when set, wins over both.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -3573,7 +3573,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Settings of the emulator search (<code>initialPopMethod = &#39;emulator&#39;</code>), by name; what is missing comes from <code>emulatorDefaults()</code>: the design size (<code>designPerParam</code>, 20), the budget (<code>globalMaxEvals</code> 1000, <code>maxEvals</code> 1600, <code>minEvals</code> 600), the stopping rule (<code>globalWindow</code>, <code>localWindow</code>, <code>relTol</code>), the response caps (<code>globalCapRatio</code>, <code>localCapRatio</code>) and the search box (<code>boxWiden</code>, <code>boxMinWidthFrac</code>). Part of the search’s cache key.
+Settings of the emulator search (<code>initialPopMethod = &#39;emulator&#39;</code>), by name; what is missing comes from <code>emulatorDefaults()</code>: the design size (<code>designPerParam</code>, 20), the budget (<code>globalMaxEvals</code> 1000, <code>maxEvals</code> 1600, <code>minEvals</code> 600), the global phase’s stopping rule (<code>globalWindow</code>, <code>relTol</code>), the response caps (<code>globalCapRatio</code>, <code>localCapRatio</code>), the log1p rule (<code>logSpanMin</code>), the trust-region rounds (<code>trustRoundBatches</code>, <code>localTopFrac</code>, <code>localWiden</code>, <code>trustTolSD</code>, <code>trustShrink</code>, <code>trustExpand</code>, <code>trustSuccessTol</code>, <code>trustFailureTol</code>, <code>trustMinWidth</code>) and the starting population’s pool and spacing (<code>popPoolFrac</code>, <code>popMinDist</code>). Part of the search’s cache key.
 </td>
 <td style="text-align:left;">
 TRUE
