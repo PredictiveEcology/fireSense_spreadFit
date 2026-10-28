@@ -3194,7 +3194,7 @@ spreadFirePoints
 sf
 </td>
 <td style="text-align:left;">
-list of <code>sf</code> points, one element per year, of fire ignition locations
+list of <code>sf</code> points, one element per year, of fire ignition locations, with each fire’s area on burnable pixels (column <code>fireSenseUtils::burnableHaTxt</code>), its target size.
 </td>
 <td style="text-align:left;">
 NA
@@ -4993,7 +4993,7 @@ lociList
 list
 </td>
 <td style="text-align:left;">
-per-year <code>data.table</code>s of fire start cells and sizes, from <code>fireSenseUtils::makeLociList()</code>
+per-year <code>data.table</code>s of fire start cells and sizes (area on burnable pixels), of the fires in <code>fireBufferedListDT</code>, from <code>fireSenseUtils::makeLociList()</code>
 </td>
 </tr>
 <tr>
