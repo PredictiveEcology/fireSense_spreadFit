@@ -17,7 +17,7 @@
 #' @param availMB numeric or `NULL`; memory available on the host, MB.
 #'   Unknown (`NULL`, empty, non-finite) means one fork.
 #' @param nPars integer; number of parameter sets to evaluate.
-#' @param detCores integer; `parallel::detectCores()`.
+#' @param detCores integer; the cores this process may use (`parallelly::availableCores()`: a Slurm job's CPUs, a cgroup's quota).
 #' @param activeThreads integer; busy threads already running on the host.
 #' @param mcCores integer or `NULL`; `getOption("mc.cores")`, an explicit cap.
 #' @param loadCap numeric; cap from the host's load (`fireSenseUtils::nThreads()`). `Inf` (default) is no cap.
@@ -35,7 +35,7 @@ thresholdForks <- function(heapMB, availMB, nPars, detCores, activeThreads = 0L,
 #'
 #' [thresholdForks()] with this host's state: the R heap in use (each fork is a copy-on-write image of this
 #' process that diverges as the garbage collector marks the heap, so budget one heap per fork; the `gc()` call
-#' also leaves less garbage to copy), the memory available, the busy threads, `detectCores()` and
+#' also leaves less garbage to copy), the memory available, the busy threads, `parallelly::availableCores()` and
 #' `options(mc.cores)`, and capped by the host's load (`fireSenseUtils::nThreads()`). Used by the threshold self-calibration and the `"powerLaw"` calibration, so several
 #' fits on one host, or a fit run inside a cluster worker, share the same caps.
 #'
@@ -45,7 +45,10 @@ forkBudget <- function(nTasks) {
   heapMB <- sum(gc()[, 2])
   availMB <- pemisc::availableMemory()
   availMB <- if (length(availMB)) availMB / 1e6 else NULL
-  thresholdForks(heapMB = heapMB, availMB = availMB, nPars = nTasks, detCores = parallel::detectCores(),
+  ## inside a Slurm job the host's free memory is not the job's: Slurm kills the job at its own limit
+  jobMB <- clusters:::.slurmAllocation()$memAvailableGB * 1024  # internal to clusters (>= 0.0.87); NULL/NA outside a job
+  if (length(availMB) && length(jobMB) && !is.na(jobMB)) availMB <- min(availMB, jobMB)
+  thresholdForks(heapMB = heapMB, availMB = availMB, nPars = nTasks, detCores = parallelly::availableCores(),
                  activeThreads = clusters::numActiveThreads(), mcCores = getOption("mc.cores"),
                  loadCap = fireSenseUtils::nThreads())
 }
