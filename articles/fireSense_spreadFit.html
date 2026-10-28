@@ -73,7 +73,7 @@
       <h1 data-toc-skip>fireSense_spreadFit Manual</h1>
             <h3 data-toc-skip class="subtitle">v.1.2.0.9027</h3>
             
-            <h4 data-toc-skip class="date">Last updated: 2026-10-27</h4>
+            <h4 data-toc-skip class="date">Last updated: 2026-10-28</h4>
       
 
       <div class="hidden name"><code>fireSense_spreadFit.Rmd</code></div>
@@ -773,10 +773,10 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Absolute path specifying R package directory location to use when running DEotpim. NOTE: this path must be read/write accessible on ALL machines used for fitting (identified in cores). Therefore, it’s best use a directory in your user’s <code>~</code> directory. If the directory does not exist at this path, will attempt to create it.
+Absolute path specifying R package directory location to use when running DEotpim. NOTE: this path must be read/write accessible on ALL machines used for fitting (identified in cores). Therefore, it’s best use a directory in your user’s <code>~</code> directory. If the directory does not exist at this path, will attempt to create it. Not part of this module’s cache keys: it says where the workers load packages from, not what they compute, and its default is a machine-specific path.
 </td>
 <td style="text-align:left;">
-TRUE
+FALSE
 </td>
 </tr>
 <tr>
@@ -1416,10 +1416,10 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Integer defining the number of cores to pass to <code>mcmapply(mc.cores = ...)</code> This will fork this many to do the years loop internally. This would be in addition to <code>cores</code> and is effecively a multiplier. The computer needs to have <code>cores objFunCoresInternal</code> threads or it will stall.
+Integer defining the number of cores to pass to <code>mcmapply(mc.cores = ...)</code> This will fork this many to do the years loop internally. This would be in addition to <code>cores</code> and is effecively a multiplier. The computer needs to have <code>cores objFunCoresInternal</code> threads or it will stall. Not part of this module’s cache keys: it sets how many forks the objective uses, not its result.
 </td>
 <td style="text-align:left;">
-TRUE
+FALSE
 </td>
 </tr>
 <tr>

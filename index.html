@@ -1840,7 +1840,7 @@ yearSpreadSDBounds
 numeric
 </td>
 <td style="text-align:left;">
-0, 5
+0, 10
 </td>
 <td style="text-align:left;">
 NA
@@ -1849,7 +1849,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Bounds of <code>yearSpreadSD</code>, the sd of a per-year random effect on spread (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>), when <code>lower</code>/<code>upper</code> are not supplied. It is added to the linear predictor with <code>spreadLink = 'powerLaw'</code> (one unit there scales a year’s mean fire size by about e) and to the logit of spread probability with the other links. A seasonal departure: each year draws one eps, so all of a year’s fires burn hotter or cooler together, which widens the simulated fire-size distribution. The upper bound is wide so it never binds: power-law fits reached the former bound of 1. <code>NA</code> turns it off.
+Bounds of <code>yearSpreadSD</code>, the sd of a per-year random effect on spread (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>), when <code>lower</code>/<code>upper</code> are not supplied. It is added to the linear predictor with <code>spreadLink = 'powerLaw'</code> (one unit there scales a year’s mean fire size by about e) and to the logit of spread probability with the other links. A seasonal departure: each year draws one eps, so all of a year’s fires burn hotter or cooler together, which widens the simulated fire-size distribution. The upper bound is wide so it never binds: power-law fits reached the former bounds of 1 and then 5 (6.6.1, 6.1.3, 6.2.3). <code>NA</code> turns it off.
 </td>
 <td style="text-align:left;">
 TRUE
