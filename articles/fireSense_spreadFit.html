@@ -281,7 +281,7 @@ spreadFirePoints
 sf
 </td>
 <td style="text-align:left;">
-list of <code>sf</code> points, one element per year, of fire ignition locations
+list of <code>sf</code> points, one element per year, of fire ignition locations, with each fire’s area on burnable pixels (column <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::burnableHaTxt</a></code>), its target size.
 </td>
 <td style="text-align:left;">
 NA
@@ -2086,7 +2086,7 @@ lociList
 list
 </td>
 <td style="text-align:left;">
-per-year <code>data.table</code>s of fire start cells and sizes, from <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/makeLociList.html" class="external-link">fireSenseUtils::makeLociList()</a></code>
+per-year <code>data.table</code>s of fire start cells and sizes (area on burnable pixels), of the fires in <code>fireBufferedListDT</code>, from <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/makeLociList.html" class="external-link">fireSenseUtils::makeLociList()</a></code>
 </td>
 </tr>
 <tr>

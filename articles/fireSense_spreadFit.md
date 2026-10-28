@@ -135,7 +135,7 @@ Table \@ref(tab:moduleInputs-fireSense-spreadFit) shows the full list of module 
   <tr>
    <td style="text-align:left;"> spreadFirePoints </td>
    <td style="text-align:left;"> sf </td>
-   <td style="text-align:left;"> list of `sf` points, one element per year, of fire ignition locations </td>
+   <td style="text-align:left;"> list of `sf` points, one element per year, of fire ignition locations, with each fire's area on burnable pixels (column `fireSenseUtils::burnableHaTxt`), its target size. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -873,7 +873,7 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-sprea
   <tr>
    <td style="text-align:left;"> lociList </td>
    <td style="text-align:left;"> list </td>
-   <td style="text-align:left;"> per-year `data.table`s of fire start cells and sizes, from `fireSenseUtils::makeLociList()` </td>
+   <td style="text-align:left;"> per-year `data.table`s of fire start cells and sizes (area on burnable pixels), of the fires in `fireBufferedListDT`, from `fireSenseUtils::makeLociList()` </td>
   </tr>
   <tr>
    <td style="text-align:left;"> spreadFitConvergence </td>
