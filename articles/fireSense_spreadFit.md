@@ -248,7 +248,25 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> adTest, .... </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Any of `'SNLL_FS'`, `'adTest'` (pooled Anderson-Darling on fire sizes) and `'pitAD'` (rank-based Anderson-Darling: each fire's observed size ranked among its replicates; does not depend on the fit buffers). Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. </td>
+   <td style="text-align:left;"> Any of `'SNLL_FS'`, `'adTest'` (pooled Anderson-Darling on fire sizes) and `'pitAD'` (rank-based Anderson-Darling: each fire's observed size ranked among its replicates; does not depend on the fit buffers), or `'crps'`: a different objective of proper scores (per-fire CRPS on log size, adTest, areaDist, CRPS of the log total area, CRPS of the 10 largest fires; weights in `crpsWeights`; no annual-area term, no early stop). The 2026-10-28 profile used it alone, with `gateRefusal = 'simulate'` and `objfunFireReps = 100L`. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. The threshold calibration has no first-block value to calibrate under `'crps'`: it warns and the fit runs without an early stop. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> crpsWeights </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Named list of the multipliers of the `'crps'` objective's terms: `fire`, `adTest`, `areaDist`, `totalArea`, `top10`. Names left out take `fireSenseUtils::crpsWeightsDefault()` (1, 0.34, 2.6, 164, 16.5: set by the 2026-10-28 profile on ELFs 6.6.2, 14.3 and 11.3). NULL (default) is all defaults. Passed to `fireSenseUtils::runDEoptim()`; unused without `'crps'` in `DEoptimTests`. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> gateRefusal </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> minLik </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> What a year that fails the spread-probability gates gets in the objective: 'minLik' (default) is not simulated and scores the floor; 'simulate' simulates and scores it like any other year. Passed to `fireSenseUtils::runDEoptim()`, for any `DEoptimTests`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
