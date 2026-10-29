@@ -56,6 +56,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                                     seed = NULL, escapeSizeHa = NULL,
                                     sizeLik = "kde", sizeLikDf = 5, adWeight = "auto", link = NULL,
                                     powerLawGamma = fireSenseUtils::spreadPowerLawGamma, jumpTries = 0, jumpMeanDist = 0, yearAreaWeight = 0, areaDistWeight = 0,
+                                    crpsWeights = NULL, gateRefusal = "minLik",
                                     penaliseRunaways = TRUE,
                                     runawayEdgeFrac = fireSenseUtils::fireSenseRunawayEdgeFrac,
                                     runawayEdgeMin = fireSenseUtils::fireSenseRunawayEdgeMin,
@@ -119,6 +120,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                                  sizeLik = sizeLik, sizeLikDf = sizeLikDf, adWeight = adWeight, link = link,
                                  powerLawGamma = powerLawGamma, jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
                                  yearAreaWeight = yearAreaWeight, areaDistWeight = areaDistWeight,
+                                 crpsWeights = crpsWeights, gateRefusal = gateRefusal,
                                  penaliseRunaways = penaliseRunaways,
                                  runawayEdgeFrac = runawayEdgeFrac, runawayEdgeMin = runawayEdgeMin,
                                  runawayBufferMultiple = runawayBufferMultiple,
@@ -185,6 +187,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                       sizeLik = sizeLik, sizeLikDf = sizeLikDf, adWeight = adWeight, link = link,
                       powerLawGamma = powerLawGamma, jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
                       yearAreaWeight = yearAreaWeight, areaDistWeight = areaDistWeight,
+                      crpsWeights = crpsWeights, gateRefusal = gateRefusal,
                       penaliseRunaways = penaliseRunaways,
                       runawayBufferMultiple = runawayBufferMultiple,
                       plot.it = FALSE)

@@ -27,7 +27,7 @@ test_that("parameter classes", {
       link = "character", spreadLink = "character", powerLawGamma = "numeric", powerLawPcMargin = "numeric", powerLawFires = "integer", powerLawPGrid = "numeric", profileReps = "integer", simulateMembers = "integer",
       sizeLik = "character", sizeLikDf = "numeric", escapeSizeHa = "numeric", weighted = "logical|character",
       adWeight = "character|numeric", yearAreaWeight = "numeric|character",
-      areaDistWeight = "numeric|character", penaliseRunaways = "logical", runawayEdgeFrac = "numeric", runawayEdgeMin = "integer", runawayBufferMultiple = "numeric", jumpTries = "numeric", jumpMeanDist = "numeric",
+      areaDistWeight = "numeric|character", crpsWeights = "list", gateRefusal = "character", penaliseRunaways = "logical", runawayEdgeFrac = "numeric", runawayEdgeMin = "integer", runawayBufferMultiple = "numeric", jumpTries = "numeric", jumpMeanDist = "numeric",
       upperTailBounds = "numeric", yearSpreadSDBounds = "numeric",
       verbose = "numeric", visualizeDEoptim = "Path"))
   )
@@ -113,6 +113,8 @@ test_that("defaults of the objective and of the post-fit diagnostics", {
   ## the annual-area and area-distribution terms and jumping are on by default
   expect_identical(def$yearAreaWeight, "auto")
   expect_identical(def$areaDistWeight, "auto")
+  expect_null(def$crpsWeights)                  # the CRPS objective is off unless DEoptimTests asks for it
+  expect_identical(def$gateRefusal, "minLik")
   expect_identical(def$jumpTries, 20)
   expect_identical(def$jumpMeanDist, 3)
   expect_identical(def$link, "logistic3p")

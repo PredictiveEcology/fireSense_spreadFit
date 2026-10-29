@@ -35,7 +35,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
                             paste0("DEoptimProgress_", runName, ".csv"))
   ## runDEoptim()'s arguments, once: the fit gets them, and the emulator (`initialPopMethod = "emulator"`)
   ## evaluates the objective they define
-  deArgs <- list(landscape = sim$rasterToMatch,
+  deArgs <- c(crpsObjectiveArgs(P(sim)), list(landscape = sim$rasterToMatch,
                    annualDTx1000 = covs$annualDTx1000,
                    nonAnnualDTx1000 = covs$nonAnnualDTx1000,
                    fireBufferedListDT = covs$fireBufferedListDT,
@@ -91,7 +91,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
                    runawayEdgeMin = P(sim)$runawayEdgeMin,
                    runawayBufferMultiple = runawayMultiple,
                    profileReps = if (diagnostics) P(sim)$profileReps else 0L,
-                   simulateMembers = if (diagnostics) P(sim)$simulateMembers else 0L)
+                   simulateMembers = if (diagnostics) P(sim)$simulateMembers else 0L))
   lower <- P(sim)$lower
   n <- max(10L * length(lower), as.integer(P(sim)$nCoresNeeded))
   ## forced only when a start is drawn: a bad .ELFind is reported by the ledger's check, after the fit
@@ -173,13 +173,24 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
 ## everything it calls that decides its value (the spread link, which replicates are cut, the per-fire likelihood
 ## and score, and the terms added to it)
 objectiveBodies <- function() {
-  fns <- c("spreadProbFromIntegerCovs", "spreadProbCovsOfYear", "spreadProbFromCovs", "logisticAll", "powerLawLink",
+  fns <- c("crpsEnsemble", "crpsFireSizes", "crpsTotalArea", "crpsTopFires", "crpsWeightsDefault", # fireSenseUtils >= the CRPS objective
+           "spreadProbFromIntegerCovs", "spreadProbCovsOfYear", "spreadProbFromCovs", "logisticAll", "powerLawLink",
            "dataYearBefore", "addBufferEdge", "bufferEdge", "bufferOpen", "sizeLikT", "kernelLogScore",
            "adStatistic", "adWeightAuto", "pooledFireSizes", "yearAreaNLL", "areaWeightedCvM",
            "pitMidRank", "adUniform")
+  fns <- fns[vapply(fns, exists, logical(1), envir = asNamespace("fireSenseUtils"), inherits = FALSE)]
   c(list(objfunSpreadFit = deparse(fireSenseUtils::.objfunSpreadFit),
          objFunInner = deparse(utils::getFromNamespace("objFunInner", "fireSenseUtils"))),
     stats::setNames(lapply(fns, function(f) deparse(utils::getFromNamespace(f, "fireSenseUtils"))), fns))
+}
+
+## The CRPS objective's options (`crpsWeights`, `gateRefusal`) as `runDEoptim()` arguments: nothing at their
+## defaults, so a fit's cache key is what it was before they existed
+crpsObjectiveArgs <- function(Par) {
+  out <- list()
+  out$crpsWeights <- Par$crpsWeights
+  if (!identical(Par$gateRefusal, "minLik")) out$gateRefusal <- Par$gateRefusal
+  out
 }
 
 ## The `link` the objective is given, from the parameters `Par` (`P(sim)`): "powerLaw" for `spreadLink = "powerLaw"`,
