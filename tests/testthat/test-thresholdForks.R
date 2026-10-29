@@ -82,3 +82,31 @@ test_that("forkBudget() does not exceed the memory the job was given", {
                                   .package = "clusters")
   expect_lte(forkBudget(10000L), max(1L, floor(1024 / heapMB)))
 })
+
+test_that("forkBudget() ignores the node's busy threads and load in a Slurm job given part of the node", {
+  # 2026-10-29, GPSC: 42 CPUs of a 64-CPU node shared with other jobs logged "Using 3 cores" for the threshold
+  # calibration. Other jobs' threads run on CPUs the job's cgroup keeps away from it.
+  withr::local_options(mc.cores = NULL)
+  testthat::local_mocked_bindings(.slurmAllocation = function(...) list(memLimitGB = 1e6, memAvailableGB = 1e6),
+                                  numActiveThreads = function(...) 100L, .package = "clusters")
+  testthat::local_mocked_bindings(nThreads = function(...) 1L, .package = "fireSenseUtils")
+  testthat::local_mocked_bindings(availableCores = function(...) 8L, .package = "parallelly")
+  testthat::local_mocked_bindings(detectCores = function(...) 64L, .package = "parallel")
+  expect_equal(forkBudget(10000L), 4L)  # half of the job's 8 CPUs
+  # a whole-node job still sees the node's load
+  testthat::local_mocked_bindings(availableCores = function(...) 64L, .package = "parallelly")
+  expect_equal(forkBudget(10000L), 1L)
+})
+
+test_that("forkBudget() outside Slurm still subtracts busy threads and caps by load", {
+  withr::local_options(mc.cores = NULL)
+  testthat::local_mocked_bindings(.slurmAllocation = function(...) NULL, numActiveThreads = function(...) 2L,
+                                  .package = "clusters")
+  testthat::local_mocked_bindings(nThreads = function(...) 100L, .package = "fireSenseUtils")
+  testthat::local_mocked_bindings(availableCores = function(...) 8L, .package = "parallelly")
+  testthat::local_mocked_bindings(detectCores = function(...) 64L, .package = "parallel")
+  expect_equal(forkBudget(10000L), 2L)  # floor(8 * 0.5) - 2 busy
+  testthat::local_mocked_bindings(numActiveThreads = function(...) 0L, .package = "clusters")
+  testthat::local_mocked_bindings(nThreads = function(...) 1L, .package = "fireSenseUtils")
+  expect_equal(forkBudget(10000L), 1L)  # load cap
+})
