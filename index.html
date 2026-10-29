@@ -520,7 +520,52 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Any of <code>'SNLL_FS'</code>, <code>'adTest'</code> (pooled Anderson-Darling on fire sizes) and <code>'pitAD'</code> (rank-based Anderson-Darling: each fire’s observed size ranked among its replicates; does not depend on the fit buffers). Passed to <code>tests</code> in <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>.
+Any of <code>'SNLL_FS'</code>, <code>'adTest'</code> (pooled Anderson-Darling on fire sizes) and <code>'pitAD'</code> (rank-based Anderson-Darling: each fire’s observed size ranked among its replicates; does not depend on the fit buffers), or <code>'crps'</code>: a different objective of proper scores (per-fire CRPS on log size, adTest, areaDist, CRPS of the log total area, CRPS of the 10 largest fires; weights in <code>crpsWeights</code>; no annual-area term, no early stop). The 2026-10-28 profile used it alone, with <code>gateRefusal = 'simulate'</code> and <code>objfunFireReps = 100L</code>. Passed to <code>tests</code> in <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>. The threshold calibration has no first-block value to calibrate under <code>'crps'</code>: it warns and the fit runs without an early stop.
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+crpsWeights
+</td>
+<td style="text-align:left;">
+list
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Named list of the multipliers of the <code>'crps'</code> objective’s terms: <code>fire</code>, <code>adTest</code>, <code>areaDist</code>, <code>totalArea</code>, <code>top10</code>. Names left out take <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/crpsWeightsDefault.html" class="external-link">fireSenseUtils::crpsWeightsDefault()</a></code> (1, 0.34, 2.6, 164, 16.5: set by the 2026-10-28 profile on ELFs 6.6.2, 14.3 and 11.3). NULL (default) is all defaults. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>; unused without <code>'crps'</code> in <code>DEoptimTests</code>.
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gateRefusal
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+minLik
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+What a year that fails the spread-probability gates gets in the objective: ‘minLik’ (default) is not simulated and scores the floor; ‘simulate’ simulates and scores it like any other year. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>, for any <code>DEoptimTests</code>.
 </td>
 <td style="text-align:left;">
 TRUE
