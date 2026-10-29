@@ -3,14 +3,15 @@
 ## miss (2026-10-01: fireSenseUtils' runaway censoring changed, and the old under-burning fits must not be served).
 test_that("the fit's and the threshold calibration's cache keys include the objective's bodies", {
   ob <- objectiveBodies()
-  expect_named(ob, c("objfunSpreadFit", "objFunInner", "spreadProbFromIntegerCovs", "spreadProbCovsOfYear",
+  expect_named(ob, c("objfunSpreadFit", "objFunInner", "crpsEnsemble", "crpsFireSizes", "crpsTotalArea",
+                     "crpsTopFires", "crpsWeightsDefault", "spreadProbFromIntegerCovs", "spreadProbCovsOfYear",
                      "spreadProbFromCovs", "logisticAll", "powerLawLink", "dataYearBefore",
                      "addBufferEdge", "bufferEdge", "bufferOpen", "sizeLikT", "kernelLogScore",
                      "adStatistic", "adWeightAuto", "pooledFireSizes", "yearAreaNLL", "areaWeightedCvM",
                      "pitMidRank", "adUniform"))
   ## which replicates are cut at the buffers, the per-fire likelihood and score, and the terms added to them
   for (f in c("kernelLogScore", "sizeLikT", "adStatistic", "yearAreaNLL", "areaWeightedCvM", "pooledFireSizes",
-              "pitMidRank", "adUniform"))
+              "pitMidRank", "adUniform", "crpsEnsemble", "crpsFireSizes", "crpsTotalArea", "crpsTopFires"))
     expect_identical(ob[[f]], deparse(utils::getFromNamespace(f, "fireSenseUtils")), label = f)
   expect_identical(ob$bufferOpen, deparse(fireSenseUtils::bufferOpen))
   ## the power-law link, and the dispatcher that reaches it

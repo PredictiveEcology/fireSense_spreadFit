@@ -119,3 +119,26 @@ test_that("penaliseRunaways = FALSE reaches the fit, the calibration and the obj
                          logical(1))))
   expect_true(all(vapply(seen, function(a) identical(a$penaliseRunaways, FALSE), logical(1))))
 })
+
+test_that("the CRPS objective's options reach the fit and the calibration, and are absent at their defaults", {
+  crps <- list(DEoptimTests = "crps", crpsWeights = list(top10 = 5), gateRefusal = "simulate")
+  rec <- new.env(); fitRec <- new.env()
+  sim <- toySim(c(list(firstBlockThresh = NULL), crps))
+  mockFitAndLedger(sim, fitRec)
+  mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
+  sim <- suppressMessages(SpaDES.core::spades(sim))
+  for (a in list(rec$args, fitRec$deArgs)) {
+    expect_identical(a$tests, "crps")
+    expect_identical(a$crpsWeights, list(top10 = 5))
+    expect_identical(a$gateRefusal, "simulate")
+  }
+  ## defaults: the fit's arguments are what they were (no new names), the calibration gets the defaults
+  rec <- new.env(); fitRec <- new.env()
+  sim <- toySim(list(firstBlockThresh = NULL, iterThresh = 6L))
+  mockFitAndLedger(sim, fitRec)
+  mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
+  sim <- suppressMessages(SpaDES.core::spades(sim))
+  expect_false(any(c("crpsWeights", "gateRefusal") %in% names(fitRec$deArgs)))
+  expect_null(rec$args$crpsWeights)
+  expect_identical(rec$args$gateRefusal, "minLik")
+})
