@@ -36,7 +36,9 @@ thresholdForks <- function(heapMB, availMB, nPars, detCores, activeThreads = 0L,
 #' [thresholdForks()] with this host's state: the R heap in use (each fork is a copy-on-write image of this
 #' process that diverges as the garbage collector marks the heap, so budget one heap per fork; the `gc()` call
 #' also leaves less garbage to copy), the memory available, the busy threads, `parallelly::availableCores()` and
-#' `options(mc.cores)`, and capped by the host's load (`fireSenseUtils::nThreads()`). Used by the threshold self-calibration and the `"powerLaw"` calibration, so several
+#' `options(mc.cores)`, and capped by the host's load (`fireSenseUtils::nThreads()`). In a Slurm job given part of
+#' the node (`parallelly::availableCores()` below `parallel::detectCores()`) the busy threads and the load are other
+#' jobs' and are ignored, as `clusters:::.limitToJob()` does. Used by the threshold self-calibration and the `"powerLaw"` calibration, so several
 #' fits on one host, or a fit run inside a cluster worker, share the same caps.
 #'
 #' @param nTasks integer; number of tasks to spread over the forks.
@@ -46,11 +48,17 @@ forkBudget <- function(nTasks) {
   availMB <- pemisc::availableMemory()
   availMB <- if (length(availMB)) availMB / 1e6 else NULL
   ## inside a Slurm job the host's free memory is not the job's: Slurm kills the job at its own limit
-  jobMB <- clusters:::.slurmAllocation()$memAvailableGB * 1024  # internal to clusters (>= 0.0.87); NULL/NA outside a job
+  job <- clusters:::.slurmAllocation()
+  jobMB <- job$memAvailableGB * 1024  # internal to clusters (>= 0.0.87); NULL/NA outside a job
   if (length(availMB) && length(jobMB) && !is.na(jobMB)) availMB <- min(availMB, jobMB)
-  thresholdForks(heapMB = heapMB, availMB = availMB, nPars = nTasks, detCores = parallelly::availableCores(),
-                 activeThreads = clusters::numActiveThreads(), mcCores = getOption("mc.cores"),
-                 loadCap = fireSenseUtils::nThreads())
+  detCores <- parallelly::availableCores()
+  ## a job given part of a node: the busy threads and the load are other jobs', on CPUs this job's cgroup keeps
+  ## away from it (the rule of clusters:::.limitToJob()); the job's own CPUs are all free
+  partNode <- length(job) > 0 && detCores < parallel::detectCores()
+  thresholdForks(heapMB = heapMB, availMB = availMB, nPars = nTasks, detCores = detCores,
+                 activeThreads = if (partNode) 0L else clusters::numActiveThreads(),
+                 mcCores = getOption("mc.cores"),
+                 loadCap = if (partNode) Inf else fireSenseUtils::nThreads())
 }
 
 #' One BLAS thread until the calling function returns
