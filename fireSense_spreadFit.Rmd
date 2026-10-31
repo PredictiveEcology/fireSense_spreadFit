@@ -66,6 +66,14 @@ full DEoptim run (see `cores` and `nCoresNeeded`), which is not practical on a s
 `refitExisting` and `stopIfNoPreRunFit` are deprecated: `refitExisting = TRUE` is `doFit = TRUE` and
 `stopIfNoPreRunFit = TRUE` is `doFit = FALSE`. Setting either prints a message naming `doFit`.
 
+#### `phase`
+
+`phase` says which part of a fit job runs; the module does not read it.
+`fireSenseUtils::runJob()` reads it and sets the SpaDES.core `.stopBefore`/`.stopAfter` barriers (`fireSenseUtils::phaseEvents()`).
+Other modules' events are barriers too (`fireSense_dataPrepPredict`'s `getClimateRasters`).
+`"all"` (default) fits if the ELF has no fit, then predicts; `"inputs"` builds and caches every input, then stops before `estimateThreshold`, which forks;
+`"fit"` fits if there is no fit, then stops (after `run`, or after `crossValidate` when `mode` includes `"validate"` or `heldOutFold` is set).
+
 ### Module inputs and parameters
 
 The covariate tables, fire buffers, fire points and formula are made by `fireSense_dataPrepFit`.

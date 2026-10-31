@@ -68,7 +68,7 @@ test_that("parameters are the expected names", {
   expect_identical(
     sort(md$parameters$paramName),
     sort(c(".c", "convergence", ".plotInterval", ".plots", ".plotSize", ".runInitialTime", ".runName", ".studyAreaName",
-           ".useCache", "cores", "covFixedRange", "DEoptimControl", "DEoptimTests", "doFit", "doObjFunAssertions",
+           ".useCache", "cores", "covFixedRange", "DEoptimControl", "DEoptimTests", "doFit", "doObjFunAssertions", "phase",
            "heldOutFold", "initialpop", "initialPopMethod", "emulatorControl", "emulatorMaxParams", "iterDEoptim", "iterThresh", "thresholdMargin", "libPathDEoptim",
            "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded", "spreadLink", "powerLawGamma", "powerLawPcMargin", "powerLawFires", "powerLawPGrid",
            "objFunCoresInternal", "objfunFireReps", ".rep", "adWeight", "profileReps",
