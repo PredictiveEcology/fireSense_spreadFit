@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9033"
-date: "Last updated: 2026-10-29"
+date: "Last updated: 2026-11-02"
 output:
   bookdown::html_document2:
     toc: true
@@ -400,6 +400,15 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> The exponent `gamma` of `spreadLink = 'powerLaw'`. `NA` (default): the calibrated value for the ELF's flammable map. A number overrides `gamma` only (the bounds of p_c still come from the calibration). It is fixed, not fitted: it is exactly confounded with the scale of the coefficients. Ignored with the other links. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> powerLawShape </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> The curvature exponent `shape` of `spreadLink = 'powerLaw'`: p = p_c - (p_c - lowerSpreadProb) exp(-sign(x) abs(x / `powerLawGamma`)^`shape`) (`fireSenseUtils::powerLawLink()`). 1 (default) is the original exponential approach to p_c. A `shape` above 1 gives a lower p for a moderate x and a p closer to p_c for a large x, so extreme pixels and years can burn large without the medium ones burning too much. Fixed, not fitted. At 1 it is left out of the cache keys; the ledger row gets `fireSenseUtils::spreadFitPowerLawShapeTxt` with a `powerLaw` fit. Ignored with the other links. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
