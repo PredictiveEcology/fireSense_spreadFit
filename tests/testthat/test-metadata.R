@@ -51,7 +51,12 @@ test_that("outputs are the expected names and classes", {
       DE                        = "data.table",
       fsSpreadFit_hists         = "ggplot",
       lociList                  = "list",
+      missingLCCgroupList       = "list",
+      nonForestedLCCGroupsList  = "list",
       powerLawCalibration       = "list",
+      sppColorVects             = "list",
+      sppEquivs                 = "list",
+      sppNameVectors            = "list",
       spreadFitConvergence      = "data.table",
       spreadFitHeldOut          = "list",
       spreadFitIdentifiability  = "data.table",
@@ -75,7 +80,7 @@ test_that("parameters are the expected names", {
            "simulateMembers", "sizeLik", "sizeLikDf", "escapeSizeHa", "yearAreaWeight", "areaDistWeight", "crpsWeights", "gateRefusal", "penaliseRunaways", "runawayEdgeFrac", "runawayEdgeMin", "runawayBufferMultiple",
            "jumpTries", "jumpMeanDist", "upperTailBounds", "weighted", "yearSpreadSDBounds",
            "refitExisting", "rescaleAll", "firstBlockThresh", "fitFileSuffix", "spreadFitFilename",
-           "spreadFitGoogleDriveFolder", "stopIfNoPreRunFit", "strategy", "trace",
+           "spreadFitGoogleDriveFolder", "sppEquivCol", "fuelClassCol", "stopIfNoPreRunFit", "strategy", "trace",
            "upper", "upperAndLowerVal", "upperAndLowerValFuel", "useCache_DE",
            "verbose", "visualizeDEoptim"))
   )

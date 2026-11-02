@@ -20,7 +20,7 @@ test_that("parameter classes", {
       nCoresNeeded = "integer", objFunCoresInternal = "integer",
       objfunFireReps = "integer", refitExisting = "logical",
       .rep = "integer", rescaleAll = "logical", firstBlockThresh = "numeric",
-      fitFileSuffix = "character", spreadFitFilename = "character", spreadFitGoogleDriveFolder = "character",
+      fitFileSuffix = "character", spreadFitFilename = "character", sppEquivCol = "character", fuelClassCol = "character", spreadFitGoogleDriveFolder = "character",
       stopIfNoPreRunFit = "logical", strategy = "integer", trace = "numeric", upper = "numeric",
       upperAndLowerVal = "numeric", upperAndLowerValFuel = "numeric", useCache_DE = "logical",
       covFixedRange = "list",

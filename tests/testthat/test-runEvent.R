@@ -170,10 +170,11 @@ test_that("modules that disagree on fitFileSuffix are caught", {
 })
 
 test_that("sppEquiv and the land-cover groups in the simList are recorded in the row", {
-  out <- fitted(objects = list(sppEquiv = data.frame(sp = c("a", "b")),
-                               nonForestedLCCGroups = list(nf = 1:3), missingLCCgroup = "nf"))
+  ## a species table the `run` event can harmonize when it rebuilds the per-ELF lists from the ledger
+  spp <- data.table::data.table(LandR = c("Abie_bal", "Pice_mar"), FuelClass = c("class1", "class1"))
+  out <- fitted(objects = list(sppEquiv = spp, nonForestedLCCGroups = list(nf = 1:3), missingLCCgroup = "nf"))
   row <- out$sim$studyAreaWithSpreadParams
-  expect_identical(row$sppEquiv[[1]], data.frame(sp = c("a", "b")))
+  expect_identical(row$sppEquiv[[1]], spp)
   expect_identical(row$nonForestedLCCGroups[[1]], list(nf = 1:3))
   expect_identical(row$missingLCCgroup[[1]], "nf")
 })
