@@ -8,13 +8,14 @@
 #' an empty parameter set (2026-09-07, every job of the 41-ELF batch).
 #'
 #' @param sim A `simList`. Uses `sim$.ELFind` as the polygon identity (the ledger
-#'   key).
+#'   key). Over several ELFs (a `studyAreaLarge`, see `fireSense_ELFs`) it names them all, and each
+#'   must have a row.
 #' @return Logical, length one.
 hasPreRunFitForThisPolygon <- function(sim) {
   sa <- sim$studyAreaWithSpreadParams
   if (!(is(sa, "sf") || is(sa, "data.frame")) || NROW(sa) == 0L) return(FALSE)
   if (!"polygonID" %in% names(sa)) return(FALSE)
-  id <- sim$.ELFind
-  if (is.null(id) || !length(id)) return(FALSE)
-  isTRUE(any(as.character(sa$polygonID) == as.character(id[1])))
+  id <- as.character(sim$.ELFind)
+  if (!length(id) || anyNA(id)) return(FALSE)
+  all(id %in% as.character(sa$polygonID))
 }

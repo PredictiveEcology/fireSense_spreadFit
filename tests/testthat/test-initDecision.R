@@ -46,6 +46,17 @@ test_that("doFit x ledger, when the ledger HAS this polygon", {
   expect_identical(queued(initOnly(list(doFit = TRUE), objs)), fitEvents)          # replace it
 })
 
+## a run over several ELFs: fireSense_ELFs makes `.ELFind` the ELFs a studyAreaLarge covers
+test_that("over several ELFs, the default doFit uses their stored fits, and stops if one has none", {
+  both <- list(studyAreaWithSpreadParams = toyLedger(c("9.8", "9.9")), .ELFind = c("9.8", "9.9"))
+  expect_identical(queued(initOnly(list(doFit = NULL), both)), "spreadFitPrepare")
+  one <- list(studyAreaWithSpreadParams = toyLedger("9.9"), .ELFind = c("9.8", "9.9"))
+  expect_error(initOnly(list(doFit = NULL), one), "no usable stored fit for polygon 9\\.8, 9\\.9")
+  ## a fit is of one ELF: neither forced nor "whatever is needed" fits several
+  expect_error(initOnly(list(doFit = TRUE), both), "a fit is of one ELF.*9\\.8, 9\\.9")
+  expect_error(initOnly(list(doFit = NA), one), "a fit is of one ELF")
+})
+
 test_that("the ledger is keyed on .ELFind, not on .runName", {
   ## .runName matches a row, .ELFind does not: no fit is found
   objs <- list(studyAreaWithSpreadParams = toyLedger("toyRun"))
