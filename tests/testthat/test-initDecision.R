@@ -1,7 +1,7 @@
 ## What `init` decides: fit, skip, or stop. Toy inputs; no event after `init` is run here.
 
 fitEvents <- c("spreadFitPrepare", "estimateThreshold", "run", "postFitDiagnostics")
-noFitMsg <- "no usable pre-run fit in the ledger for polygon 9\\.9.*doFit"
+noFitMsg <- "no usable stored fit for polygon 9\\.9 in the ledger.*doFit"
 
 ## the messages `init` sends (runEvents() hides them)
 initMessages <- function(params = list(), objects = list()) {
@@ -17,9 +17,19 @@ initOnly <- function(params = list(), objects = list()) runEvents(toySim(params,
 
 test_that("doFit x ledger, when the ledger LACKS this polygon", {
   expect_identical(queued(initOnly(list(doFit = NA))), fitEvents)    # whatever is needed: fit
-  expect_identical(queued(initOnly()), fitEvents)                    # NA is the default
   expect_identical(queued(initOnly(list(doFit = TRUE))), fitEvents)
   expect_error(initOnly(list(doFit = FALSE)), noFitMsg)             # never fit: stop, naming the polygon
+})
+
+test_that("the default doFit never fits: no ledger row stops the run before any DEoptim call", {
+  ## a user who adds fireSense only to predict must never start a fit by accident
+  sim <- toySim(list(doFit = NULL))                     # NULL: the module's default
+  expect_identical(SpaDES.core::params(sim)[[moduleName]]$doFit, FALSE)
+  calls <- 0L
+  mockInModule(sim, runDEoptim = function(...) { calls <<- calls + 1L; stop("runDEoptim was called") })
+  expect_error(suppressMessages(SpaDES.core::spades(sim)),
+               "polygon 9\\.9 in the ledger with fitFileSuffix \"\".*the default.*doFit = NA")
+  expect_identical(calls, 0L)
 })
 
 test_that("a ledger holding only neighbours' rows is not a fit for this polygon", {
@@ -60,9 +70,11 @@ test_that("refitExisting and stopIfNoPreRunFit are deprecated aliases of doFit, 
   expect_identical(queued(suppressMessages(initOnly(list(refitExisting = FALSE, stopIfNoPreRunFit = TRUE), objs))),
                    "spreadFitPrepare")
   expect_error(suppressMessages(initOnly(list(refitExisting = FALSE, stopIfNoPreRunFit = TRUE))), noFitMsg)
-  ## an explicit doFit is not overridden by an alias
-  expect_identical(queued(suppressMessages(initOnly(list(doFit = FALSE, refitExisting = TRUE), objs))),
+  ## doFit NA or TRUE is not overridden by an alias; FALSE, the default, is (it cannot be told from unset)
+  expect_identical(queued(suppressMessages(initOnly(list(doFit = TRUE, stopIfNoPreRunFit = TRUE)))), fitEvents)
+  expect_identical(queued(suppressMessages(initOnly(list(doFit = NA, refitExisting = FALSE), objs))),
                    "spreadFitPrepare")
+  expect_identical(queued(suppressMessages(initOnly(list(doFit = FALSE, refitExisting = TRUE), objs))), fitEvents)
 })
 
 test_that("a run that sets none of the deprecated parameters prints no deprecation message", {

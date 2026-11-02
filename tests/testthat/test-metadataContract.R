@@ -65,7 +65,7 @@ test_that("DEoptim defaults are the tuning study's best and a production fit's s
 })
 
 test_that("defaults that decide whether and how a fit runs", {
-  expect_identical(def$doFit, NA)                 # fit if the ledger has no fit, else use the ledger's
+  expect_identical(def$doFit, FALSE)              # never fit: use the ledger's fit, stop if there is none
   ## the deprecated aliases are "not set" unless a user sets them
   expect_identical(def$stopIfNoPreRunFit, NA)
   expect_identical(def$refitExisting, NA)

@@ -9,7 +9,8 @@
 mustFitThisPolygon <- function(sim, message = FALSE) {
   doFit <- fireSenseUtils::resolveDoFit(P(sim)$doFit, P(sim)$refitExisting, P(sim)$stopIfNoPreRunFit,
                                         module = "fireSense_spreadFit", message = message)
-  fireSenseUtils::mustFit(doFit, hasPreRunFitForThisPolygon(sim), sim$.ELFind)
+  fireSenseUtils::mustFit(doFit, hasPreRunFitForThisPolygon(sim), sim$.ELFind,
+                          fitFileSuffix = P(sim)$fitFileSuffix)
 }
 
 #' Does this job use the `"powerLaw"` calibration?
