@@ -8,7 +8,7 @@
 #'
 #' @param sim a `simList`; uses `.ELFind`, `studyArea`, `sppEquiv`, `nonForestedLCCGroups`,
 #'   `missingLCCgroup`, `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`, and the parameters
-#'   `spreadLink`, `powerLawGamma` and `powerLawPcMargin`, and `powerLawCalibration`.
+#'   `spreadLink`, `powerLawGamma`, `powerLawShape` and `powerLawPcMargin`, and `powerLawCalibration`.
 #' @param numIterations integer, the number of DEoptim generations.
 #' @param objFunVal numeric, the objective values of the members in `params`.
 #' @param params `data.table`, one row per member, with `hillSlope1` and `inflectionPoint1` (see `addFixedParsToLedger()`).
@@ -35,6 +35,7 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params) {
     df[[fireSenseUtils::spreadFitClimateRefTxt]] <- I(list(sim$climateRef_spread))
   if (identical(P(sim)$spreadLink, "powerLaw")) {
     df[[fireSenseUtils::spreadFitPowerLawGammaTxt]] <- powerLawGammaOf(sim)
+    df[[fireSenseUtils::spreadFitPowerLawShapeTxt]] <- P(sim)$powerLawShape
     ## the calibration that set gamma (unless given) and p_c's upper bound (p50 + margin), to compare p_c with
     df[[fireSenseUtils::spreadFitPowerLawPc50Txt]] <- sim$powerLawCalibration$p50
     df[[fireSenseUtils::spreadFitPowerLawR2Txt]] <- sim$powerLawCalibration$R2

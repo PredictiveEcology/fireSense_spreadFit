@@ -29,6 +29,7 @@
 #'   "climateOutside"`), or `NULL` (the default link). Passed to `.objfunSpreadFit()` and the gates like `covCentre`.
 #' @param powerLawGamma numeric; the `"powerLaw"` link's `gamma` (`fireSenseUtils::powerLawLink()`), used with
 #'   `link = "powerLaw"`. Passed to `.objfunSpreadFit()` and the gates.
+#' @param powerLawShape numeric; the `"powerLaw"` link's `shape`, passed like `powerLawGamma`.
 #' @param objfunFireReps integer; passed to `Nreps`, the replicates per fire.
 #' @param maxFireSpread numeric; upper limit on mean spread probability.
 #' @param weighted logical; weight each fire's score by log fire size.
@@ -55,7 +56,8 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                                     pars = NULL, plot.it = TRUE, mode = "fit",
                                     seed = NULL, escapeSizeHa = NULL,
                                     sizeLik = "kde", sizeLikDf = 5, adWeight = "auto", link = NULL,
-                                    powerLawGamma = fireSenseUtils::spreadPowerLawGamma, jumpTries = 0, jumpMeanDist = 0, yearAreaWeight = 0, areaDistWeight = 0,
+                                    powerLawGamma = fireSenseUtils::spreadPowerLawGamma,
+                                    powerLawShape = fireSenseUtils::spreadPowerLawShape, jumpTries = 0, jumpMeanDist = 0, yearAreaWeight = 0, areaDistWeight = 0,
                                     crpsWeights = NULL, gateRefusal = "minLik",
                                     penaliseRunaways = TRUE,
                                     runawayEdgeFrac = fireSenseUtils::fireSenseRunawayEdgeFrac,
@@ -118,7 +120,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                                  weighted = weighted,
                                  escapeSizeHa = escapeSizeHa,
                                  sizeLik = sizeLik, sizeLikDf = sizeLikDf, adWeight = adWeight, link = link,
-                                 powerLawGamma = powerLawGamma, jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
+                                 powerLawGamma = powerLawGamma, powerLawShape = powerLawShape, jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
                                  yearAreaWeight = yearAreaWeight, areaDistWeight = areaDistWeight,
                                  crpsWeights = crpsWeights, gateRefusal = gateRefusal,
                                  penaliseRunaways = penaliseRunaways,
@@ -153,7 +155,8 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                         covMinMax = covMinMax, covCentre = covCentre, climateRef = climateRef,
                         mutuallyExclusive = mutuallyExclusive,
                         maxFireSpread = maxFireSpread, escapeSizeHa = escapeSizeHa,
-                        landscape = flammableRTM, link = link, powerLawGamma = powerLawGamma, doAssertions = FALSE)$pass
+                        landscape = flammableRTM, link = link, powerLawGamma = powerLawGamma,
+                        powerLawShape = powerLawShape, doAssertions = FALSE)$pass
       }
       active <- drawActivePars(n, lower, upper, maxDraws, gates, cores = coresToUse)
       message("  accepted ", active$accepted, " of ", active$drawn, " draws (cap ", maxDraws, " = ",
@@ -185,7 +188,7 @@ runSpreadWithoutDEoptim <- function(iterThresh, lower, upper, fireSense_spreadFo
                       maxFireSpread = maxFireSpread,
                       weighted = weighted, escapeSizeHa = escapeSizeHa,
                       sizeLik = sizeLik, sizeLikDf = sizeLikDf, adWeight = adWeight, link = link,
-                      powerLawGamma = powerLawGamma, jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
+                      powerLawGamma = powerLawGamma, powerLawShape = powerLawShape, jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
                       yearAreaWeight = yearAreaWeight, areaDistWeight = areaDistWeight,
                       crpsWeights = crpsWeights, gateRefusal = gateRefusal,
                       penaliseRunaways = penaliseRunaways,

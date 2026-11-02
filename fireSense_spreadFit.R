@@ -28,7 +28,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.87)", # .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9132)", # 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9138)", # 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -189,6 +189,13 @@ defineModule(sim, list(
                                  "the ELF's flammable map. A number overrides `gamma` only (the bounds of p_c still come from",
                                  "the calibration). It is fixed, not fitted: it is exactly confounded with the scale of the",
                                  "coefficients. Ignored with the other links.")),
+    defineParameter("powerLawShape", "numeric", default = fireSenseUtils::spreadPowerLawShape,
+                    desc = paste("The curvature exponent `shape` of `spreadLink = 'powerLaw'`: p = p_c - (p_c - lowerSpreadProb) *",
+                                 "exp(-sign(x) * abs(x / `powerLawGamma`)^`shape`) (`fireSenseUtils::powerLawLink()`). 1 (default) is the",
+                                 "original exponential approach to p_c. A `shape` above 1 gives a lower p for a moderate x and a p",
+                                 "closer to p_c for a large x, so extreme pixels and years can burn large without the medium ones",
+                                 "burning too much. Fixed, not fitted. At 1 it is left out of the cache keys; the ledger row",
+                                 "gets `fireSenseUtils::spreadFitPowerLawShapeTxt` with a `powerLaw` fit. Ignored with the other links.")),
     defineParameter("powerLawPcMargin", "numeric", default = 0.005,
                     desc = paste("With `spreadLink = 'powerLaw'`, the upper bound of p_c is the calibrated p_c50 plus this",
                                  "(`fireSenseUtils::powerLawPcBounds()`). Written to the ledger row.")),
@@ -602,6 +609,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
         weighted = P(sim)$weighted, sizeLik = P(sim)$sizeLik, sizeLikDf = P(sim)$sizeLikDf,
         adWeight = P(sim)$adWeight, link = spreadLink(P(sim)), powerLawGamma = powerLawGammaOf(sim),
+        powerLawShape = P(sim)$powerLawShape,
         jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist,
         yearAreaWeight = P(sim)$yearAreaWeight, areaDistWeight = P(sim)$areaDistWeight,
         crpsWeights = P(sim)$crpsWeights, gateRefusal = P(sim)$gateRefusal,
@@ -1098,6 +1106,7 @@ estimateFirstBlockThreshold <- function(sim, covs) {
       ## the same objective as the fit (R/fitSpread.R), or the threshold is calibrated on another one
       weighted = P(sim)$weighted, sizeLik = P(sim)$sizeLik, sizeLikDf = P(sim)$sizeLikDf,
       adWeight = P(sim)$adWeight, link = spreadLink(P(sim)), powerLawGamma = powerLawGammaOf(sim),
+        powerLawShape = P(sim)$powerLawShape,
       jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist,
       yearAreaWeight = P(sim)$yearAreaWeight, areaDistWeight = P(sim)$areaDistWeight,
       crpsWeights = P(sim)$crpsWeights, gateRefusal = P(sim)$gateRefusal,
@@ -1139,7 +1148,7 @@ estimateFirstBlockThreshold <- function(sim, covs) {
             ## covCentre is NULL without an intercept, runawayBufferMultiple with NA, climateRef with the default
             ## spreadLink, powerLawGamma unless spreadLink is "powerLaw": omitted then, so thresholds cached before
             ## they existed are found
-            omitArgs = c("runawayEdgeFrac", "runawayEdgeMin", fireSenseUtils::powerLawOmitArgs(spreadLink(P(sim))),
+            omitArgs = c("runawayEdgeFrac", "runawayEdgeMin", fireSenseUtils::powerLawOmitArgs(spreadLink(P(sim)), P(sim)$powerLawShape),
                          ## the CRPS objective's options, when at their defaults
                          if (identical(P(sim)$gateRefusal, "minLik")) "gateRefusal",
                          if (is.null(P(sim)$crpsWeights)) "crpsWeights",

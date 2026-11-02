@@ -55,12 +55,13 @@ test_that("spreadGates() applies fireSenseUtils::spreadProbGates() to the fit's 
   covs <- list(annualDTx1000 = "a", nonAnnualDTx1000 = "na", historicalFires = "hf")
   g <- spreadGates(covs, formulaToFit = "~ CMD", covMinMax = "mm", covCentre = NULL, climateRef = NULL,
                    mutuallyExclusive = list(youngAge = "x"), maxFireSpread = 0.276, escapeSizeHa = 50,
-                   landscape = "ras", link = "powerLaw", powerLawGamma = 1.7)
+                   landscape = "ras", link = "powerLaw", powerLawGamma = 1.7, powerLawShape = 2)
   expect_identical(g(list(lower, upper)), c(TRUE, FALSE))
   expect_identical(seen$args$annualDTx1000, "a")
   expect_identical(seen$args$historicalFires, "hf")
   expect_identical(seen$args$link, "powerLaw")
   expect_identical(seen$args$powerLawGamma, 1.7)
+  expect_identical(seen$args$powerLawShape, 2)
   expect_false(seen$args$doAssertions)
   expect_identical(g(list(lower, upper), pass = FALSE)$notSpread, c(FALSE, TRUE))
 })

@@ -189,3 +189,32 @@ test_that("calibratePowerLaw runs when the job fits, and not when it uses the le
   expect_identical(calibrationCalls(list(doFit = FALSE), row), 0L)            # hindcast: use the row
   expect_identical(calibrationCalls(list(doFit = NA), row), 0L)               # row found, reused
 })
+
+## powerLawShape: p = p_c - (p_c - lowerSpreadProb) * exp(-sign(x) * abs(x / gamma)^shape); 1 is the original link
+shapeCol <- fireSenseUtils::spreadFitPowerLawShapeTxt
+
+test_that("powerLawShape defaults to 1, which leaves the cache keys as they were; another value reaches the fit, the keys and the ledger row", {
+  md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
+  expect_identical(md$parameters$default[[which(md$parameters$paramName == "powerLawShape")]], 1)
+  expect_identical(shapeCol, "powerLawShape_spread")
+  d <- fittedCO(list(spreadLink = "powerLaw"))
+  expect_identical(d$rec$deArgs$powerLawShape, 1)
+  expect_identical(d$rec$geoArgs$studyAreaFireSense[[shapeCol]], 1)
+  expect_true(all(vapply(omitArgsCO(list(spreadLink = "powerLaw"))$omit, function(o) "powerLawShape" %in% o, logical(1))))
+  ## the default link writes neither the gamma nor the shape column
+  expect_false(shapeCol %in% names(fittedCO()$rec$geoArgs$studyAreaFireSense))
+  s <- fittedCO(list(spreadLink = "powerLaw", powerLawShape = 2))
+  expect_identical(s$rec$deArgs$powerLawShape, 2)
+  expect_identical(s$rec$geoArgs$studyAreaFireSense[[shapeCol]], 2)
+  on <- omitArgsCO(list(spreadLink = "powerLaw", powerLawShape = 2))
+  expect_false(any(vapply(on$omit, function(o) "powerLawShape" %in% o, logical(1))))
+  expect_identical(on$rswd$powerLawShape, 2)
+  ## climateOutside: no shape column
+  expect_false(shapeCol %in% names(fittedCO(list(spreadLink = "climateOutside"))$rec$geoArgs$studyAreaFireSense))
+})
+
+test_that("a bad powerLawShape stops", {
+  run <- function(params) { sim <- toySim(params, toyObjectsCO()); mockFitAndLedger(sim); suppressMessages(SpaDES.core::spades(sim)) }
+  expect_error(run(list(spreadLink = "powerLaw", powerLawShape = 0)), "powerLawShape must be one positive number")
+  expect_error(run(list(spreadLink = "powerLaw", powerLawShape = c(1, 2))), "powerLawShape must be one positive number")
+})

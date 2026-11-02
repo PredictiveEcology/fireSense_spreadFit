@@ -81,6 +81,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
                    adWeight = P(sim)$adWeight,
                    link = spreadLink(P(sim)),
                    powerLawGamma = powerLawGammaOf(sim),
+                   powerLawShape = P(sim)$powerLawShape,
                    escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
                    jumpTries = P(sim)$jumpTries,
                    jumpMeanDist = P(sim)$jumpMeanDist,
@@ -128,7 +129,7 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
         omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "progressFile", "runawayEdgeFrac", "runawayEdgeMin",
                      ## only the powerLaw link uses it
-                     fireSenseUtils::powerLawOmitArgs(spreadLink(P(sim))),
+                     fireSenseUtils::powerLawOmitArgs(spreadLink(P(sim)), P(sim)$powerLawShape),
                      ## NULL without an intercept (or with runawayBufferMultiple NA, or with the default spreadLink):
                      ## omitted then, so fits cached before it existed are found
                      fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread,
@@ -150,7 +151,8 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
                          covCentre = sim$covCentre_spread, climateRef = sim$climateRef_spread,
                          mutuallyExclusive = P(sim)$mutuallyExclusiveCols, maxFireSpread = P(sim)$maxFireSpread,
                          escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa), landscape = sim$rasterToMatch,
-                         link = spreadLink(P(sim)), powerLawGamma = powerLawGammaOf(sim))
+                         link = spreadLink(P(sim)), powerLawGamma = powerLawGammaOf(sim),
+                         powerLawShape = P(sim)$powerLawShape)
     localSingleThreadBLAS()
     pop <- feasibleInitialPopulation(n, lower = lower, upper = P(sim)$upper, gates = gates,
                                      seed = seed, cores = forkBudget(n))
@@ -217,6 +219,8 @@ checkSpreadLink <- function(Par) {
     if (!(is.numeric(Par$powerLawGamma) && length(Par$powerLawGamma) == 1L &&
           (is.na(Par$powerLawGamma) || (is.finite(Par$powerLawGamma) && Par$powerLawGamma > 0))))
       stop("fireSense_spreadFit: powerLawGamma must be one positive number, or NA to calibrate it; got ", format(Par$powerLawGamma))
+    if (!(is.numeric(Par$powerLawShape) && length(Par$powerLawShape) == 1L && is.finite(Par$powerLawShape) && Par$powerLawShape > 0))
+      stop("fireSense_spreadFit: powerLawShape must be one positive number; got ", format(Par$powerLawShape))
   }
 }
 
@@ -366,5 +370,6 @@ spreadObjFunArgs <- function(sim, covs) {
   args$covCentre <- sim$covCentre_spread
   args$climateRef <- sim$climateRef_spread
   args$powerLawGamma <- if (identical(args$link, "powerLaw")) powerLawGammaOf(sim)
+  args$powerLawShape <- if (!"powerLawShape" %in% fireSenseUtils::powerLawOmitArgs(args$link, P(sim)$powerLawShape)) P(sim)$powerLawShape
   args
 }
