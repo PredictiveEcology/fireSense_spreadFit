@@ -700,6 +700,24 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
+   <td style="text-align:left;"> sppEquivCol </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> LandR </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Column of each ledger row's `sppEquiv` naming the species; used to rebuild the per-ELF lists after the fit writes its row. The same parameter of `fireSense_dataPrepFit`. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> fuelClassCol </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> FuelClass </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Column of each ledger row's `sppEquiv` naming the fuel classes; used as `sppEquivCol` is. The same parameter of `fireSense_dataPrepFit`. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
    <td style="text-align:left;"> strategy </td>
    <td style="text-align:left;"> integer </td>
    <td style="text-align:left;"> 6 </td>
@@ -889,6 +907,31 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-sprea
    <td style="text-align:left;"> studyAreaWithSpreadParams </td>
    <td style="text-align:left;"> sf </td>
    <td style="text-align:left;"> Rows of the shared fit ledger that intersect `studyArea`, including the row this fit writes: `studyArea` geometry, `polygonID`, and list-columns named by `spreadFitAdditionalColNames` (the 5 best parameter sets are in `params`). </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> missingLCCgroupList </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> Per ledger row of `studyAreaWithSpreadParams` (named by `polygonID`), its `missingLCCgroup`. Rebuilt by the `run` event after it writes this fit's row, with `fireSenseUtils::spreadFitLedgerInputLists()`, so prediction in the same run finds this ELF. `fireSense_dataPrepFit` sets it, and the next four, from the ledger before the fit. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> nonForestedLCCGroupsList </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> As `missingLCCgroupList`, each row's `nonForestedLCCGroups`. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> sppColorVects </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> As `missingLCCgroupList`, each row's species colours. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> sppEquivs </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> As `missingLCCgroupList`, each row's `sppEquiv`, harmonized (`LandR::sppHarmonize()`). </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> sppNameVectors </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> As `missingLCCgroupList`, each row's species names. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fsSpreadFit_hists </td>
