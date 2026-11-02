@@ -70,7 +70,7 @@ test_that("parameters are the expected names", {
     sort(c(".c", "convergence", ".plotInterval", ".plots", ".plotSize", ".runInitialTime", ".runName", ".studyAreaName",
            ".useCache", "cores", "covFixedRange", "DEoptimControl", "DEoptimTests", "doFit", "doObjFunAssertions",
            "heldOutFold", "initialpop", "initialPopMethod", "emulatorControl", "emulatorMaxParams", "iterDEoptim", "iterThresh", "thresholdMargin", "libPathDEoptim",
-           "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded", "spreadLink", "powerLawGamma", "powerLawPcMargin", "powerLawFires", "powerLawPGrid",
+           "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded", "spreadLink", "powerLawGamma", "powerLawShape", "powerLawPcMargin", "powerLawFires", "powerLawPGrid",
            "objFunCoresInternal", "objfunFireReps", ".rep", "adWeight", "profileReps",
            "simulateMembers", "sizeLik", "sizeLikDf", "escapeSizeHa", "yearAreaWeight", "areaDistWeight", "crpsWeights", "gateRefusal", "penaliseRunaways", "runawayEdgeFrac", "runawayEdgeMin", "runawayBufferMultiple",
            "jumpTries", "jumpMeanDist", "upperTailBounds", "weighted", "yearSpreadSDBounds",
