@@ -1698,6 +1698,52 @@ TRUE
 </tr>
 <tr>
 <td style="text-align:left;">
+sppEquivCol
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+LandR
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Column of each ledger row’s <code>sppEquiv</code> naming the species; used to rebuild the per-ELF lists after the fit writes its row. The same parameter of <code>fireSense_dataPrepFit</code>.
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fuelClassCol
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+FuelClass
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Column of each ledger row’s <code>sppEquiv</code> naming the fuel classes; used as <code>sppEquivCol</code> is. The same parameter of <code>fireSense_dataPrepFit</code>.
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 strategy
 </td>
 <td style="text-align:left;">
@@ -2133,6 +2179,61 @@ sf
 </td>
 <td style="text-align:left;">
 Rows of the shared fit ledger that intersect <code>studyArea</code>, including the row this fit writes: <code>studyArea</code> geometry, <code>polygonID</code>, and list-columns named by <code>spreadFitAdditionalColNames</code> (the 5 best parameter sets are in <code>params</code>).
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+missingLCCgroupList
+</td>
+<td style="text-align:left;">
+list
+</td>
+<td style="text-align:left;">
+Per ledger row of <code>studyAreaWithSpreadParams</code> (named by <code>polygonID</code>), its <code>missingLCCgroup</code>. Rebuilt by the <code>run</code> event after it writes this fit’s row, with <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadFitLedgerInputs.html" class="external-link">fireSenseUtils::spreadFitLedgerInputLists()</a></code>, so prediction in the same run finds this ELF. <code>fireSense_dataPrepFit</code> sets it, and the next four, from the ledger before the fit.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+nonForestedLCCGroupsList
+</td>
+<td style="text-align:left;">
+list
+</td>
+<td style="text-align:left;">
+As <code>missingLCCgroupList</code>, each row’s <code>nonForestedLCCGroups</code>.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sppColorVects
+</td>
+<td style="text-align:left;">
+list
+</td>
+<td style="text-align:left;">
+As <code>missingLCCgroupList</code>, each row’s species colours.
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sppEquivs
+</td>
+<td style="text-align:left;">
+list
+</td>
+<td style="text-align:left;">
+As <code>missingLCCgroupList</code>, each row’s <code>sppEquiv</code>, harmonized (<code><a href="https://landr.predictiveecology.org/reference/sppHarmonize.html" class="external-link">LandR::sppHarmonize()</a></code>).
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sppNameVectors
+</td>
+<td style="text-align:left;">
+list
+</td>
+<td style="text-align:left;">
+As <code>missingLCCgroupList</code>, each row’s species names.
 </td>
 </tr>
 <tr>

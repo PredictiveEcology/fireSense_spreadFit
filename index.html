@@ -916,6 +916,29 @@ TRUE
 </tr>
 <tr>
 <td style="text-align:left;">
+powerLawShape
+</td>
+<td style="text-align:left;">
+numeric
+</td>
+<td style="text-align:left;">
+1
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+The curvature exponent <code>shape</code> of <code>spreadLink = 'powerLaw'</code>: p = p_c - (p_c - lowerSpreadProb) exp(-sign(x) abs(x / <code>powerLawGamma</code>)^<code>shape</code>) (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/powerLawLink.html" class="external-link">fireSenseUtils::powerLawLink()</a></code>). 1 (default) is the original exponential approach to p_c. A <code>shape</code> above 1 gives a lower p for a moderate x and a p closer to p_c for a large x, so extreme pixels and years can burn large without the medium ones burning too much. Fixed, not fitted. At 1 it is left out of the cache keys; the ledger row gets <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadFitPowerLawShapeTxt</a></code> with a <code>powerLaw</code> fit. Ignored with the other links.
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 powerLawPcMargin
 </td>
 <td style="text-align:left;">
