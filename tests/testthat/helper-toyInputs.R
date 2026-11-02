@@ -73,7 +73,10 @@ toyObjects <- function() {
         class1 = fireSenseUtils::logMinB(c(0, 300, 1000, 5000, 7803, 22601, 300, 1000, 5000)),
         class2 = fireSenseUtils::logMinB(c(40, 0, 2000, 0, 12000, 0, 500, 0, 9000)),
         nf = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8))), # cover-like: max <= 1
-    fireSense_spreadFormula = "~ 0 + CMDsm + youngAge + class1 + class2 + nf"
+    fireSense_spreadFormula = "~ 0 + CMDsm + youngAge + class1 + class2 + nf",
+    ## fireSense_dataPrepFit's: they go in the ledger row, and the `run` event rebuilds the per-ELF lists from it
+    sppEquiv = data.table::data.table(LandR = c("Pice_mar", "Popu_tre"), FuelClass = c("class1", "class2")),
+    nonForestedLCCGroups = list(nf = c(40, 50)), missingLCCgroup = "nf"
   )
 }
 

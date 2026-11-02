@@ -347,6 +347,12 @@ defineModule(sim, list(
                                   "years and model, `fireSenseUtils::spreadFitFilenameFor()`, e.g.",
                                   "`fireSenseParams_1985-2024_linearFuel.rds`; readers then find it with",
                                   "`fireSenseUtils::latestSpreadFits()`.")),
+    defineParameter("sppEquivCol", "character", "LandR", NA, NA,
+                    paste("Column of each ledger row's `sppEquiv` naming the species; used to rebuild the per-ELF",
+                          "lists after the fit writes its row. The same parameter of `fireSense_dataPrepFit`.")),
+    defineParameter("fuelClassCol", "character", fireSenseUtils::fireSenseFuelClassCol, NA, NA,
+                    paste("Column of each ledger row's `sppEquiv` naming the fuel classes; used as `sppEquivCol` is.",
+                          "The same parameter of `fireSense_dataPrepFit`.")),
     defineParameter("strategy", "integer", default = 6L,
                     desc = paste("Passed to `DEoptim.control`. 6 (DE/current-to-p-best/1) with `p = 0.1` did best",
                                  "in a settings study (see NEWS).")),
@@ -482,6 +488,19 @@ defineModule(sim, list(
                   desc = paste("Rows of the shared fit ledger that intersect `studyArea`, including the row this",
                                "fit writes: `studyArea` geometry, `polygonID`, and list-columns named by",
                                "`spreadFitAdditionalColNames` (the 5 best parameter sets are in `params`).")),
+    createsOutput("missingLCCgroupList", "list",
+                  desc = paste("Per ledger row of `studyAreaWithSpreadParams` (named by `polygonID`), its `missingLCCgroup`.",
+                               "Rebuilt by the `run` event after it writes this fit's row, with",
+                               "`fireSenseUtils::spreadFitLedgerInputLists()`, so prediction in the same run finds this ELF.",
+                               "`fireSense_dataPrepFit` sets it, and the next four, from the ledger before the fit.")),
+    createsOutput("nonForestedLCCGroupsList", "list",
+                  desc = "As `missingLCCgroupList`, each row's `nonForestedLCCGroups`."),
+    createsOutput("sppColorVects", "list",
+                  desc = "As `missingLCCgroupList`, each row's species colours."),
+    createsOutput("sppEquivs", "list",
+                  desc = "As `missingLCCgroupList`, each row's `sppEquiv`, harmonized (`LandR::sppHarmonize()`)."),
+    createsOutput("sppNameVectors", "list",
+                  desc = "As `missingLCCgroupList`, each row's species names."),
     createsOutput("fsSpreadFit_hists", "ggplot",
                   desc = "histograms of each parameter used in `DEoptim` fitting."),
     createsOutput("lociList", "list",
@@ -669,6 +688,13 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
                                                   le = le, purge = 7,
                                                   studyAreaFireSense = sim$studyAreaWithSpreadParams,
                                                   action = "update")
+        ## fireSense_dataPrepFit built the per-ELF lists from the ledger before this fit, without this ELF's row
+        ## when it had none: rebuild them from the ledger with it, so prediction in this run finds this ELF
+        ledgerLists <- fireSenseUtils::spreadFitLedgerInputLists(fireSenseUtils::spreadFitLedgerInputs(
+          sim$studyAreaWithSpreadParams, sppEquivCol = SpaDES.core::paramCheckOtherMods(sim, "sppEquivCol"),
+          fuelClassCol = SpaDES.core::paramCheckOtherMods(sim, "fuelClassCol"), studyArea = sim$studyArea,
+          colNames = sim$spreadFitAdditionalColNames))
+        for (nm in names(ledgerLists)) sim[[nm]] <- ledgerLists[[nm]]
         ## observed against simulated burning, and the response curves, for the best parameter set
         spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], mod$covsX1000, P(sim)$.runName)
       }
