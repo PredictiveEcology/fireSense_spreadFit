@@ -181,8 +181,9 @@ test_that("sppEquiv and the land-cover groups in the simList are recorded in the
 
 test_that("an .ELFind that cannot key the ledger stops before anything is written", {
   rec <- new.env()
+  ## several ELFs (a studyAreaLarge) are refused before the fit, not after it (mustFitThisPolygon())
   expect_error(fitted(objects = list(.ELFind = c("9.9", "9.8")), rec = rec),
-               "`sim\\$.ELFind` must be a single non-empty character identifying the polygon being fit; got: 9.9, 9.8")
+               "a fit is of one ELF, but this run covers several \\(9\\.9, 9\\.8\\)")
   expect_null(rec$geoArgs)
   expect_error(fitted(objects = list(.ELFind = "")), "must be a single non-empty character")
 })
