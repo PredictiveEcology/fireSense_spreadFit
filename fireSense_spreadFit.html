@@ -431,7 +431,7 @@ DEoptimTests
 character
 </td>
 <td style="text-align:left;">
-adTest, ….
+crps
 </td>
 <td style="text-align:left;">
 NA
@@ -440,7 +440,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Any of <code>'SNLL_FS'</code>, <code>'adTest'</code> (pooled Anderson-Darling on fire sizes) and <code>'pitAD'</code> (rank-based Anderson-Darling: each fire’s observed size ranked among its replicates; does not depend on the fit buffers), or <code>'crps'</code>: a different objective of proper scores (per-fire CRPS on log size, adTest, areaDist, CRPS of the log total area, CRPS of the 10 largest fires; weights in <code>crpsWeights</code>; no annual-area term, no early stop). The 2026-10-28 profile used it alone, with <code>gateRefusal = 'simulate'</code> and <code>objfunFireReps = 100L</code>. Passed to <code>tests</code> in <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>. The threshold calibration has no first-block value to calibrate under <code>'crps'</code>: it warns and the fit runs without an early stop.
+<code>'crps'</code> (default): an objective of proper scores (per-fire CRPS on log size, adTest, areaDist, CRPS of the log total area, CRPS of the 10 largest fires; weights in <code>crpsWeights</code>; no annual-area term). Or any of <code>'adTest'</code> (pooled Anderson-Darling on fire sizes) and <code>'pitAD'</code> (rank-based Anderson-Darling: each fire’s observed size ranked among its replicates; does not depend on the fit buffers). The 2026-10-28 profile used <code>'crps'</code> alone, with <code>gateRefusal = 'simulate'</code> and <code>objfunFireReps = 100L</code>. <code>'SNLL_FS'</code> was removed and stops the fit. Passed to <code>tests</code> in <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -523,7 +523,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code> and to the threshold calibration; TRUE runs diagnostics but is slower; FALSE for operational runs. The default follows <code>options(fireSenseUtils.assertions = )</code>.
+Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/dot-objfunSpreadFit.html" class="external-link">fireSenseUtils::.objfunSpreadFit()</a></code>; TRUE runs diagnostics but is slower; FALSE for operational runs. The default follows <code>options(fireSenseUtils.assertions = )</code>.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -564,7 +564,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Where DEoptim’s starting population comes from. ‘calibration’ (default): the threshold calibration’s passing sets, then uniform draws, or DEoptim’s own draw when there are none. ‘emulator’: <code>nCoresNeeded</code> good, spread-out points evaluated by a Gaussian-process emulator search of the fit’s objective (~1,000-1,600 real evaluations on the fit’s <code>cores</code>, between <code>lower</code> and <code>upper</code>, wide one-sided parameters on a log1p scale; a global phase, then trust-region rounds; see <code>emulatorControl</code>). The search is cached. A fit seeded this way stops sooner: <code>convergence</code> defaults to <code>minGenerations = 200</code> and <code>window = 200</code> (elements of the <code>convergence</code> parameter win). The <code>initialpop</code> parameter, when set, wins over both.
+Where DEoptim’s starting population comes from. ‘calibration’ (default; the name is historical): DEoptim’s own draw, or, when no member of it passes the objective’s spreadProb gates, a start of gate-passing draws. ‘emulator’: <code>nCoresNeeded</code> good, spread-out points evaluated by a Gaussian-process emulator search of the fit’s objective (~1,000-1,600 real evaluations on the fit’s <code>cores</code>, between <code>lower</code> and <code>upper</code>, wide one-sided parameters on a log1p scale; a global phase, then trust-region rounds; see <code>emulatorControl</code>). The search is cached. A fit seeded this way stops sooner: <code>convergence</code> defaults to <code>minGenerations = 200</code> and <code>window = 200</code> (elements of the <code>convergence</code> parameter win). The <code>initialpop</code> parameter, when set, wins over both.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -627,48 +627,6 @@ NA
 </td>
 <td style="text-align:left;">
 integer defining the maximum number of iterations allowed (DEoptim optimizer). A ceiling: clusters (&gt;= 0.0.46) stops the fit earlier, once the population’s median value has stopped improving.
-</td>
-<td style="text-align:left;">
-TRUE
-</td>
-</tr><tr><td style="text-align:left;">
-iterThresh
-</td>
-<td style="text-align:left;">
-integer
-</td>
-<td style="text-align:left;">
-96
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-Number of random parameter sets tried when calibrating <code>firstBlockThresh</code>.
-</td>
-<td style="text-align:left;">
-TRUE
-</td>
-</tr><tr><td style="text-align:left;">
-thresholdMargin
-</td>
-<td style="text-align:left;">
-numeric
-</td>
-<td style="text-align:left;">
-2
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-When calibrating <code>firstBlockThresh</code>, the threshold is this multiple of the best usable trial’s first-block value per fire (trials run with no early stop; a trial that saturates spreadProb is not usable). Must be &gt;= 1. With 2, known-truth simulations of three ELFs never stopped a parameter set near the truth (2026-10-23).
 </td>
 <td style="text-align:left;">
 TRUE
@@ -920,7 +878,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-NA (default): unchanged behaviour, governed by <code>mode</code>. <code>1</code> or <code>2</code>: run ONLY that cross-validation fold, as its own job. <code>init</code> then schedules <code>spreadFitPrepare</code>, <code>estimateThreshold</code> and <code>crossValidate</code> – never <code>run</code>, so the full fit and the ledger write never happen, and the ledger (<code>doFit</code>) is not consulted. <code>crossValidate</code> fits on the OTHER fold’s years and scores this fold’s held-out years (<code>cvFolds()</code> in <code>R/fitSpread.R</code>), and writes <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;_fold&amp;lt;heldOutFold&amp;gt;.rds</code> instead of <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;.rds</code>. A run script stops after <code>crossValidate</code>: <code>events = list(.stopAfter = list(fireSense_spreadFit = "crossValidate"))</code>. Any other value is an error.
+NA (default): unchanged behaviour, governed by <code>mode</code>. <code>1</code> or <code>2</code>: run ONLY that cross-validation fold, as its own job. <code>init</code> then schedules <code>spreadFitPrepare</code> and <code>crossValidate</code> – never <code>run</code>, so the full fit and the ledger write never happen, and the ledger (<code>doFit</code>) is not consulted. <code>crossValidate</code> fits on the OTHER fold’s years and scores this fold’s held-out years (<code>cvFolds()</code> in <code>R/fitSpread.R</code>), and writes <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;_fold&amp;lt;heldOutFold&amp;gt;.rds</code> instead of <code>spreadFitHeldOut_&amp;lt;.runName&amp;gt;.rds</code>. A run script stops after <code>crossValidate</code>: <code>events = list(.stopAfter = list(fireSense_spreadFit = "crossValidate"))</code>. Any other value is an error.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1171,7 +1129,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-A simulated fire that burns an open edge pixel of its year’s buffers (one next to flammable land outside every buffer, <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/bufferEdge.html" class="external-link">fireSenseUtils::bufferOpen()</a></code>) is cut: it has no density at the observed size in the size likelihood, and the other terms score the size it reached. TRUE also stops such a fire at the first open pixel of its own buffer, which saves time. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>; the threshold calibration uses the same setting.
+A simulated fire that burns an open edge pixel of its year’s buffers (one next to flammable land outside every buffer, <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/bufferEdge.html" class="external-link">fireSenseUtils::bufferOpen()</a></code>) is cut: it has no density at the observed size in the size likelihood, and the other terms score the size it reached. TRUE also stops such a fire at the first open pixel of its own buffer, which saves time. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1554,26 +1512,6 @@ Passed to <code>DEoptim.control</code>. 6 (DE/current-to-p-best/1) with <code>p 
 TRUE
 </td>
 </tr><tr><td style="text-align:left;">
-firstBlockThresh
-</td>
-<td style="text-align:left;">
-numeric
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-The objective’s early stop: a parameter set whose first block of years (the two with the most area burned) scores above this per fire is abandoned. NULL (default) calibrates it (<code>iterThresh</code>, <code>thresholdMargin</code>) once per ELF, and the cross-validation folds reuse it. Replaces <code>SNLL_FS_thresh</code>, which was per year.
-</td>
-<td style="text-align:left;">
-TRUE
-</td>
-</tr><tr><td style="text-align:left;">
 refitExisting
 </td>
 <td style="text-align:left;">
@@ -1829,11 +1767,9 @@ TRUE
 <div class="section level3">
 <h3 id="events">Events<a class="anchor" aria-label="anchor" href="#events"></a></h3>
 <ul><li>
-<code>init</code>: schedules <code>spreadFitPrepare</code> and, if the polygon needs a fit, <code>estimateThreshold</code> then <code>run</code> (or <code>debug</code> when <code>mode</code> includes <code>"debug"</code>; <code>debug</code> and <code>plot</code> after <code>run</code> when it includes <code>"visualize"</code>);</li>
+<code>init</code>: schedules <code>spreadFitPrepare</code> and, if the polygon needs a fit, <code>run</code> (or <code>debug</code> when <code>mode</code> includes <code>"debug"</code>; <code>debug</code> and <code>plot</code> after <code>run</code> when it includes <code>"visualize"</code>);</li>
 <li>
 <code>spreadFitPrepare</code>: sets default <code>lower</code>/<code>upper</code>, computes <code>covMinMax_spread</code> and <code>lociList</code>, converts covariates to integers (x 1000);</li>
-<li>
-<code>estimateThreshold</code>: uses <code>firstBlockThresh</code>, or calibrates it from <code>iterThresh</code> random parameter sets (cached, with a seed derived from <code>.ELFind</code>);</li>
 <li>
 <code>run</code>: runs DEoptim (cached per generation) and writes the polygon’s row to the ledger;</li>
 <li>
@@ -1880,7 +1816,7 @@ climateRef_spread
 list
 </td>
 <td style="text-align:left;">
-With <code>spreadLink = 'climateOutside'</code>, the reference value of each climate covariate of the formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit’s pixel-years (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateRef.html" class="external-link">fireSenseUtils::spreadClimateRef()</a></code>), the climate at which the spread probability is the fuel ceiling’s p0. Given to the fit, the threshold, the validation and the ledger row. <code>NULL</code> with <code>spreadLink = 'ceiling'</code>.
+With <code>spreadLink = 'climateOutside'</code>, the reference value of each climate covariate of the formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit’s pixel-years (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateRef.html" class="external-link">fireSenseUtils::spreadClimateRef()</a></code>), the climate at which the spread probability is the fuel ceiling’s p0. Given to the fit, the validation and the ledger row. <code>NULL</code> with <code>spreadLink = 'ceiling'</code>.
 </td>
 </tr><tr><td style="text-align:left;">
 powerLawCalibration
