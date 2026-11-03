@@ -456,21 +456,6 @@ emulatorEvaluator <- function(objArgs, cl = NULL) {
   }
 }
 
-#' The DEoptim stopping rule of a fit, seeded or not
-#'
-#' A fit that starts from the emulator's points starts near where an unseeded fit ends, so it stops sooner:
-#' `minGenerations` and `window` default to `seededConvergence` (200 each) instead of clusters' defaults. Only those
-#' two; `se` and `sdChange` are clusters' as always. Elements of the `convergence` parameter win.
-#'
-#' @param convergence the `convergence` parameter (a list, or `NULL`).
-#' @param seeded logical; the start came from the emulator.
-#' @param seededConvergence list; the seeded fit's `window` and `minGenerations`.
-#' @return the full rule, `clusters::deoptimConvergence()`.
-convergenceOf <- function(convergence, seeded, seededConvergence = list(window = 200L, minGenerations = 200L)) {
-  if (seeded) convergence <- c(convergence, seededConvergence[setdiff(names(seededConvergence), names(convergence))])
-  clusters::deoptimConvergence(convergence)
-}
-
 ## The emulator's code, for the Cache key of its result: Cache() digests the arguments, not the functions they reach
 emulatorBodies <- function() {
   fns <- c("emulatorDefaults", "emulatorControlOf", "emulatorSpace", "emulatorTrustBox", "emulatorTrustStep",
