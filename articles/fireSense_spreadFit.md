@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9036"
-date: "Last updated: 2026-11-02"
+date: "Last updated: 2026-11-03"
 output:
   bookdown::html_document2:
     toc: true
@@ -272,10 +272,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> doFit </td>
    <td style="text-align:left;"> logical </td>
+   <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Whether to fit this polygon. NA (default): do whatever is needed -- use the ledger's fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it when the fit's INPUTS changed -- new land cover, vegetation parameters, objective). FALSE: never fit -- use the ledger's fit, and stop with an error if it holds none. </td>
+   <td style="text-align:left;"> Whether to fit this polygon. FALSE (default): never fit -- use the ledger's fit, and stop with an error if it holds none for this polygon (`fitFileSuffix` picks the ledger), so a run that only predicts can never start a fit by accident. NA: do whatever is needed -- use the ledger's fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it when the fit's INPUTS changed -- new land cover, vegetation parameters, objective). </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -689,7 +689,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;">  </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Text put after the model tag in the ledger file names, e.g. `"_boundfix_rep81"`, so a test run writes (and `"latest"` readers read) only its own files and never the production ones. `""` (the default) is the production ledger. The same parameter of `fireSense_ignitionFit`, `fireSense_dataPrepFit` and `fireSense_ELFs`; set it for all with `.globals = list(fitFileSuffix = ...)`. Ignored when `spreadFitFilename` names a file. </td>
+   <td style="text-align:left;"> Text put after the model tag in the ledger file names, e.g. `"_boundfix_rep81"`, so a test run writes (and `"latest"` readers read) only its own files and never the production ones. `""` (the default) writes the unsuffixed file and reads (`"latest"`) every file of the model tag, newest by the date in its suffix (`fireSenseUtils::ledgerFileOrder()`); experiment fits belong in `spreadFitLedgerFolder(testing = TRUE)`. The same parameter of `fireSense_ignitionFit`, `fireSense_dataPrepFit` and `fireSense_ELFs`; set it for all with `.globals = list(fitFileSuffix = ...)`. Ignored when `spreadFitFilename` names a file. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -743,7 +743,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> DEPRECATED, use `doFit`. TRUE is `doFit = TRUE`; NA (unset) and FALSE do nothing. </td>
+   <td style="text-align:left;"> DEPRECATED, use `doFit`. TRUE is `doFit = TRUE`; NA (unset) and FALSE do nothing. Overrides `doFit = FALSE` (the default), not `doFit = NA` or TRUE. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -752,7 +752,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> DEPRECATED, use `doFit`. TRUE is `doFit = FALSE`; NA (unset) and FALSE (allow a fit) are `doFit = NA`. Ignored when `refitExisting` is TRUE. </td>
+   <td style="text-align:left;"> DEPRECATED, use `doFit`. TRUE is `doFit = FALSE`; FALSE (allow a fit) is `doFit = NA`. Overrides `doFit = FALSE` (the default), not `doFit = NA` or TRUE. Ignored when `refitExisting` is TRUE. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
