@@ -28,7 +28,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.87)", # .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9141)", # 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9142)", # 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -79,12 +79,14 @@ defineModule(sim, list(
                     desc = paste("What a year that fails the spread-probability gates gets in the objective: 'minLik'",
                                  "(default) is not simulated and scores the floor; 'simulate' simulates and scores it like",
                                  "any other year. Passed to `fireSenseUtils::runDEoptim()`, for any `DEoptimTests`.")),
-    defineParameter("doFit", "logical", default = NA,
-                    desc = paste("Whether to fit this polygon. NA (default): do whatever is needed -- use the ledger's",
-                                 "fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any",
-                                 "ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it",
-                                 "when the fit's INPUTS changed -- new land cover, vegetation parameters, objective). FALSE:",
-                                 "never fit -- use the ledger's fit, and stop with an error if it holds none.")),
+    defineParameter("doFit", "logical", default = FALSE,
+                    desc = paste("Whether to fit this polygon. FALSE (default): never fit -- use the ledger's fit, and",
+                                 "stop with an error if it holds none for this polygon (`fitFileSuffix` picks the ledger),",
+                                 "so a run that only predicts can never start a fit by accident. NA: do whatever is",
+                                 "needed -- use the ledger's fit if it holds one for this polygon, otherwise fit. TRUE:",
+                                 "always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only",
+                                 "with at least 40 cores; use it when the fit's INPUTS changed -- new land cover,",
+                                 "vegetation parameters, objective).")),
     defineParameter("doObjFunAssertions", "logical", default = getOption("fireSenseUtils.assertions", FALSE),
                     desc = paste("Passed to `fireSenseUtils::.objfunSpreadFit()` and to the threshold calibration; TRUE runs",
                                  "diagnostics but is slower; FALSE for operational runs. The default follows",
@@ -338,7 +340,9 @@ defineModule(sim, list(
     defineParameter("fitFileSuffix", "character", "", NA, NA,
                     paste("Text put after the model tag in the ledger file names, e.g. `\"_boundfix_rep81\"`, so a test run",
                           "writes (and `\"latest\"` readers read) only its own files and never the production ones.",
-                          "`\"\"` (the default) is the production ledger. The same parameter of `fireSense_ignitionFit`,",
+                          "`\"\"` (the default) writes the unsuffixed file and reads (`\"latest\"`) every file of the model tag, newest by",
+                          "the date in its suffix (`fireSenseUtils::ledgerFileOrder()`); experiment fits belong in",
+                          "`spreadFitLedgerFolder(testing = TRUE)`. The same parameter of `fireSense_ignitionFit`,",
                           "`fireSense_dataPrepFit` and `fireSense_ELFs`; set it for all with `.globals = list(fitFileSuffix = ...)`.",
                           "Ignored when `spreadFitFilename` names a file.")),
     defineParameter("spreadFitFilename", "character", "latest",
@@ -362,10 +366,12 @@ defineModule(sim, list(
                                  "calibrates it (`iterThresh`, `thresholdMargin`) once per ELF, and the",
                                  "cross-validation folds reuse it. Replaces `SNLL_FS_thresh`, which was per year.")),
     defineParameter("refitExisting", "logical", NA, NA, NA,
-                    paste("DEPRECATED, use `doFit`. TRUE is `doFit = TRUE`; NA (unset) and FALSE do nothing.")),
+                    paste("DEPRECATED, use `doFit`. TRUE is `doFit = TRUE`; NA (unset) and FALSE do nothing.",
+                          "Overrides `doFit = FALSE` (the default), not `doFit = NA` or TRUE.")),
     defineParameter("stopIfNoPreRunFit", "logical", default = NA,
-                    desc = paste("DEPRECATED, use `doFit`. TRUE is `doFit = FALSE`; NA (unset) and FALSE (allow a fit)",
-                                 "are `doFit = NA`. Ignored when `refitExisting` is TRUE.")),
+                    desc = paste("DEPRECATED, use `doFit`. TRUE is `doFit = FALSE`; FALSE (allow a fit) is `doFit = NA`.",
+                                 "Overrides `doFit = FALSE` (the default), not `doFit = NA` or TRUE. Ignored when",
+                                 "`refitExisting` is TRUE.")),
     
     defineParameter("trace", "numeric", default = 1L,
                     desc = paste("non-negative integer. If > 0, tracing information on",

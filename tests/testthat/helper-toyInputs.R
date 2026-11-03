@@ -97,9 +97,10 @@ toySim <- function(params = list(), objects = list()) {
   }
   obj <- override(toyObjects(), objects)
   ## spreadLink and penaliseRunaways are the module's pre-2026-10-18 defaults here, so the tests keep testing those
-  ## paths; a test of the new defaults sets them to NULL (removed: the module's default)
+  ## paths; a test of the new defaults sets them to NULL (removed: the module's default). Likewise `doFit = NA`
+  ## (fit when the ledger has no row; the default before 2026-11-02, now FALSE): most tests fit the toy polygon.
   pars <- override(c(list(.runName = "toyRun", .useCache = FALSE, useCache_DE = FALSE, firstBlockThresh = 500,
-                          spreadLink = "ceiling", penaliseRunaways = TRUE), calParams), params)
+                          spreadLink = "ceiling", penaliseRunaways = TRUE, doFit = NA), calParams), params)
   suppressMessages(
     SpaDES.core::simInit(times = list(start = 0, end = 1), modules = toyModule,
                          paths = toyPaths(), params = stats::setNames(list(pars), toyModule),

@@ -1,4 +1,5 @@
-#' Does this run fit the polygon, or use the ledger's fit? Stops when `doFit` is FALSE and there is no fit.
+#' Does this run fit the polygon, or use the ledger's fit? Stops when `doFit` is FALSE and there is no fit,
+#' and when it would fit a run over several ELFs.
 #'
 #' Reads the module's `doFit` and its deprecated aliases through `fireSenseUtils::resolveDoFit()` and
 #' decides with `fireSenseUtils::mustFit()`.
@@ -9,7 +10,13 @@
 mustFitThisPolygon <- function(sim, message = FALSE) {
   doFit <- fireSenseUtils::resolveDoFit(P(sim)$doFit, P(sim)$refitExisting, P(sim)$stopIfNoPreRunFit,
                                         module = "fireSense_spreadFit", message = message)
-  fireSenseUtils::mustFit(doFit, hasPreRunFitForThisPolygon(sim), sim$.ELFind)
+  must <- fireSenseUtils::mustFit(doFit, hasPreRunFitForThisPolygon(sim), paste(sim$.ELFind, collapse = ", "),
+                                  fitFileSuffix = P(sim)$fitFileSuffix)
+  if (must && length(sim$.ELFind) > 1L)
+    stop("fireSense_spreadFit: a fit is of one ELF, but this run covers several (", paste(sim$.ELFind, collapse = ", "),
+         "). Fit each on its own (`.ELFind`), or predict from their stored fits (`doFit = FALSE`, the default).",
+         call. = FALSE)
+  must
 }
 
 #' Does this job use the `"powerLaw"` calibration?

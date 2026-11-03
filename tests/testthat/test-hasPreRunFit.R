@@ -37,14 +37,18 @@ test_that(".ELFind is the key", {
   expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l, .ELFind = character(0))))
   ## not supplied
   expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l)))
-  ## only the first element of a vector id is used
-  expect_true(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l, .ELFind = c("4.3", "9.9"))))
+  ## a run over several ELFs (fireSense_ELFs with a studyAreaLarge): every one needs its row
+  expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l, .ELFind = c("4.3", "9.9"))))
   expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = l, .ELFind = c("9.9", "4.3"))))
+  expect_true(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = led(c("9.9", "4.3")),
+                                              .ELFind = c("4.3", "9.9"))))
 })
 
 test_that("an NA polygonID or NA id is never a match", {
   expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = data.frame(polygonID = NA),
                                                .ELFind = "4.3")))
   expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = led("4.3"),
+                                               .ELFind = NA_character_)))
+  expect_false(hasPreRunFitForThisPolygon(list(studyAreaWithSpreadParams = data.frame(polygonID = NA),
                                                .ELFind = NA_character_)))
 })
