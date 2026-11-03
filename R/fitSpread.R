@@ -102,9 +102,9 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
           omitArgs = c("cores", "libPath", "logPath", "runName"),
           useCache = P(sim)$useCache_DE)
   seedPop <- if (is.null(emulated)) P(sim)$initialpop else emulated$pop
-  ## the early-stop rule in full (parameter, else options, else clusters' defaults; shorter from the emulator's
-  ## start, convergenceOf()), so it is in the fit's key
-  deArgs$convergence <- convergenceOf(P(sim)$convergence, seeded = !is.null(emulated))
+  ## the early-stop rule in full (parameter, else options, else clusters' defaults; the same whatever the start),
+  ## so it is in the fit's key
+  deArgs$convergence <- clusters::deoptimConvergence(P(sim)$convergence)
   ## `initialpop` is NULL without a given start: DEoptim draws its own, and nothing in the cache key changes.
   ## With one it is a matrix (the given rows, then uniform draws), a new fit with its own key, as is the retry
   ## below.

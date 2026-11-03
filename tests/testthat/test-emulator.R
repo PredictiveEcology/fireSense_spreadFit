@@ -9,15 +9,15 @@ emulatorMock <- function(rec) list(
     rec$emuPop <- pop
     list(pop = pop)
   })
-test_that("with initialPopMethod = 'emulator' the emulator's points start DEoptim, and the fit stops sooner", {
+test_that("with initialPopMethod = 'emulator' the emulator's points start DEoptim", {
   rec <- seededRun(params = list(initialPopMethod = "emulator"), mocks = emulatorMock)
   expect_false(is.null(rec$emu))
   call <- rec$calls[[1]]
   pop <- call$DEoptimControl$initialpop
   expect_identical(unname(pop[seq_len(nrow(rec$emuPop)), ]), unname(rec$emuPop))
   expect_identical(colnames(pop), names(rec$lower))
-  ## only minGenerations and window change
-  expect_identical(call$convergence, clusters::deoptimConvergence(list(window = 200L, minGenerations = 200L)))
+  ## the stopping rule is the one an unseeded fit gets
+  expect_identical(call$convergence, clusters::deoptimConvergence(NULL))
   ## the population size and the cores are the fit's
   expect_identical(rec$emu$NP, fireSenseUtils::deoptimPopulationSize(length(rec$lower)))
   expect_identical(rec$emu$cores, call$cores)
@@ -33,10 +33,20 @@ test_that("with initialPopMethod = 'emulator' the emulator's points start DEopti
   expect_identical(oa$fireBufferedListDT, fireSenseUtils::addBufferEdge(call$fireBufferedListDT, call$landscape))
 })
 
-test_that("a convergence parameter wins over the seeded fit's defaults", {
+test_that("an emulator-started fit stops by the run's rule, as every fit does", {
+  withr::local_options(clusters.deoptimConvergenceWindow = 300L, clusters.deoptimMinGenerations = 350L)
+  rec <- seededRun(params = list(initialPopMethod = "emulator"), mocks = emulatorMock)
+  expect_false(is.null(rec$emu))
+  expect_identical(rec$calls[[1]]$convergence$window, 300L)
+  expect_identical(rec$calls[[1]]$convergence$minGenerations, 350L)
+})
+
+test_that("a convergence parameter wins over the run's options for an emulator-started fit", {
+  withr::local_options(clusters.deoptimConvergenceWindow = 300L, clusters.deoptimMinGenerations = 350L)
   rec <- seededRun(params = list(initialPopMethod = "emulator", convergence = list(window = 250L)),
                    mocks = emulatorMock)
-  expect_identical(rec$calls[[1]]$convergence, clusters::deoptimConvergence(list(window = 250L, minGenerations = 200L)))
+  expect_identical(rec$calls[[1]]$convergence$window, 250L)
+  expect_identical(rec$calls[[1]]$convergence$minGenerations, 350L)
 })
 
 test_that("initialPopMethod = 'calibration' (the default) is the fit as before: no emulator, the usual stopping rule", {
