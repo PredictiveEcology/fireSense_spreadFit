@@ -1,9 +1,9 @@
 #' The spread objective's gates, as a function of parameter sets
 #'
-#' Builds the screen the threshold calibration applies to its draws (`runSpreadWithoutDEoptim()`):
+#' Builds the screen `feasibleInitialPopulation()` applies to its draws:
 #' `fireSenseUtils::spreadProbGates()` on the covariates of the first block of fire years, which is
 #' the test the objective itself applies before simulating any fire. A parameter set that fails it is
-#' one the objective refuses (its fail value, 1e6), whatever the threshold.
+#' one the objective refuses (its fail value, 1e6).
 #'
 #' @param covs `mod$covsX1000`, or the subset of its years being fitted.
 #' @param formulaToFit,covMinMax,covCentre,climateRef,mutuallyExclusive,maxFireSpread,escapeSizeHa,landscape,link,powerLawGamma,powerLawShape
@@ -33,8 +33,7 @@ spreadGates <- function(covs, formulaToFit, covMinMax, covCentre, climateRef, mu
 #' ELF whose feasible region is a sliver of that box, the start has no member the objective accepts, and
 #' DE never finds one: a trial is kept when it is no worse than its parent, and every value is the
 #' fail value (ELF 6.6.2, 2026-10-20: 0 of 2000 uniform draws passed the gates, with two climate terms
-#' each drawn over 0-50). This draws as the calibration does (`drawActivePars()`, with the same
-#' `gates`) and fills the rest of the population with uniform draws: DE's p-best strategy pulls the
+#' each drawn over 0-50). This draws by rejection (`drawActivePars()`) and fills the rest of the population with uniform draws: DE's p-best strategy pulls the
 #' population towards its accepted members, so a few are enough to start from.
 #'
 #' @param n integer; rows wanted. At least the population size the fit may get (`clusters::clusterSetup()`
@@ -44,7 +43,7 @@ spreadGates <- function(covs, formulaToFit, covMinMax, covCentre, climateRef, mu
 #' @param seed integer; `withr::with_seed()`, so the population is the same on every call for an ELF.
 #' @param minFeasible integer; stop with the gate counts when fewer sets pass after `maxDrawsPerMember * n`
 #'   draws. 4 is DEoptim's smallest population.
-#' @param maxDrawsPerMember integer; the calibration's rule (`runSpreadWithoutDEoptim(maxDrawsPerTrial)`).
+#' @param maxDrawsPerMember integer; cap on the draws per member wanted.
 #' @param cores integer; forks for `gates`.
 #' @return an `n` x `length(lower)` matrix, columns named as `lower`, the accepted sets first; attribute
 #'   `feasible` is how many rows were accepted.
@@ -75,30 +74,6 @@ feasibleInitialPopulation <- function(n, lower, upper, gates, seed, minFeasible 
 uniformSets <- function(m, lower, upper)
   lapply(seq_len(m), function(i) stats::setNames(runif(length(lower), lower, upper), names(lower)))
 
-#' Put the calibration's passing sets first in a starting population
-#'
-#' `passing` (`runSpreadWithoutDEoptim()`'s `passingPars`) are placed first and the rest of `pop` follows, cut to `pop`'s number of rows (`clusters::clusterSetup()` uses
-#' the first `NP`). They were drawn between `lower` and `upper`, so one outside them is a changed bound or a
-#' bug and stops, rather than being clamped.
-#'
-#' @param passing matrix of parameter sets with the columns of `lower`, or `NULL`.
-#' @param pop the starting population, `n` rows (`uniformSets()` or `feasibleInitialPopulation()`).
-#' @param lower,upper the bounds, named.
-#' @return `pop` if `passing` is `NULL`; otherwise `n` rows with attribute `feasible` (as `pop`'s, plus the
-#'   passing sets, at most `n`) when `pop` has one.
-withPassingFirst <- function(passing, pop, lower, upper) {
-  if (is.null(passing) || !nrow(passing)) return(pop)
-  stopifnot("the passing sets do not have the bounds' parameters" = setequal(colnames(passing), names(lower)))
-  passing <- passing[, names(lower), drop = FALSE]
-  if (any(sweep(passing, 2L, lower) < 0) || any(sweep(passing, 2L, upper) > 0))
-    stop("fireSense_spreadFit: a parameter set from the threshold calibration is outside lower/upper; ",
-         "the calibration and the fit use different bounds", call. = FALSE)
-  out <- rbind(passing, pop)[seq_len(nrow(pop)), , drop = FALSE]
-  colnames(out) <- names(lower)
-  if (!is.null(attr(pop, "feasible"))) attr(out, "feasible") <- min(nrow(pop), attr(pop, "feasible") + nrow(passing))
-  out
-}
-
 ## `DEoptimControl` with a starting population added; unchanged (same cache key) without one
 deoptimControlStart <- function(control, initialpop = NULL) {
   if (is.null(initialpop)) control else c(control, list(initialpop = initialpop))
@@ -107,28 +82,27 @@ deoptimControlStart <- function(control, initialpop = NULL) {
 #' The population DEoptim starts from
 #'
 #' The `initialpop` parameter's rows first, then uniform draws up to `n` rows, when it is given (it used to be dropped: `runDEoptim()` ignores its own `initialpop`
-#' argument, and with the parameter set the passing sets were cleared and DEoptim drew its own start, so a
-#' population seeded from elsewhere never reached it, 2026-10-26); otherwise the calibration's passing sets first,
-#' then uniform draws; otherwise `NULL`, DEoptim's own draw.
+#' argument, so a population seeded from elsewhere never reached DEoptim, 2026-10-26); otherwise `NULL`,
+#' DEoptim's own draw. The rows were drawn between `lower` and `upper`, so one outside them is a changed bound
+#' or a bug and stops, rather than being clamped.
 #'
 #' @param initialpop the `initialpop` parameter: a matrix with the columns of `lower`, or `NULL`.
-#' @param passingPars the calibration's passing sets, or `NULL`.
 #' @param n rows of the population (at least the rows of `initialpop`).
 #' @param lower,upper the bounds, named.
 #' @param seed seed for the uniform draws.
 #' @return A matrix or `NULL`.
-startPopulation <- function(initialpop, passingPars, n, lower, upper, seed) {
-  if (!is.null(initialpop)) {
-    pop <- as.matrix(initialpop)
-    if (!is.null(colnames(pop)) && !identical(colnames(pop), names(lower)))
-      stop("initialpop's columns (", paste(colnames(pop), collapse = ", "), ") are not names(lower) in that order",
-           call. = FALSE)
-    if (ncol(pop) != length(lower)) stop("initialpop has ", ncol(pop), " columns; lower has ", length(lower), call. = FALSE)
-    colnames(pop) <- names(lower)
-    passingPars <- pop
-  }
-  if (!is.null(passingPars) && nrow(passingPars))
-    return(withPassingFirst(passingPars, do.call(rbind, withr::with_seed(seed, uniformSets(max(n, nrow(passingPars)), lower, upper))),
-                            lower, upper))
-  NULL
+startPopulation <- function(initialpop, n, lower, upper, seed) {
+  if (is.null(initialpop)) return(NULL)
+  pop <- as.matrix(initialpop)
+  if (!is.null(colnames(pop)) && !identical(colnames(pop), names(lower)))
+    stop("initialpop's columns (", paste(colnames(pop), collapse = ", "), ") are not names(lower) in that order",
+         call. = FALSE)
+  if (ncol(pop) != length(lower)) stop("initialpop has ", ncol(pop), " columns; lower has ", length(lower), call. = FALSE)
+  colnames(pop) <- names(lower)
+  if (any(sweep(pop, 2L, lower) < 0) || any(sweep(pop, 2L, upper) > 0))
+    stop("fireSense_spreadFit: a row of initialpop is outside lower/upper", call. = FALSE)
+  uniform <- do.call(rbind, withr::with_seed(seed, uniformSets(max(n, nrow(pop)), lower, upper)))
+  out <- rbind(pop, uniform)[seq_len(nrow(uniform)), , drop = FALSE]
+  colnames(out) <- names(lower)
+  out
 }

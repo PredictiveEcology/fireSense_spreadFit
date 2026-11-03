@@ -1,4 +1,4 @@
-#' How many forks the threshold self-calibration may use
+#' How many forks the fit's start population and the `"powerLaw"` calibration may use
 #'
 #' `mcmapply()` forks this process. Each child starts as a copy-on-write image
 #' of the parent and diverges as R's garbage collector marks the heap, so the
@@ -38,7 +38,7 @@ thresholdForks <- function(heapMB, availMB, nPars, detCores, activeThreads = 0L,
 #' also leaves less garbage to copy), the memory available, the busy threads, `parallelly::availableCores()` and
 #' `options(mc.cores)`, and capped by the host's load (`fireSenseUtils::nThreads()`). In a Slurm job given part of
 #' the node (`parallelly::availableCores()` below `parallel::detectCores()`) the busy threads and the load are other
-#' jobs' and are ignored, as `clusters:::.limitToJob()` does. Used by the threshold self-calibration and the `"powerLaw"` calibration, so several
+#' jobs' and are ignored, as `clusters:::.limitToJob()` does. Used by the start population and the `"powerLaw"` calibration, so several
 #' fits on one host, or a fit run inside a cluster worker, share the same caps.
 #'
 #' @param nTasks integer; number of tasks to spread over the forks.
@@ -63,8 +63,8 @@ forkBudget <- function(nTasks) {
 
 #' One BLAS thread until the calling function returns
 #'
-#' A fork inherits the parent's OpenBLAS thread pool, so each fork of the threshold calibration ran several
-#' threads (64 on an 80-core host) and five fits calibrating at once pushed the 1-minute load past 370.
+#' A fork inherits the parent's OpenBLAS thread pool, so each fork of a calibration ran several
+#' threads (64 on an 80-core host) and five fits forking at once pushed the 1-minute load past 370.
 #' Call this before forking: the forks inherit one thread, and the previous number is restored when the
 #' caller exits.
 #'

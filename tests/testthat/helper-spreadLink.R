@@ -1,5 +1,5 @@
 ## Shared by test-climateOutside.R and test-powerLaw.R: a fit of the toy inputs under a spreadLink, and the Cache
-## omitArgs the fit and the threshold calibration are given.
+## omitArgs the fit is given.
 
 formCO <- "~ 0 + CMDsm + youngAge + class1 + class2 + nf"
 refCol <- fireSenseUtils::spreadFitClimateRefTxt
@@ -27,13 +27,12 @@ runCalibration <- function(FUN, ...) {
   do.call(FUN, a[setdiff(names(a), c("omitArgs", ".cacheExtra", "useCache"))])
 }
 
-## what Cache(omitArgs =) the fit and the threshold calibration are given, and what the calibration receives
+## what Cache(omitArgs =) the fit is given
 omitArgsCO <- function(params = list()) {
   rec <- new.env()
-  sim <- toySim(c(list(firstBlockThresh = NULL, iterThresh = 3L), params), toyObjectsCO())
+  sim <- toySim(params, toyObjectsCO())
   mockFitAndLedger(sim, rec)
   mockInModule(sim,
-    runSpreadWithoutDEoptim = function(...) { rec$rswd <- list(...); 777 },
     Cache = function(FUN, ..., omitArgs = NULL) {
       if (identical(FUN, fireSenseUtils::calibratePowerLaw)) return(runCalibration(FUN, ..., omitArgs = omitArgs))
       f <- if (is.function(FUN)) FUN(..., omitArgs = NULL) else FUN

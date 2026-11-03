@@ -1,4 +1,4 @@
-## .elfSeed(): the threshold seed is a pure function of the polygon id.
+## .elfSeed(): the seed of the start population is a pure function of the polygon id.
 
 test_that(".elfSeed() is 1 + (sum of byte * position * 7919) mod 1e6", {
   ## "A" is byte 65: 65 * 1 * 7919 = 514735

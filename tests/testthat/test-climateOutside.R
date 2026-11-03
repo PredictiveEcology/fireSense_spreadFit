@@ -1,9 +1,9 @@
 ## spreadLink = "climateOutside": the logistic and its maxAsymptote ceiling are fitted to the non-climate covariates
 ## and the climate term is added on the logit after it (fireSenseUtils::spreadProbFromCovs(climateRef =)). The
 ## reference climate is found once from the data the objective uses (fireSenseUtils::spreadClimateRef()) and handed
-## to the fit, the threshold calibration (objective and gates), the held-out simulation and the ledger row, which
+## to the fit, the debug objective call, the held-out simulation and the ledger row, which
 ## records it with the link. With the default "ceiling" nothing changes: no reference, no ledger columns, and the
-## cache keys of the fit, the threshold and the held-out simulation are what they were.
+## cache keys of the fit and the held-out simulation are what they were.
 
 ## the mean of the rescaled CMDsm over the 9 toy pixel-years, with the range the fit stores
 cmdMean <- function(sim) {
@@ -60,20 +60,17 @@ test_that("climateOutside without a climate covariate in the formula stops, sayi
   expect_error(suppressMessages(SpaDES.core::spades(sim)), "needs a climate covariate")
 })
 
-test_that("the fit's and the threshold's cache keys omit climateRef only when it is NULL; the calibration is given it", {
+test_that("the fit's cache key omits climateRef only when it is NULL", {
   off <- omitArgsCO()
-  expect_length(off$omit, 2L)                 # the threshold, then the fit
-  expect_true(all(vapply(off$omit, function(o) "climateRef" %in% o, logical(1))))
-  expect_null(off$rswd$climateRef)
+  expect_length(off$omit, 1L)
+  expect_true("climateRef" %in% off$omit[[1]])
   on <- omitArgsCO(list(spreadLink = "climateOutside"))
-  expect_false(any(vapply(on$omit, function(o) "climateRef" %in% o, logical(1))))
-  expect_named(on$rswd$climateRef, "CMDsm")
+  expect_false("climateRef" %in% on$omit[[1]])
 })
 
-test_that("runSpreadWithoutDEoptim() hands climateRef to the objective and to the gates, as it does covCentre", {
+test_that("runSpreadWithoutDEoptim() hands climateRef to the objective, as it does covCentre", {
   src <- paste(deparse(body(runSpreadWithoutDEoptim)), collapse = "\n")
-  ## the debug objective call, the gates, and the trials
-  expect_equal(lengths(regmatches(src, gregexpr("climateRef = climateRef", src))), 3L)
+  expect_equal(lengths(regmatches(src, gregexpr("climateRef = climateRef", src))), 1L)
   expect_null(formals(runSpreadWithoutDEoptim)$climateRef)
 })
 

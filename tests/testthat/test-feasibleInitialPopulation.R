@@ -3,7 +3,7 @@
 ## spreadProb gates, every value is the fail value, and DE never improves (ELF 6.6.2, 2026-10-20:
 ## 0 of 2000 uniform draws passed; its fit died at generation 10). clusters now stops such a fit after
 ## its first generation with a `deoptimNoFeasibleMember` error; the module then starts again from a
-## population drawn as the threshold calibration draws its trials (gate-screened), filled up with
+## population drawn by rejection (gate-screened), filled up with
 ## uniform draws. The first fit's cache key is unchanged, so fits in progress resume as before.
 
 lower <- c(maxAsymptote = 0.14, CMD = 0, CMDsm = 0, youngAge = -50)

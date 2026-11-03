@@ -87,3 +87,20 @@ test_that("the held-out object carries the fold's fit in the ledger row's struct
   expect_identical(fold$fitYears, "year2002")
   expect_identical(fold$heldOutYears, "year2001")
 })
+
+test_that("a fit whose final population is all fail values stops instead of scoring random parameters", {
+  ## 2026-09-29: fits that never passed returned the fail value 1e6 for all 5000 generations, and still wrote a
+  ## held-out score from random parameters
+  rec <- new.env()
+  sim <- toySim(list(heldOutFold = 1L, simulateMembers = 3L, .runName = "toyFailedFit"))
+  mockFitAndLedger(sim, rec)
+  mockInModule(sim,
+    runDEoptim = function(...) {
+      de <- toyDE(length(list(...)$lower))
+      de[[length(de)]]$member$popval[] <- 1e6
+      de
+    })
+  expect_error(suppressMessages(SpaDES.core::spades(sim)), "fail value")
+  heldOutPath <- file.path(SpaDES.core::outputPath(sim), moduleName, "spreadFitHeldOut_toyFailedFit_fold1.rds")
+  expect_false(file.exists(heldOutPath))
+})

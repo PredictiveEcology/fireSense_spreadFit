@@ -9,10 +9,8 @@ emulatorMock <- function(rec) list(
     rec$emuPop <- pop
     list(pop = pop)
   })
-withPassing <- function(r) list(thresh = 777, passingPars = r$passing)
-
 test_that("with initialPopMethod = 'emulator' the emulator's points start DEoptim, and the fit stops sooner", {
-  rec <- seededRun(withPassing, params = list(initialPopMethod = "emulator"), mocks = emulatorMock)
+  rec <- seededRun(params = list(initialPopMethod = "emulator"), mocks = emulatorMock)
   expect_false(is.null(rec$emu))
   call <- rec$calls[[1]]
   pop <- call$DEoptimControl$initialpop
@@ -23,12 +21,12 @@ test_that("with initialPopMethod = 'emulator' the emulator's points start DEopti
   ## the population size and the cores are the fit's
   expect_identical(rec$emu$NP, fireSenseUtils::deoptimPopulationSize(length(rec$lower)))
   expect_identical(rec$emu$cores, call$cores)
-  ## the objective the emulator evaluates is the fit's: the same arguments, with no early stop
+  ## the objective the emulator evaluates is the fit's: the same arguments
   oa <- rec$emu$objArgs
-  shared <- setdiff(intersect(names(oa), names(call)), c("fireBufferedListDT", "thresh"))
+  shared <- setdiff(intersect(names(oa), names(call)), "fireBufferedListDT")
   expect_true(all(c("formulaToFit", "covMinMax", "tests", "Nreps", "landscape", "link") %in% shared))
   for (nm in shared) expect_identical(oa[[nm]], call[[nm]], label = nm)
-  expect_identical(oa$thresh, Inf)
+  expect_false("thresh" %in% names(oa))
   expect_false(any(c("itermax", "cores", "DEoptimControl", "lower") %in% names(oa)))
   expect_identical(oa$doAssertions, call$doObjFunAssertions)
   expect_identical(oa$fitYearSpreadSD, "yearSpreadSD" %in% names(rec$lower))
@@ -36,39 +34,32 @@ test_that("with initialPopMethod = 'emulator' the emulator's points start DEopti
 })
 
 test_that("a convergence parameter wins over the seeded fit's defaults", {
-  rec <- seededRun(withPassing, params = list(initialPopMethod = "emulator", convergence = list(window = 250L)),
+  rec <- seededRun(params = list(initialPopMethod = "emulator", convergence = list(window = 250L)),
                    mocks = emulatorMock)
   expect_identical(rec$calls[[1]]$convergence, clusters::deoptimConvergence(list(window = 250L, minGenerations = 200L)))
 })
 
 test_that("initialPopMethod = 'calibration' (the default) is the fit as before: no emulator, the usual stopping rule", {
-  rec <- seededRun(withPassing, mocks = emulatorMock)
+  rec <- seededRun(mocks = emulatorMock)
   expect_null(rec$emu)
   expect_identical(rec$calls[[1]]$convergence, clusters::deoptimConvergence(NULL))
-  expect_identical(unname(rec$calls[[1]]$DEoptimControl$initialpop[1:3, ]), unname(rec$passing))
-})
-
-test_that("without passing sets the emulator still starts the fit", {
-  rec <- seededRun(list(thresh = 777, passingPars = NULL), params = list(initialPopMethod = "emulator"),
-                   mocks = emulatorMock)
-  expect_false(is.null(rec$emu))
-  expect_identical(unname(rec$calls[[1]]$DEoptimControl$initialpop[1, ]), unname(rec$emuPop[1, ]))
+  expect_null(rec$calls[[1]]$DEoptimControl$initialpop)
 })
 
 test_that("more parameters than emulatorMaxParams, or a given initialpop, start the fit as 'calibration' does", {
-  rec <- seededRun(withPassing, params = list(initialPopMethod = "emulator", emulatorMaxParams = 2L), mocks = emulatorMock)
+  rec <- seededRun(params = list(initialPopMethod = "emulator", emulatorMaxParams = 2L), mocks = emulatorMock)
   expect_null(rec$emu)
   expect_identical(rec$calls[[1]]$convergence, clusters::deoptimConvergence(NULL))
-  expect_identical(unname(rec$calls[[1]]$DEoptimControl$initialpop[1:3, ]), unname(rec$passing))
+  expect_null(rec$calls[[1]]$DEoptimControl$initialpop)
   expect_message(expect_false(useEmulator(list(initialPopMethod = "emulator", emulatorMaxParams = 2L), 3L)),
                  "more than emulatorMaxParams")
   expect_true(useEmulator(list(initialPopMethod = "emulator", emulatorMaxParams = 18L), 3L))
   expect_false(useEmulator(list(initialPopMethod = "calibration", emulatorMaxParams = 18L), 3L))
   expect_error(useEmulator(list(initialPopMethod = "GP", emulatorMaxParams = 18L), 3L), "initialPopMethod")
 
-  first <- seededRun(withPassing)
+  first <- seededRun()
   given <- passingSets(first$lower, first$upper)[3:1, , drop = FALSE]
-  rec <- seededRun(withPassing, params = list(initialPopMethod = "emulator", initialpop = given), mocks = emulatorMock)
+  rec <- seededRun(params = list(initialPopMethod = "emulator", initialpop = given), mocks = emulatorMock)
   expect_null(rec$emu)
   expect_equal(unname(rec$calls[[1]]$DEoptimControl$initialpop[1:3, ]), unname(given))
 })

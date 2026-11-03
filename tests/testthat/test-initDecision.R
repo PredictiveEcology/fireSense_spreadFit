@@ -1,6 +1,6 @@
 ## What `init` decides: fit, skip, or stop. Toy inputs; no event after `init` is run here.
 
-fitEvents <- c("spreadFitPrepare", "estimateThreshold", "run", "postFitDiagnostics")
+fitEvents <- c("spreadFitPrepare", "run", "postFitDiagnostics")
 noFitMsg <- "no usable stored fit for polygon 9\\.9 in the ledger.*doFit"
 
 ## the messages `init` sends (runEvents() hides them)
@@ -92,8 +92,8 @@ test_that("a run that sets none of the deprecated parameters prints no deprecati
   expect_length(grep("deprecated", initMessages(list(doFit = NA))), 0L)
 })
 
-test_that("mode picks the events that follow the threshold", {
-  prep <- c("spreadFitPrepare", "estimateThreshold")
+test_that("mode picks the events that follow the prepare event", {
+  prep <- "spreadFitPrepare"
   p <- function(mode) list(mode = mode)
   expect_identical(queued(initOnly(p("debug"))), c(prep, "debug"))
   expect_identical(queued(initOnly(p(c("fit", "visualize")))),
@@ -106,8 +106,8 @@ test_that("mode 'validate' adds crossValidate, after the fit or, with a ledger r
   p <- list(mode = c("fit", "validate"))
   expect_identical(queued(initOnly(p)), c(fitEvents, "crossValidate"))
   objs <- list(studyAreaWithSpreadParams = toyLedger("9.9"))
-  ## the ledger's fit is not refitted, but validation needs the threshold
-  expect_identical(queued(initOnly(p, objs)), c("spreadFitPrepare", "estimateThreshold", "crossValidate"))
+  ## the ledger's fit is not refitted
+  expect_identical(queued(initOnly(p, objs)), c("spreadFitPrepare", "crossValidate"))
 })
 
 test_that("supplying parsKnown switches the module to debug mode", {
@@ -129,17 +129,17 @@ test_that("heldOutFold NA (the default) leaves scheduling unchanged", {
                    queued(initOnly(list(heldOutFold = NA))))
 })
 
-test_that("heldOutFold 1 or 2 schedules ONLY prepare, threshold and crossValidate", {
+test_that("heldOutFold 1 or 2 schedules ONLY prepare and crossValidate", {
   ## no full fit ("run"), no postFitDiagnostics -- and it bypasses doFit entirely,
   ## so even doFit = FALSE without a ledger row does not stop it
   expect_identical(queued(initOnly(list(heldOutFold = 1L, doFit = FALSE))),
-                   c("spreadFitPrepare", "estimateThreshold", "crossValidate"))
+                   c("spreadFitPrepare", "crossValidate"))
   expect_identical(queued(initOnly(list(heldOutFold = 2L))),
-                   c("spreadFitPrepare", "estimateThreshold", "crossValidate"))
+                   c("spreadFitPrepare", "crossValidate"))
   ## still true with a ledger row present and doFit = TRUE: heldOutFold does not consult it
   objs <- list(studyAreaWithSpreadParams = toyLedger("9.9"))
   expect_identical(queued(initOnly(list(heldOutFold = 1L, doFit = TRUE), objs)),
-                   c("spreadFitPrepare", "estimateThreshold", "crossValidate"))
+                   c("spreadFitPrepare", "crossValidate"))
 })
 
 test_that("heldOutFold rejects values other than NA, 1 or 2", {

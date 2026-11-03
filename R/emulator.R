@@ -389,9 +389,7 @@ emulatorSpreadPopulation <- function(X, value, theta, NP, poolFrac, minDist) {
 #'
 #' What `runDEoptim()` hands `fireSenseUtils::.objfunSpreadFit()`: its arguments that the objective also has, plus
 #' `doAssertions` (its `doObjFunAssertions`) and `fitYearSpreadSD` (whether `lower` has `yearSpreadSD`), and the
-#' buffer edges it adds to `fireBufferedListDT` before the fit (`fireSenseUtils::addBufferEdge()`). `thresh` is
-#' `Inf`: every evaluation is a full one, as in `runDEoptim()`'s re-score, so the GP sees values, not the early
-#' stop's fail value.
+#' buffer edges it adds to `fireBufferedListDT` before the fit (`fireSenseUtils::addBufferEdge()`).
 #'
 #' @param deArgs named list, the arguments `fitSpread()` gives `runDEoptim()`.
 #' @return a named list of arguments to `.objfunSpreadFit()` (all but `par`).
@@ -401,7 +399,6 @@ emulatorObjectiveArgs <- function(deArgs) {
   args$fireBufferedListDT <- fireSenseUtils::addBufferEdge(deArgs$fireBufferedListDT, deArgs$landscape)
   args$doAssertions <- deArgs$doObjFunAssertions
   args$fitYearSpreadSD <- "yearSpreadSD" %in% names(deArgs$lower)
-  args$thresh <- Inf
   args$verbose <- 0
   args
 }

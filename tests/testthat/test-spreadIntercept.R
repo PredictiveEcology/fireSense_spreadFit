@@ -1,8 +1,8 @@
 ## An optional free intercept (formula "~ 1 + ...", built by fireSense_dataPrepFit's `spreadIntercept`) with
 ## centred covariates. With an intercept: wide symmetric bounds for it, the covariate means computed once from
-## the data the objective uses and handed to the fit, the threshold, the held-out simulation and the ledger row.
+## the data the objective uses and handed to the fit, the held-out simulation and the ledger row.
 ## Without one (the default, "~ 0 + ..."): nothing changes -- no intercept bound, no centre, no ledger column,
-## and the cache keys of the fit, the threshold and the held-out simulation are what they were.
+## and the cache keys of the fit and the held-out simulation are what they were.
 
 formI <- "~ 0 + CMDsm + youngAge + class1 + class2 + nf"
 formIcpt <- sub("0 \\+", "1 +", formI, fixed = FALSE)
@@ -87,13 +87,12 @@ test_that("off, there is no centre, no ledger column, and the fit's cache key om
   expect_false(icptName %in% names(out$rec$deArgs$lower))
 })
 
-## what Cache(omitArgs =) the fit and the threshold calibration are given
+## what Cache(omitArgs =) the fit is given
 omitArgsOf <- function(formula, params = list()) {
   rec <- new.env()
   sim <- toySim(c(list(), params), toyObjectsI(formula))
   mockFitAndLedger(sim, rec)
   mockInModule(sim,
-    runSpreadWithoutDEoptim = function(...) { rec$rswd <- list(...); 777 },
     Cache = function(FUN, ..., omitArgs = NULL) {
       f <- if (is.function(FUN)) FUN(..., omitArgs = NULL) else FUN
       rec$omit <- c(rec$omit, list(omitArgs))
@@ -103,25 +102,17 @@ omitArgsOf <- function(formula, params = list()) {
   rec
 }
 
-test_that("the fit's and the threshold's cache keys omit covCentre only when it is NULL", {
-  off <- omitArgsOf(formI, list(firstBlockThresh = NULL, iterThresh = 3L))
-  expect_true(all(vapply(off$omit, function(o) "covCentre" %in% o, logical(1))))
-  expect_length(off$omit, 2L)                 # the threshold, then the fit
-  on <- omitArgsOf(formIcpt, list(firstBlockThresh = NULL, iterThresh = 3L))
-  expect_false(any(vapply(on$omit, function(o) "covCentre" %in% o, logical(1))))
+test_that("the fit's cache key omits covCentre only when it is NULL", {
+  off <- omitArgsOf(formI)
+  expect_length(off$omit, 1L)
+  expect_true("covCentre" %in% off$omit[[1]])
+  on <- omitArgsOf(formIcpt)
+  expect_false("covCentre" %in% on$omit[[1]])
 })
 
-test_that("the threshold calibration is given the centre", {
-  on <- omitArgsOf(formIcpt, list(firstBlockThresh = NULL, iterThresh = 3L))
-  expect_named(on$rswd$covCentre, c("CMDsm", "youngAge", "class1", "class2", "nf"))
-  off <- omitArgsOf(formI, list(firstBlockThresh = NULL, iterThresh = 3L))
-  expect_null(off$rswd$covCentre)
-})
-
-test_that("runSpreadWithoutDEoptim() hands covCentre to the objective and to the gates", {
+test_that("runSpreadWithoutDEoptim() hands covCentre to the objective", {
   src <- paste(deparse(body(runSpreadWithoutDEoptim)), collapse = "\n")
-  ## the debug objective call, the gates, and the trials
-  expect_equal(lengths(regmatches(src, gregexpr("covCentre = covCentre", src))), 3L)
+  expect_equal(lengths(regmatches(src, gregexpr("covCentre = covCentre", src))), 1L)
   expect_true("covCentre" %in% names(formals(runSpreadWithoutDEoptim)))
   expect_null(formals(runSpreadWithoutDEoptim)$covCentre)
 })

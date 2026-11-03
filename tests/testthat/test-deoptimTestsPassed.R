@@ -1,7 +1,7 @@
 ## The `debug` event called runSpreadWithoutDEoptim() with tests = "", which switches off
-## every test in the objective function: no SNLL_FS, no MAD, no adTest, so a debug run
+## every test in the objective function: no MAD, no adTest, no CRPS, so a debug run
 ## exercised none of the code it exists to debug. Every call must pass the `DEoptimTests`
-## parameter, as the threshold estimate and the DEoptim fit already do.
+## parameter, as the DEoptim fit does.
 ##
 ## The calls need a full simList, so this checks the module's source instead of running
 ## it: parsed, not sourced, so no module machinery is needed.
@@ -18,7 +18,7 @@ test_that("every runSpreadWithoutDEoptim() call passes the DEoptimTests paramete
   }
   for (e in exprs) walk(e)
 
-  expect_gte(length(calls), 2L) # the debug event and estimateFirstBlockThreshold()
+  expect_gte(length(calls), 1L) # the debug event
   for (cl in calls)
     expect_identical(deparse(cl$tests), "P(sim)$DEoptimTests")
 })
