@@ -15,11 +15,11 @@ test_that("parameter classes", {
       cores = "integer", DEoptimControl = "list", DEoptimTests = "character",
       doFit = "logical", doObjFunAssertions = "logical", heldOutFold = "integer", initialpop = "numeric", initialPopMethod = "character",
       emulatorControl = "list", emulatorMaxParams = "integer", iterDEoptim = "integer",
-      iterThresh = "integer", thresholdMargin = "numeric", libPathDEoptim = "character", lower = "numeric",
+      libPathDEoptim = "character", lower = "numeric",
       maxFireSpread = "numeric", mode = "character", mutuallyExclusiveCols = "list",
       nCoresNeeded = "integer", objFunCoresInternal = "integer",
       objfunFireReps = "integer", refitExisting = "logical",
-      .rep = "integer", rescaleAll = "logical", firstBlockThresh = "numeric",
+      .rep = "integer", rescaleAll = "logical",
       fitFileSuffix = "character", spreadFitFilename = "character", sppEquivCol = "character", fuelClassCol = "character", spreadFitGoogleDriveFolder = "character",
       stopIfNoPreRunFit = "logical", strategy = "integer", trace = "numeric", upper = "numeric",
       upperAndLowerVal = "numeric", upperAndLowerValFuel = "numeric", useCache_DE = "logical",
@@ -36,7 +36,7 @@ test_that("parameter classes", {
 test_that("`cores`, `libPathDEoptim` and `objFunCoresInternal` are not part of the module's cache keys", {
   ## adding a host to `cores` (2026-10-20: "mega") re-ran every cached spreadFit event, although the
   ## fit's own Cache() calls already leave `cores` out; needs SpaDES.core >= 3.2.1.9045.
-  ## `libPathDEoptim` (default `.libPaths()[1]`, a machine's path) made the estimateThreshold entry of one
+  ## `libPathDEoptim` (default `.libPaths()[1]`, a machine's path) made a cached event of one
   ## machine miss on another (2026-10-28, 1 of 979 digests differed); it and `objFunCoresInternal` only say
   ## where and how wide the objective runs, and the fit's own Cache() calls already leave them out.
   notKeyed <- c("cores", "libPathDEoptim", "objFunCoresInternal")
@@ -70,14 +70,14 @@ test_that("defaults that decide whether and how a fit runs", {
   expect_identical(def$stopIfNoPreRunFit, NA)
   expect_identical(def$refitExisting, NA)
   expect_identical(def$mode, "fit")
-  expect_identical(def$DEoptimTests, c("adTest", "SNLL_FS"))
+  expect_identical(def$DEoptimTests, "crps")
   expect_identical(def$rescaleAll, TRUE)
   ## diagnostics inside the objective are slow: off unless options(fireSenseUtils.assertions = TRUE)
   expect_identical(def$doObjFunAssertions, getOption("fireSenseUtils.assertions", FALSE))
   expect_identical(def$useCache_DE, TRUE)
   expect_identical(def$.useCache, "init")
   expect_identical(def$mutuallyExclusiveCols, list(youngAge = c("class", "nonForest")))
-  ## DEoptim starts from the calibration's passing sets unless the emulator is asked for
+  ## DEoptim draws its own start unless the emulator is asked for
   expect_identical(def$initialPopMethod, "calibration")
   expect_identical(def$emulatorControl, list())
   expect_identical(def$emulatorMaxParams, 18L)
@@ -90,7 +90,6 @@ test_that("the retired runaway rule's parameters exist with their defaults", {
 })
 
 test_that("numeric defaults", {
-  expect_identical(def$iterThresh, 96L)
   expect_identical(def$objFunCoresInternal, 1L)
   expect_identical(def$cores, 1L)
   expect_identical(def$.rep, 1L)
@@ -128,7 +127,7 @@ test_that("defaults of the objective and of the post-fit diagnostics", {
 })
 
 test_that("defaults that are 'not set'", {
-  for (nm in c(".plots", "initialpop", "nCoresNeeded", "firstBlockThresh"))
+  for (nm in c(".plots", "initialpop", "nCoresNeeded"))
     expect_null(def[[nm]], label = nm)
   for (nm in c("lower", "upper"))
     expect_identical(def[[nm]], NA, label = nm)

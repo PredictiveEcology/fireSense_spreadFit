@@ -7,19 +7,12 @@
 #'
 #' @param sim a `simList`.
 #' @param covs the covariates as integers x 1000 (`mod$covsX1000`, or a subset of its years).
-#' @param thresh the objective's early-stop threshold, `mod$thresh`.
 #' @param runName character; labels the run and its cache entry. Also names the fit's progress file,
 #'   `DEoptimProgress_<runName>.csv` in the module's output folder.
 #' @param diagnostics logical; `FALSE` skips the profile and the simulations.
-#' @param passingPars matrix or `NULL`; the threshold calibration's parameter sets that pass `thresh`
-#'   (`mod$thresholdPassingPars`). They are the first members of DEoptim's starting population, on the first
-#'   attempt and on the retry (`withPassingFirst()`), unless the `initialpop` parameter is set or the emulator
-#'   chose the start (`initialPopMethod = "emulator"`). The folds
-#'   pass none: their first block is other years.
 #' @return the `runDEoptim()` result. Stops if every member of the final population has the
-#'   objective's fail value: no parameter set ever passed `thresh`, so there is no fit.
-fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPars = NULL) {
-  stopifnot("`thresh` is NA: it must be a number, or Inf for no early stop" = !anyNA(thresh))
+#'   objective's fail value: no parameter set was ever accepted, so there is no fit.
+fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
   if (!is.null(P(sim)$cores) && !any(is.na(P(sim)$cores)) &&
       identical(sort(unique(P(sim)$cores)), sort(P(sim)$cores))) {
     best <- list(cluster = P(sim)$cores)
@@ -63,7 +56,6 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
                    tests = P(sim)$DEoptimTests,
                    maxFireSpread = P(sim)$maxFireSpread,
                    Nreps = P(sim)$objfunFireReps,
-                   thresh = thresh,
                    .c = P(sim)$.c,
                    DEoptimControl = P(sim)$DEoptimControl,
                    .verbose = P(sim)$verbose,
@@ -113,9 +105,9 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
   ## the early-stop rule in full (parameter, else options, else clusters' defaults; shorter from the emulator's
   ## start, convergenceOf()), so it is in the fit's key
   deArgs$convergence <- convergenceOf(P(sim)$convergence, seeded = !is.null(emulated))
-  ## `initialpop` is NULL when there are no passing sets: DEoptim draws its start, and nothing in the cache
-  ## key changes. With them it is a matrix (the passing sets, then uniform draws), a new fit with its own key,
-  ## as is the retry below.
+  ## `initialpop` is NULL without a given start: DEoptim draws its own, and nothing in the cache key changes.
+  ## With one it is a matrix (the given rows, then uniform draws), a new fit with its own key, as is the retry
+  ## below.
   fit <- function(initialpop = NULL) {
     args <- deArgs
     args$DEoptimControl <- deoptimControlStart(args$DEoptimControl, initialpop)
@@ -138,15 +130,14 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
         useCache = P(sim)$useCache_DE
     )
   }
-  if (!is.null(seedPop)) passingPars <- NULL
-  firstStart <- startPopulation(seedPop, passingPars, n, lower, P(sim)$upper, seed)
+  firstStart <- startPopulation(seedPop, n, lower, P(sim)$upper, seed)
   ## clusters stops after the first generation when every member holds the fail value: DEoptim's
   ## uniform start had no member the objective accepts, and DE cannot improve on a population of fail
   ## values (ELF 6.6.2, 2026-10-20). Start again from a population the gates accept
   ## (feasibleInitialPopulation()); a second stop is final and says so.
   DE <- tryCatch(fit(initialpop = firstStart), deoptimNoFeasibleMember = function(e) {
     message("fireSense_spreadFit: ", conditionMessage(e),
-            "\nDrawing a starting population that passes the spreadProb gates, as the threshold calibration does")
+            "\nDrawing a starting population that passes the spreadProb gates")
     gates <- spreadGates(covs, formulaToFit = sim$fireSense_spreadFormula, covMinMax = sim$covMinMax_spread,
                          covCentre = sim$covCentre_spread, climateRef = sim$climateRef_spread,
                          mutuallyExclusive = P(sim)$mutuallyExclusiveCols, maxFireSpread = P(sim)$maxFireSpread,
@@ -156,7 +147,6 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
     localSingleThreadBLAS()
     pop <- feasibleInitialPopulation(n, lower = lower, upper = P(sim)$upper, gates = gates,
                                      seed = seed, cores = forkBudget(n))
-    pop <- withPassingFirst(passingPars, pop, lower, P(sim)$upper)
     tryCatch(fit(initialpop = pop), deoptimNoFeasibleMember = function(e2)
       stop("fireSense_spreadFit: fit '", runName, "' failed again from a starting population of which ",
            attr(pop, "feasible"), " of ", nrow(pop), " members pass the spreadProb gates: ", conditionMessage(e2),
@@ -166,18 +156,17 @@ fitSpread <- function(sim, covs, thresh, runName, diagnostics = TRUE, passingPar
   ## fail values was never fitted; its "best" members are random draws.
   if (length(DE) && all(as.numeric(DE[[length(DE)]]$member$popval) >= 1e6))
     stop("fireSense_spreadFit: fit '", runName, "' failed: every member of the final DEoptim ",
-         "population has the fail value 1e6, i.e. no parameter set passed the early-stop threshold (",
-         thresh, " per fire) on the first two fire years.")
+         "population has the fail value 1e6, i.e. the objective accepted no parameter set.")
   DE
 }
 
-## The spread objective's bodies, for the Cache keys of the fit and the threshold calibration: the objective and
-## everything it calls that decides its value (the spread link, which replicates are cut, the per-fire likelihood
-## and score, and the terms added to it)
+## The spread objective's bodies, for the Cache key of the fit: the objective and
+## everything it calls that decides its value (the spread link, which replicates are cut, the per-fire score,
+## and the terms added to it)
 objectiveBodies <- function() {
   fns <- c("crpsEnsemble", "crpsFireSizes", "crpsTotalArea", "crpsTopFires", "crpsWeightsDefault", # fireSenseUtils >= the CRPS objective
            "spreadProbFromIntegerCovs", "spreadProbCovsOfYear", "spreadProbFromCovs", "logisticAll", "powerLawLink",
-           "dataYearBefore", "addBufferEdge", "bufferEdge", "bufferOpen", "sizeLikT", "kernelLogScore",
+           "dataYearBefore", "addBufferEdge", "bufferEdge", "bufferOpen", "sizeLikT",
            "adStatistic", "adWeightAuto", "pooledFireSizes", "yearAreaNLL", "areaWeightedCvM",
            "pitMidRank", "adUniform")
   fns <- fns[vapply(fns, exists, logical(1), envir = asNamespace("fireSenseUtils"), inherits = FALSE)]
@@ -284,12 +273,6 @@ cvFolds <- function(years) {
 #' `runName` (and so its `Cache` key, see `fitSpread()`) is suffixed by `k`, so fold 1, fold 2 and
 #' a full fit (plain `P(sim)$.runName`, no suffix) never share a cache entry.
 #'
-#' The early-stop threshold is the full data's (`estimateFirstBlockThreshold()` on all years, the same
-#' cached calibration as the full fit's). It is per fire, so it does not depend on how many fires the
-#' two largest years of the fitted data hold. (It was a summed SNLL per year, which did: with the full
-#' data's threshold, held-out fits of ELFs 4.3 and 5.2.1 (2026-09-29) never passed it and returned the
-#' fail value for all 5000 generations, so each fold calibrated its own.)
-#'
 #' @param sim a `simList`.
 #' @param covs `mod$covsX1000`.
 #' @param fold integer vector, one element per year in `names(covs$historicalFires)`, from `cvFolds()`.
@@ -302,8 +285,7 @@ fitAndScoreFold <- function(sim, covs, fold, k) {
   fitCovs <- heldCovs <- covs
   fitCovs[yearLists] <- lapply(covs[yearLists], function(x) x[years[fold != k]])
   heldCovs[yearLists] <- lapply(covs[yearLists], function(x) x[years[fold == k]])
-  thresh <- estimateFirstBlockThreshold(sim, covs)$thresh
-  DE <- fitSpread(sim, fitCovs, thresh, runName = paste0(P(sim)$.runName, "_cvFold", k), diagnostics = FALSE)
+  DE <- fitSpread(sim, fitCovs, runName = paste0(P(sim)$.runName, "_cvFold", k), diagnostics = FALSE)
   best <- bestParamSets(DE, names(P(sim)$lower), n = max(1L, P(sim)$simulateMembers))
   s <- Cache(fireSenseUtils::simulateFireSizes, pop = best$params,
              fnArgs = spreadObjFunArgs(sim, heldCovs),

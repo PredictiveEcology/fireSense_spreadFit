@@ -1,6 +1,5 @@
 ## `escapeSizeHa` (default 50): the spread model is fitted to escaped fires only, and each simulated fire
-## starts as an escaped fire. It must reach the fit AND the threshold calibration, or the calibrated
-## threshold comes from a different objective than the one it is used in.
+## starts as an escaped fire. It must reach the fit AND the debug call, or the debug call evaluates another objective than the fit.
 
 test_that("escapeSizeHa is a numeric parameter, 50 by default", {
   md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
@@ -10,7 +9,7 @@ test_that("escapeSizeHa is a numeric parameter, 50 by default", {
   expect_identical(p$default[[i]], 50)
 })
 
-test_that("the fit and both threshold calibrations pass escapeSizeHa", {
+test_that("the fit and the debug call pass escapeSizeHa", {
   exprs <- moduleSource()
   calls <- list()
   walk <- function(x) {
@@ -22,8 +21,8 @@ test_that("the fit and both threshold calibrations pass escapeSizeHa", {
     invisible(NULL)
   }
   invisible(lapply(exprs, walk))
-  ## the `debug` event and the `estimateThreshold` event (a packaged module may list a call twice)
-  expect_gte(length(calls), 2L)
+  ## the `debug` event (a packaged module may list a call twice)
+  expect_gte(length(calls), 1L)
   for (cl in calls)
     expect_identical(deparse(as.list(cl)$escapeSizeHa), "escapeSizeHaOrNULL(P(sim)$escapeSizeHa)")
   ## the fit
@@ -41,20 +40,20 @@ test_that("NULL or NA means the old fit", {
   expect_identical(escapeSizeHaOrNULL(50), 50)
 })
 
-test_that("the threshold calibration hands escapeSizeHa to the objective", {
+test_that("runSpreadWithoutDEoptim() hands escapeSizeHa to the objective", {
   seen <- list()
-  local_mocked_bindings(.objfunSpreadFit = function(par, thresh, ...) {
+  local_mocked_bindings(.objfunSpreadFit = function(par, ...) {
     seen[[length(seen) + 1L]] <<- list(...)
-    1000 + thresh
+    1000
   })
   land <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 2400, ymin = 0, ymax = 2400) # 5.76-ha pixels
   fires <- list(year2001 = data.frame(size = c(5L, 12L), date = "year2001", ids = 11:12, cells = c(3L, 56L)),
                 year2002 = data.frame(size = c(3L, 10L), date = "year2002", ids = 21:22, cells = c(89L, 12L)))
   suppressMessages(utils::capture.output(runSpreadWithoutDEoptim(
-    iterThresh = 3L, lower = c(a = 0), upper = c(a = 1), fireSense_spreadFormula = "~ 0 + a",
+    nSets = 3L, lower = c(a = 0), upper = c(a = 1), fireSense_spreadFormula = "~ 0 + a",
     flammableRTM = land, annualDTx1000 = list(), nonAnnualDTx1000 = list(), fireBufferedListDT = list(),
     historicalFires = fires, covMinMax = NULL, objfunFireReps = 2L, maxFireSpread = 0.28,
-    tests = "SNLL_FS", formulaToFit = "~ 0 + a", mode = "debug", seed = 1L, escapeSizeHa = 50, doObjFunAssertions = FALSE)))
+    tests = "crps", formulaToFit = "~ 0 + a", seed = 1L, escapeSizeHa = 50, doObjFunAssertions = FALSE)))
   expect_length(seen, 3L)
   expect_true(all(vapply(seen, function(a) identical(a$escapeSizeHa, 50), logical(1))))
 })

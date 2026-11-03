@@ -1,4 +1,4 @@
-## The whole fit path -- init, spreadFitPrepare, estimateThreshold, run -- on toy inputs, with the two
+## The whole fit path -- init, spreadFitPrepare, run -- on toy inputs, with the two
 ## calls that leave the machine replaced by recorders (see helper-toyInputs.R): runDEoptim() returns
 ## a small fixed DEoptim result, CacheGeo() returns the row it was asked to write.
 
@@ -15,8 +15,7 @@ test_that("every scheduled event runs, in order, and nothing is left queued", {
   out <- fitted()
   done <- SpaDES.core::completed(out$sim)
   expect_identical(done$eventType[done$moduleName == moduleName],
-                   c(".inputObjects", "init", "spreadFitPrepare",
-                     "estimateThreshold", "run", "postFitDiagnostics"))
+                   c(".inputObjects", "init", "spreadFitPrepare", "run", "postFitDiagnostics"))
   expect_length(queued(out$sim), 0L)
 })
 
@@ -52,10 +51,9 @@ test_that("the simList's own covariate tables are not multiplied by 1000", {
   expect_equal(sim$fireSense_nonAnnualSpreadFitCovariates[[1]]$nf, seq(0, 0.8, by = 0.1))
 })
 
-test_that("runDEoptim() receives the parameters, bounds, threshold and formula", {
+test_that("runDEoptim() receives the parameters, bounds and formula", {
   out <- fitted(list(iterDEoptim = 40L, nCoresNeeded = 12L, cores = c("hostA", "hostB"),
-                     objfunFireReps = 9L, .rep = 3L, DEoptimControl = list(CR = 0.7), .c = 0.4,
-                     firstBlockThresh = 321L))
+                     objfunFireReps = 9L, .rep = 3L, DEoptimControl = list(CR = 0.7), .c = 0.4))
   a <- out$rec$deArgs
   expect_identical(a$itermax, 40L)
   expect_identical(a$nCoresNeeded, 12L)
@@ -64,7 +62,7 @@ test_that("runDEoptim() receives the parameters, bounds, threshold and formula",
   expect_identical(a$rep, 3L)
   expect_identical(a$DEoptimControl, list(CR = 0.7))
   expect_identical(a$.c, 0.4)
-  expect_identical(a$thresh, 321L)                       # firstBlockThresh, not an estimate
+  expect_false("thresh" %in% names(a))                   # the early stop is gone
   expect_identical(a$runName, "toyRun")
   expect_identical(a$formulaToFit, "~ 0 + CMDsm + youngAge + class1 + class2 + nf")
   expect_identical(a$lower, m(out$sim)$lower)
@@ -72,7 +70,7 @@ test_that("runDEoptim() receives the parameters, bounds, threshold and formula",
                                      "CMDsm", "youngAge", "class1", "class2", "nf", "yearSpreadSD"))
   expect_identical(a$mutuallyExclusive, list(youngAge = c("class", "nonForest", "class1", "class2", "nf")))
   expect_identical(a$covMinMax, out$sim$covMinMax_spread)
-  expect_identical(a$tests, c("adTest", "SNLL_FS"))
+  expect_identical(a$tests, "crps")
   expect_identical(a$maxFireSpread, fireSenseUtils::spreadProbCeiling)
 })
 
@@ -237,4 +235,11 @@ test_that("doFit = FALSE with a ledger row for this polygon fits and writes noth
   sim <- suppressMessages(SpaDES.core::spades(sim))
   expect_null(rec$deArgs)
   expect_null(rec$geoArgs)
+})
+
+test_that("DEoptimTests = 'SNLL_FS' stops the run event: fireSenseUtils removed that test", {
+  sim <- toySim(list(DEoptimTests = "SNLL_FS"))
+  mockFitAndLedger(sim)
+  mockInModule(sim, runDEoptim = fireSenseUtils::runDEoptim)   # the real one, which checks `tests` before building a cluster
+  expect_error(suppressMessages(SpaDES.core::spades(sim)), "were removed")
 })

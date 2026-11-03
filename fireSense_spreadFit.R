@@ -28,7 +28,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.87)", # .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9142)", # 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9144)", # 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -61,15 +61,14 @@ defineModule(sim, list(
                                  "character vector of machine names, one element per core wanted on that machine.",
                                  "Not part of this module's cache keys: it changes where the work is done, not the result."),
                     cacheKey = FALSE),
-    defineParameter("DEoptimTests", "character", default = c("adTest", "SNLL_FS"),
-                    desc = paste("Any of `'SNLL_FS'`, `'adTest'` (pooled Anderson-Darling on fire sizes) and `'pitAD'`",
-                                 "(rank-based Anderson-Darling: each fire's observed size ranked among its replicates;",
-                                 "does not depend on the fit buffers), or `'crps'`: a different objective of proper scores",
-                                 "(per-fire CRPS on log size, adTest, areaDist, CRPS of the log total area, CRPS of the 10 largest",
-                                 "fires; weights in `crpsWeights`; no annual-area term, no early stop). The 2026-10-28 profile used it alone,",
-                                 "with `gateRefusal = 'simulate'` and `objfunFireReps = 100L`. Passed to `tests` in",
-                                 "`fireSenseUtils::.objfunSpreadFit()`. The threshold calibration has no first-block value to",
-                                 "calibrate under `'crps'`: it warns and the fit runs without an early stop.")),
+    defineParameter("DEoptimTests", "character", default = "crps",
+                    desc = paste("`'crps'` (default): an objective of proper scores (per-fire CRPS on log size, adTest, areaDist,",
+                                 "CRPS of the log total area, CRPS of the 10 largest fires; weights in `crpsWeights`; no annual-area",
+                                 "term). Or any of `'adTest'` (pooled Anderson-Darling on fire sizes) and `'pitAD'` (rank-based",
+                                 "Anderson-Darling: each fire's observed size ranked among its replicates; does not depend on the fit",
+                                 "buffers). The 2026-10-28 profile used `'crps'` alone, with `gateRefusal = 'simulate'` and",
+                                 "`objfunFireReps = 100L`. `'SNLL_FS'` was removed and stops the fit. Passed to `tests` in",
+                                 "`fireSenseUtils::.objfunSpreadFit()`.")),
     defineParameter("crpsWeights", "list", default = NULL,
                     desc = paste("Named list of the multipliers of the `'crps'` objective's terms: `fire`, `adTest`,",
                                  "`areaDist`, `totalArea`, `top10`. Names left out take `fireSenseUtils::crpsWeightsDefault()`",
@@ -88,7 +87,7 @@ defineModule(sim, list(
                                  "with at least 40 cores; use it when the fit's INPUTS changed -- new land cover,",
                                  "vegetation parameters, objective).")),
     defineParameter("doObjFunAssertions", "logical", default = getOption("fireSenseUtils.assertions", FALSE),
-                    desc = paste("Passed to `fireSenseUtils::.objfunSpreadFit()` and to the threshold calibration; TRUE runs",
+                    desc = paste("Passed to `fireSenseUtils::.objfunSpreadFit()`; TRUE runs",
                                  "diagnostics but is slower; FALSE for operational runs. The default follows",
                                  "`options(fireSenseUtils.assertions = )`.")),
     defineParameter("initialpop", "numeric", default = NULL,
@@ -97,8 +96,9 @@ defineModule(sim, list(
                                  "through `control$initialpop = P(sim)$initialpop` if it is",
                                  "not NULL")),
     defineParameter("initialPopMethod", "character", default = "calibration",
-                    desc = paste("Where DEoptim's starting population comes from. 'calibration' (default): the threshold",
-                                 "calibration's passing sets, then uniform draws, or DEoptim's own draw when there are none.",
+                    desc = paste("Where DEoptim's starting population comes from. 'calibration' (default; the name is historical):",
+                                 "DEoptim's own draw, or, when no member of it passes the objective's spreadProb gates, a start of",
+                                 "gate-passing draws.",
                                  "'emulator': `nCoresNeeded` good, spread-out points evaluated by a Gaussian-process emulator",
                                  "search of the fit's objective (~1,000-1,600 real evaluations on the fit's `cores`, between",
                                  "`lower` and `upper`, wide one-sided parameters on a log1p scale; a global phase, then",
@@ -123,13 +123,6 @@ defineModule(sim, list(
                     desc = paste("integer defining the maximum number of iterations allowed (DEoptim optimizer).",
                                  "A ceiling: clusters (>= 0.0.46) stops the fit earlier, once the population's",
                                  "median value has stopped improving.")),
-    defineParameter("iterThresh", "integer", default = 96L,
-                    desc = "Number of random parameter sets tried when calibrating `firstBlockThresh`."),
-    defineParameter("thresholdMargin", "numeric", default = 2,
-                    desc = paste("When calibrating `firstBlockThresh`, the threshold is this multiple of the best",
-                                 "usable trial's first-block value per fire (trials run with no early stop;",
-                                 "a trial that saturates spreadProb is not usable). Must be >= 1. With 2, known-truth",
-                                 "simulations of three ELFs never stopped a parameter set near the truth (2026-10-23).")),
     defineParameter("libPathDEoptim", "character", default = .libPaths()[1],
                     desc = paste("Absolute path specifying R package directory location to use when running DEotpim.",
                                  "NOTE: this path must be read/write accessible on ALL machines",
@@ -218,7 +211,7 @@ defineModule(sim, list(
     defineParameter("heldOutFold", "integer", default = NA,
                     desc = paste("NA (default): unchanged behaviour, governed by `mode`. `1` or `2`: run ONLY",
                                  "that cross-validation fold, as its own job. `init` then schedules",
-                                 "`spreadFitPrepare`, `estimateThreshold` and `crossValidate` -- never `run`, so",
+                                 "`spreadFitPrepare` and `crossValidate` -- never `run`, so",
                                  "the full fit and the ledger write never happen, and the ledger",
                                  "(`doFit`) is not consulted. `crossValidate` fits on",
                                  "the OTHER fold's years and scores this fold's held-out years (`cvFolds()` in",
@@ -284,8 +277,7 @@ defineModule(sim, list(
                                  "flammable land outside every buffer, `fireSenseUtils::bufferOpen()`) is cut: it has no",
                                  "density at the observed size in the size likelihood, and the other terms score the size",
                                  "it reached. TRUE also stops such a fire at the first open pixel of its own buffer, which",
-                                 "saves time. Passed to `fireSenseUtils::runDEoptim()`; the threshold calibration uses",
-                                 "the same setting.")),
+                                 "saves time. Passed to `fireSenseUtils::runDEoptim()`.")),
     defineParameter("runawayBufferMultiple", "numeric", default = NA_real_,
                     desc = paste("Retired: a cut fire is scored at the size it reached. It set the size a runaway counted",
                                  "as in the Anderson-Darling, annual-area and area-distribution terms.",
@@ -360,11 +352,6 @@ defineModule(sim, list(
     defineParameter("strategy", "integer", default = 6L,
                     desc = paste("Passed to `DEoptim.control`. 6 (DE/current-to-p-best/1) with `p = 0.1` did best",
                                  "in a settings study (see NEWS).")),
-    defineParameter("firstBlockThresh", "numeric", default = NULL,
-                    desc = paste("The objective's early stop: a parameter set whose first block of years (the two with",
-                                 "the most area burned) scores above this per fire is abandoned. NULL (default)",
-                                 "calibrates it (`iterThresh`, `thresholdMargin`) once per ELF, and the",
-                                 "cross-validation folds reuse it. Replaces `SNLL_FS_thresh`, which was per year.")),
     defineParameter("refitExisting", "logical", NA, NA, NA,
                     paste("DEPRECATED, use `doFit`. TRUE is `doFit = TRUE`; NA (unset) and FALSE do nothing.",
                           "Overrides `doFit = FALSE` (the default), not `doFit = NA` or TRUE.")),
@@ -476,7 +463,7 @@ defineModule(sim, list(
                   desc = paste("With `spreadLink = 'climateOutside'`, the reference value of each climate covariate of the",
                                "formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit's",
                                "pixel-years (`fireSenseUtils::spreadClimateRef()`), the climate at which the spread probability",
-                               "is the fuel ceiling's p0. Given to the fit, the threshold, the validation and the ledger row.",
+                               "is the fuel ceiling's p0. Given to the fit, the validation and the ledger row.",
                                "`NULL` with `spreadLink = 'ceiling'`.")),
     createsOutput("powerLawCalibration", "list",
                   desc = paste("With `spreadLink = 'powerLaw'`, the result of `fireSenseUtils::calibratePowerLaw()` on",
@@ -547,14 +534,14 @@ defineModule(sim, list(
 #' Event dispatcher for fireSense_spreadFit
 #'
 #' `init` schedules `spreadFitPrepare`, and, unless the ledger already holds a fit for this polygon
-#' (or `doFit` is TRUE), `estimateThreshold` then `run` (or `debug` when `mode` has "debug").
+#' (or `doFit` is TRUE), `run` (or `debug` when `mode` has "debug").
 #' When `heldOutFold` is 1 or 2, `init` instead schedules only `spreadFitPrepare`,
-#' `estimateThreshold` and `crossValidate` (that one fold): never `run`, so the full fit and the
+#' `crossValidate` (that one fold): never `run`, so the full fit and the
 #' ledger write never happen.
 #'
 #' @param sim a `simList`.
 #' @param eventTime numeric; current simulation time.
-#' @param eventType character; one of `init`, `spreadFitPrepare`, `estimateThreshold`, `run`,
+#' @param eventType character; one of `init`, `spreadFitPrepare`, `run`,
 #'   `debug`, `plot`, `postFitDiagnostics` (after every fit), `crossValidate` (mode "validate").
 #' @param debug not used.
 #' @return the `simList`, invisibly.
@@ -581,7 +568,6 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         # the ledger, so it does not consult the ledger (hasPreRunFitForThisPolygon()) or
         # `doFit`: those decide whether to run the full fit, which this job never does.
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
-        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "estimateThreshold")
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "crossValidate")
         return(invisible(sim))
       }
@@ -593,7 +579,6 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
       # `doFit` overrides that: TRUE refits (the stored row is stale when the inputs have changed),
       # FALSE stops when there is no row.
       if (mustFitThisPolygon(sim, message = TRUE)) {
-        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "estimateThreshold")
         if ("debug" %in% P(sim)$mode) {
           sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "debug")
         } else {
@@ -604,8 +589,6 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
             sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "plot")
           }
         }
-      } else if ("validate" %in% P(sim)$mode) {
-        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "estimateThreshold")
       }
       if ("validate" %in% P(sim)$mode)
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "crossValidate")
@@ -615,8 +598,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
     },
     debug = {
       ## This below is to test the code without running DEOptim
-      thresh <- runSpreadWithoutDEoptim(
-        iterThres = P(sim)$iterThresh,
+      runSpreadWithoutDEoptim(
         lower = P(sim)$lower, upper = P(sim)$upper,
         fireSense_spreadFormula = sim$fireSense_spreadFormula,
         flammableRTM = sim$rasterToMatch,
@@ -630,7 +612,6 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         formulaToFit = sim$fireSense_spreadFormula,
         objfunFireReps = P(sim)$objfunFireReps,
         tests = P(sim)$DEoptimTests,
-        mode = Par$mode,
         escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
         weighted = P(sim)$weighted, sizeLik = P(sim)$sizeLik, sizeLikDf = P(sim)$sizeLikDf,
         adWeight = P(sim)$adWeight, link = spreadLink(P(sim)), powerLawGamma = powerLawGammaOf(sim),
@@ -641,14 +622,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         penaliseRunaways = P(sim)$penaliseRunaways,
         runawayEdgeFrac = P(sim)$runawayEdgeFrac, runawayEdgeMin = P(sim)$runawayEdgeMin,
         runawayBufferMultiple = runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple),
-        thresholdMargin = P(sim)$thresholdMargin,
         maxFireSpread = P(sim)$maxFireSpread)
-    },
-    estimateThreshold = {
-      # Estimate threshold for .objFunSpreadFit
-      calibration <- estimateFirstBlockThreshold(sim, mod$covsX1000)
-      mod$thresh <- calibration$thresh
-      mod$thresholdPassingPars <- calibration$passingPars
     },
     run = {
       if (mustFitThisPolygon(sim)) {
@@ -656,8 +630,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         if (!identical(basename(Par$visualizeDEoptim), currentModule(sim))) {
           params(sim)[[currentModule(sim)]][["visualizeDEoptim"]] <- figurePath(sim)
         }
-        DE <- fitSpread(sim, mod$covsX1000, mod$thresh, runName = P(sim)$.runName,
-                        passingPars = mod$thresholdPassingPars)
+        DE <- fitSpread(sim, mod$covsX1000, runName = P(sim)$.runName)
         mod$fitDE <- DE # sim$DE is reordered below, which drops the attributes postFitDiagnostics reads
         sim$DE <- DE
         objFunVal <- vapply(sim$DE, function(D) D$member$bestvalit, FUN.VALUE = numeric(1))
@@ -872,13 +845,13 @@ spreadFitPrep <- function(sim) {
     paramOrder = P(sim)$upper)
   
   ## With an intercept the covariates are centred; the centre is found once, from the data the objective
-  ## uses, and every fit, threshold, validation and prediction of this fit uses it (NULL: no intercept).
+  ## uses, and every fit, validation and prediction of this fit uses it (NULL: no intercept).
   sim$covCentre_spread <- fireSenseUtils::spreadCovCentre(
     mod$covsX1000$annualDTx1000, mod$covsX1000$nonAnnualDTx1000, sim$fireSense_spreadFormula,
     covMinMax = sim$covMinMax_spread, mutuallyExclusive = P(sim)[[mec]])
 
   ## With climate outside the ceiling (spreadLink), the climate reference is found once, from the same data, on
-  ## the same scale (after the centre), and every fit, threshold, validation and prediction of this fit uses it.
+  ## the same scale (after the centre), and every fit, validation and prediction of this fit uses it.
   ## NULL with the default link, so nothing downstream (calls, cache keys, the ledger row) changes.
   sim$climateRef_spread <- NULL
   if (identical(P(sim)$spreadLink, "climateOutside")) {
@@ -1079,10 +1052,9 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 
 #' A seed that depends only on the ELF
 #'
-#' The early-stop threshold becomes `thresh` in `runDEoptim()`, so it is part of every cached DEoptim
-#' generation's key. Drawing the seed by chance meant a single cache miss on `estimateThreshold`
-#' re-drew the threshold and invalidated every cached generation for that ELF. Keyed on the ELF, a
-#' miss costs only the threshold estimate.
+#' Seeds the emulator search, the uniform draws that fill a given `initialpop`, and the gate-passing start
+#' of the retry in `fitSpread()`. Those draws are part of the fit's cache key, so a seed drawn by chance
+#' would give every call a new start and a cache miss; keyed on the ELF, the same ELF draws the same start.
 #'
 #' @param elf character; `sim$.ELFind` (which falls back to the `.runName` parameter).
 #' @return a single integer in `1:1e6`.
@@ -1092,110 +1064,6 @@ histOfCovariates <- function(annualList, nonAnnualList) {
   ## identical across sessions, machines and R versions
   bytes <- utils::head(as.integer(charToRaw(elf)), 64L)
   1L + as.integer(sum(bytes * seq_along(bytes) * 7919) %% 1e6)
-}
-
-#' The early-stop threshold of the objective function, calibrated on the years in `covs`
-#'
-#' Uses `firstBlockThresh` if supplied; otherwise calibrates it with a cached
-#' `runSpreadWithoutDEoptim()` call on `covs`. The threshold bounds the per-fire score of the two
-#' largest fire years, per fire, so it does not depend on how many fires they hold: the
-#' cross-validation folds reuse the full data's (`fitAndScoreFold()`).
-#'
-#' @param sim a `simList`, after `spreadFitPrep()`.
-#' @param covs `mod$covsX1000`, or the subset of its years that will be fitted.
-#' @return `list(thresh =, passingPars =)`: the threshold (`Inf`, no early stop, if every calibration trial
-#'   failed, see `noEarlyStopThreshold()`) and the calibration's parameter sets that pass it (`passingPars()`),
-#'   `NULL` if there are none, if `firstBlockThresh` was supplied, or if the cached calibration predates them
-#'   (it is a bare number). Separate, so `thresh` stays the plain number in DEoptim's cache key.
-estimateFirstBlockThreshold <- function(sim, covs) {
-  calibration <- if (is.null(Par$firstBlockThresh) || is.na(Par$firstBlockThresh)) {
-    message("Estimating threshold for inside .objFunSpreadFit -- This can be supplied via firstBlockThresh parameter")
-
-    runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)
-    # Took 50 minutes using 10 cores for Taiga studyArea
-    runSpreadWithoutDEoptim(
-      iterThres = P(sim)$iterThresh,
-      lower = P(sim)$lower, upper = P(sim)$upper,
-      fireSense_spreadFormula = sim$fireSense_spreadFormula,
-      flammableRTM = sim$rasterToMatch,
-      mutuallyExclusive =  P(sim)$mutuallyExclusiveCols,
-      doObjFunAssertions = P(sim)$doObjFunAssertions,
-      annualDTx1000 = covs$annualDTx1000,
-      nonAnnualDTx1000 = covs$nonAnnualDTx1000,
-      fireBufferedListDT = covs$fireBufferedListDT,
-      historicalFires = covs$historicalFires,
-      covMinMax = sim$covMinMax_spread, covCentre = sim$covCentre_spread, climateRef = sim$climateRef_spread,
-      formulaToFit = sim$fireSense_spreadFormula,
-      objfunFireReps = P(sim)$objfunFireReps,
-      tests = P(sim)$DEoptimTests,
-      mode = Par$mode,
-      ## Deterministic per ELF: the threshold feeds every DEoptim generation's cache key, so a
-      ## re-drawn threshold discards the whole fit's cached generations (2026-09-16: 1236 -> 1416
-      ## cost ~17 h). `seed` is an argument, so it is in this Cache key too -- which is what
-      ## test-thresholdCacheKey.R asks for: nothing that changes the result is omitted.
-      seed = .elfSeed(sim$.ELFind),
-      escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
-      ## the same objective as the fit (R/fitSpread.R), or the threshold is calibrated on another one
-      weighted = P(sim)$weighted, sizeLik = P(sim)$sizeLik, sizeLikDf = P(sim)$sizeLikDf,
-      adWeight = P(sim)$adWeight, link = spreadLink(P(sim)), powerLawGamma = powerLawGammaOf(sim),
-        powerLawShape = P(sim)$powerLawShape,
-      jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist,
-      yearAreaWeight = P(sim)$yearAreaWeight, areaDistWeight = P(sim)$areaDistWeight,
-      crpsWeights = P(sim)$crpsWeights, gateRefusal = P(sim)$gateRefusal,
-      penaliseRunaways = P(sim)$penaliseRunaways,
-      runawayEdgeFrac = P(sim)$runawayEdgeFrac, runawayEdgeMin = P(sim)$runawayEdgeMin,
-      runawayBufferMultiple = runawayMultiple,
-      thresholdMargin = P(sim)$thresholdMargin,
-      maxFireSpread = P(sim)$maxFireSpread) |>
-      ## Nothing is omitted from the key, because both of the arguments that used to
-      ## be omitted change the result.
-      ##
-      ## `mode` selects which branch of runSpreadWithoutDEoptim runs, and the branches
-      ## return different types -- the fitting branch returns the numeric threshold
-      ## (R/runSpreadWithoutDEoptim.R), the debug branch ends in a `for` loop with
-      ## no return and yields NULL. Omitting it let a debug-mode result be served to a
-      ## fit-mode caller and the reverse, which is how `mod$thresh` came back as a
-      ## character and the objective function died at `round(thresh, 0)`.
-      ##
-      ## `objfunFireReps` becomes `Nreps` in the objective function, so it changes the
-      ## threshold's *value* rather than its type: a threshold calibrated at 5
-      ## replicates would be served to a caller asking for 25, with nothing to show
-      ## that it had been.
-      ## The rule lives in pickThreshold() and trialFirstBlock(), callees that Cache() does not
-      ## digest: their bodies go in .cacheExtra, so a change of rule is a cache miss, not an old
-      ## NA or randomly paired threshold served from the cache.
-      ## The draws are screened by fireSenseUtils::spreadProbGates() (which calls spreadProbGateTest(),
-      ## the objective's own gate) and drawn by drawActivePars(): their bodies are in the key too.
-      ## runawayEdgeFrac/Min are passed on but omitted from the key, as in the fit (R/fitSpread.R): the
-      ## rule only changes how quickly DEoptim moves away from an unlucky draw, so thresholds cached
-      ## under the 1-cell rule stay valid and must not rerun.
-      Cache(.cacheExtra = list(pickThreshold = deparse(pickThreshold),
-                               usableTrials = deparse(usableTrials),
-                               passingPars = deparse(passingPars),
-                               trialFirstBlock = deparse(trialFirstBlock),
-                               drawActivePars = deparse(drawActivePars),
-                               spreadProbGates = deparse(fireSenseUtils::spreadProbGates),
-                               spreadProbGateTest = deparse(fireSenseUtils::spreadProbGateTest),
-                               objective = objectiveBodies()),
-            ## covCentre is NULL without an intercept, runawayBufferMultiple with NA, climateRef with the default
-            ## spreadLink, powerLawGamma unless spreadLink is "powerLaw": omitted then, so thresholds cached before
-            ## they existed are found
-            omitArgs = c("runawayEdgeFrac", "runawayEdgeMin", fireSenseUtils::powerLawOmitArgs(spreadLink(P(sim)), P(sim)$powerLawShape),
-                         ## the CRPS objective's options, when at their defaults
-                         if (identical(P(sim)$gateRefusal, "minLik")) "gateRefusal",
-                         if (is.null(P(sim)$crpsWeights)) "crpsWeights",
-                         fireSenseUtils::omitNullArgs(covCentre = sim$covCentre_spread,
-                                                      climateRef = sim$climateRef_spread,
-                                                      runawayBufferMultiple = runawayMultiple)))
-  } else {
-    P(sim)$firstBlockThresh
-  }
-  ## a calibration cached before the passing sets existed is a bare number
-  if (!is.list(calibration)) calibration <- list(thresh = calibration, passingPars = NULL)
-  ## after Cache(), so a cached NA is converted too
-  thresh <- calibration$thresh
-  list(thresh = noEarlyStopThreshold(thresh, runName = P(sim)$.runName, nTrials = P(sim)$iterThresh),
-       passingPars = calibration$passingPars)
 }
 
 #' Default `upper` or `lower` bounds for DEoptim

@@ -1,7 +1,7 @@
 ## spreadLink = "powerLaw": p = p_c - (p_c - lowerSpreadProb) * exp(-x / powerLawGamma) (fireSenseUtils::powerLawLink()).
 ## p_c is the fitted maxAsymptote, bounded above per ELF by the calibrated p_c50 + powerLawPcMargin; gamma is calibrated on
 ## the ELF's flammable map unless powerLawGamma is a number (fixed, not fitted). The
-## link goes to the fit, the threshold calibration, the held-out simulation and the ledger row, which records it with
+## link goes to the fit, the held-out simulation and the ledger row, which records it with
 ## gamma. With the default "ceiling" nothing changes. Helpers: helper-spreadLink.R.
 
 gammaCol <- fireSenseUtils::spreadFitPowerLawGammaTxt
@@ -16,8 +16,7 @@ test_that("the defaults leave the fit, the ledger row and the cache keys as they
   expect_identical(unname(out$rec$deArgs$upper[["maxAsymptote"]]), fireSenseUtils::spreadProbCeiling)
   expect_identical(unname(out$rec$deArgs$lower[["maxAsymptote"]]), fireSenseUtils::spreadProbFloor)
   off <- omitArgsCO()
-  expect_true(all(vapply(off$omit, function(o) "powerLawGamma" %in% o, logical(1))))
-  expect_null(off$rswd$link)
+  expect_true("powerLawGamma" %in% off$omit[[1]])
 })
 
 test_that("the defaults are the powerLaw link, gamma calibrated, no runaway penalty", {
@@ -114,19 +113,12 @@ test_that("an unknown spreadLink, powerLaw with the upper-tail link, and a bad g
   expect_error(run(list(spreadLink = "powerLaw", powerLawGamma = c(1, 2))), "powerLawGamma must be one positive number")
 })
 
-test_that("the threshold calibration is given the link and gamma, and gamma is in the cache keys only with powerLaw", {
+test_that("gamma is in the fit's cache key only with powerLaw, and the debug objective call is given it", {
   on <- omitArgsCO(list(spreadLink = "powerLaw", powerLawGamma = 2.5))
-  expect_false(any(vapply(on$omit, function(o) "powerLawGamma" %in% o, logical(1))))
-  expect_identical(on$rswd$link, "powerLaw")
-  expect_identical(on$rswd$powerLawGamma, 2.5)
+  expect_false("powerLawGamma" %in% on$omit[[1]])
   src <- paste(deparse(body(runSpreadWithoutDEoptim)), collapse = "\n")
-  ## the debug objective call, the gates, and the trials
-  expect_equal(lengths(regmatches(src, gregexpr("powerLawGamma = powerLawGamma", src))), 3L)
+  expect_equal(lengths(regmatches(src, gregexpr("powerLawGamma = powerLawGamma", src))), 1L)
   expect_identical(formals(runSpreadWithoutDEoptim)$powerLawGamma, quote(fireSenseUtils::spreadPowerLawGamma))
-  ## with gamma calibrated, the calibrated one goes to the threshold calibration
-  cal <- omitArgsCO(list(spreadLink = "powerLaw"))
-  expect_gt(cal$rswd$powerLawGamma, 0)
-  expect_false(isTRUE(all.equal(cal$rswd$powerLawGamma, 2.5)))
 })
 
 test_that("the held-out simulation and the fold's ledger row use the fit's link and gamma", {
@@ -200,15 +192,14 @@ test_that("powerLawShape defaults to 1, which leaves the cache keys as they were
   d <- fittedCO(list(spreadLink = "powerLaw"))
   expect_identical(d$rec$deArgs$powerLawShape, 1)
   expect_identical(d$rec$geoArgs$studyAreaFireSense[[shapeCol]], 1)
-  expect_true(all(vapply(omitArgsCO(list(spreadLink = "powerLaw"))$omit, function(o) "powerLawShape" %in% o, logical(1))))
+  expect_true("powerLawShape" %in% omitArgsCO(list(spreadLink = "powerLaw"))$omit[[1]])
   ## the default link writes neither the gamma nor the shape column
   expect_false(shapeCol %in% names(fittedCO()$rec$geoArgs$studyAreaFireSense))
   s <- fittedCO(list(spreadLink = "powerLaw", powerLawShape = 2))
   expect_identical(s$rec$deArgs$powerLawShape, 2)
   expect_identical(s$rec$geoArgs$studyAreaFireSense[[shapeCol]], 2)
   on <- omitArgsCO(list(spreadLink = "powerLaw", powerLawShape = 2))
-  expect_false(any(vapply(on$omit, function(o) "powerLawShape" %in% o, logical(1))))
-  expect_identical(on$rswd$powerLawShape, 2)
+  expect_false("powerLawShape" %in% on$omit[[1]])
   ## climateOutside: no shape column
   expect_false(shapeCol %in% names(fittedCO(list(spreadLink = "climateOutside"))$rec$geoArgs$studyAreaFireSense))
 })

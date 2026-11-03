@@ -1,49 +1,35 @@
 ## The objective settings must reach every evaluation of the objective: the fit (runDEoptim(), which
-## also re-scores the final population) AND the threshold calibration (runSpreadWithoutDEoptim()).
-## The calibration used to leave `weighted` at runSpreadWithoutDEoptim()'s default TRUE and never
-## passed `sizeLik`, so the threshold came from a different objective than the one it is used in.
-
-recordingRSWD <- function(rec, value) {
-  f <- function() {
-    rec$args <- as.list(environment())
-    value
-  }
-  formals(f) <- formals(runSpreadWithoutDEoptim)
-  f
-}
+## also re-scores the final population) AND the debug event (runSpreadWithoutDEoptim()).
+## Helpers: debugArgs() and fitArgs() in helper-debugEvent.R.
 
 settings <- list(weighted = "sqrt", sizeLik = "t", sizeLikDf = 7, adWeight = 2,
                  yearAreaWeight = "auto", areaDistWeight = "auto", jumpTries = 20, jumpMeanDist = 4)
 
-test_that("the calibration and the fit get the same objective settings", {
-  rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(c(list(firstBlockThresh = NULL), settings))
-  mockFitAndLedger(sim, fitRec)
-  mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
-  sim <- suppressMessages(SpaDES.core::spades(sim))
+test_that("the debug call and the fit get the same objective settings", {
+  dbg <- debugArgs(settings)
+  fit <- fitArgs(settings)
   for (nm in names(settings)) {
-    expect_identical(rec$args[[nm]], settings[[nm]], label = paste("calibration", nm))
-    expect_identical(fitRec$deArgs[[nm]], settings[[nm]], label = paste("fit", nm))
+    expect_identical(dbg[[nm]], settings[[nm]], label = paste("debug", nm))
+    expect_identical(fit[[nm]], settings[[nm]], label = paste("fit", nm))
   }
-  expect_null(rec$args$link)       # logistic3p is the objective's default link, NULL
-  expect_null(fitRec$deArgs$link)
+  expect_null(dbg$link)       # logistic3p is the objective's default link, NULL
+  expect_null(fit$link)
 })
 
 test_that("runSpreadWithoutDEoptim() hands the settings to the objective", {
   seen <- list()
-  local_mocked_bindings(.objfunSpreadFit = function(par, thresh, ...) {
+  local_mocked_bindings(.objfunSpreadFit = function(par, ...) {
     seen[[length(seen) + 1L]] <<- list(...)
-    1000 + thresh
+    1000
   })
   land <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 2400, ymin = 0, ymax = 2400)
   fires <- list(year2001 = data.frame(size = c(5L, 12L), date = "year2001", ids = 11:12, cells = c(3L, 56L)),
                 year2002 = data.frame(size = c(3L, 10L), date = "year2002", ids = 21:22, cells = c(89L, 12L)))
-  ## weighted = "sqrt" used to reach `log(size) ^ weighted` in the rough threshold estimate and error
   suppressMessages(utils::capture.output(do.call(runSpreadWithoutDEoptim, c(list(
-    iterThresh = 3L, lower = c(a = 0), upper = c(a = 1), fireSense_spreadFormula = "~ 0 + a",
+    nSets = 3L, lower = c(a = 0), upper = c(a = 1), fireSense_spreadFormula = "~ 0 + a",
     flammableRTM = land, annualDTx1000 = list(), nonAnnualDTx1000 = list(), fireBufferedListDT = list(),
     historicalFires = fires, covMinMax = NULL, objfunFireReps = 2L, maxFireSpread = 0.28,
-    tests = "SNLL_FS", formulaToFit = "~ 0 + a", mode = "debug", seed = 1L, escapeSizeHa = 50, doObjFunAssertions = FALSE,
+    tests = "crps", formulaToFit = "~ 0 + a", seed = 1L, escapeSizeHa = 50, doObjFunAssertions = FALSE,
     link = "logistic3pUpper"), settings))))
   expect_length(seen, 3L)
   for (nm in names(settings))
@@ -52,66 +38,45 @@ test_that("runSpreadWithoutDEoptim() hands the settings to the objective", {
 })
 
 test_that("the new terms and jumping are on by default", {
-  rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(list(firstBlockThresh = NULL))
-  mockFitAndLedger(sim, fitRec)
-  mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
-  sim <- suppressMessages(SpaDES.core::spades(sim))
-  for (a in list(rec$args, fitRec$deArgs)) {
+  for (a in list(debugArgs(), fitArgs())) {
     expect_identical(a$yearAreaWeight, "auto")
     expect_identical(a$areaDistWeight, "auto")
     expect_identical(a$jumpTries, 20)
     expect_identical(a$jumpMeanDist, 3)
     expect_identical(a$penaliseRunaways, TRUE)
-    expect_identical(a$weighted, FALSE)   # the module's default, now also in the calibration
-  }
-  for (a in list(rec$args, fitRec$deArgs)) {
+    expect_identical(a$weighted, FALSE)
     expect_identical(a$runawayEdgeFrac, 0.01)
     expect_identical(a$runawayEdgeMin, 3L)
     expect_null(a$runawayBufferMultiple)    # NA: fireSenseUtils does not warn about it
   }
 })
 
-test_that("runawayBufferMultiple = NA reaches the fit and the calibration as NULL", {
-  rec <- new.env(); fitRec <- new.env()
-  ## NA is the default now: iterThresh differs from the test above, so its cached threshold is not reused
-  sim <- toySim(list(stopIfNoPreRunFit = FALSE, firstBlockThresh = NULL, runawayBufferMultiple = NA_real_,
-                     iterThresh = 5L))
-  mockFitAndLedger(sim, fitRec)
-  mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
-  sim <- suppressMessages(SpaDES.core::spades(sim))
-  expect_true(exists("args", rec) && "runawayBufferMultiple" %in% names(rec$args))
-  expect_null(rec$args$runawayBufferMultiple)
-  expect_true("runawayBufferMultiple" %in% names(fitRec$deArgs))
-  expect_null(fitRec$deArgs$runawayBufferMultiple)
+test_that("runawayBufferMultiple = NA reaches the fit and the debug call as NULL", {
+  dbg <- debugArgs(list(runawayBufferMultiple = NA_real_))
+  fit <- fitArgs(list(runawayBufferMultiple = NA_real_))
+  expect_true("runawayBufferMultiple" %in% names(dbg))
+  expect_null(dbg$runawayBufferMultiple)
+  expect_true("runawayBufferMultiple" %in% names(fit))
+  expect_null(fit$runawayBufferMultiple)
   expect_null(formals(runSpreadWithoutDEoptim)$runawayBufferMultiple)
 })
 
-test_that("penaliseRunaways = FALSE reaches the fit, the calibration and the objective", {
-  ## FALSE only: the default TRUE is asserted in "the new terms and jumping are on by default", and a
-  ## second TRUE call here would hit that test's cached threshold and never reach the mock
-  for (value in list(FALSE)) {
-    rec <- new.env(); fitRec <- new.env()
-    sim <- toySim(list(firstBlockThresh = NULL, penaliseRunaways = value))
-    mockFitAndLedger(sim, fitRec)
-    mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
-    sim <- suppressMessages(SpaDES.core::spades(sim))
-    expect_identical(rec$args$penaliseRunaways, value)
-    expect_identical(fitRec$deArgs$penaliseRunaways, value)
-  }
+test_that("penaliseRunaways = FALSE reaches the fit, the debug call and the objective", {
+  expect_identical(debugArgs(list(penaliseRunaways = FALSE))$penaliseRunaways, FALSE)
+  expect_identical(fitArgs(list(penaliseRunaways = FALSE))$penaliseRunaways, FALSE)
   expect_identical(formals(runSpreadWithoutDEoptim)$penaliseRunaways, TRUE)
   seen <- list()
-  local_mocked_bindings(.objfunSpreadFit = function(par, thresh, ...) {
+  local_mocked_bindings(.objfunSpreadFit = function(par, ...) {
     seen[[length(seen) + 1L]] <<- list(...)
-    1000 + thresh
+    1000
   })
   land <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 2400, ymin = 0, ymax = 2400)
   fires <- list(year2001 = data.frame(size = c(5L, 12L), date = "year2001", ids = 11:12, cells = c(3L, 56L)))
   suppressMessages(utils::capture.output(runSpreadWithoutDEoptim(
-    iterThresh = 3L, lower = c(a = 0), upper = c(a = 1), fireSense_spreadFormula = "~ 0 + a",
+    nSets = 3L, lower = c(a = 0), upper = c(a = 1), fireSense_spreadFormula = "~ 0 + a",
     flammableRTM = land, annualDTx1000 = list(), nonAnnualDTx1000 = list(), fireBufferedListDT = list(),
     historicalFires = fires, covMinMax = NULL, objfunFireReps = 2L, maxFireSpread = 0.28,
-    tests = "SNLL_FS", formulaToFit = "~ 0 + a", mode = "debug", seed = 1L, escapeSizeHa = 50, doObjFunAssertions = FALSE,
+    tests = "crps", formulaToFit = "~ 0 + a", seed = 1L, escapeSizeHa = 50, doObjFunAssertions = FALSE,
     penaliseRunaways = FALSE, runawayEdgeFrac = 0.5, runawayEdgeMin = 7L, runawayBufferMultiple = 3)))
   expect_true(length(seen) > 0)
   expect_true(all(vapply(seen, function(a) identical(a$runawayBufferMultiple, 3), logical(1))))
@@ -120,25 +85,16 @@ test_that("penaliseRunaways = FALSE reaches the fit, the calibration and the obj
   expect_true(all(vapply(seen, function(a) identical(a$penaliseRunaways, FALSE), logical(1))))
 })
 
-test_that("the CRPS objective's options reach the fit and the calibration, and are absent at their defaults", {
-  crps <- list(DEoptimTests = "crps", crpsWeights = list(top10 = 5), gateRefusal = "simulate")
-  rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(c(list(firstBlockThresh = NULL), crps))
-  mockFitAndLedger(sim, fitRec)
-  mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
-  sim <- suppressMessages(SpaDES.core::spades(sim))
-  for (a in list(rec$args, fitRec$deArgs)) {
+test_that("the CRPS objective's options reach the fit and the debug call, and are absent from the fit at their defaults", {
+  crps <- list(crpsWeights = list(top10 = 5), gateRefusal = "simulate")
+  for (a in list(debugArgs(crps), fitArgs(crps))) {
     expect_identical(a$tests, "crps")
     expect_identical(a$crpsWeights, list(top10 = 5))
     expect_identical(a$gateRefusal, "simulate")
   }
-  ## defaults: the fit's arguments are what they were (no new names), the calibration gets the defaults
-  rec <- new.env(); fitRec <- new.env()
-  sim <- toySim(list(firstBlockThresh = NULL, iterThresh = 6L))
-  mockFitAndLedger(sim, fitRec)
-  mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
-  sim <- suppressMessages(SpaDES.core::spades(sim))
-  expect_false(any(c("crpsWeights", "gateRefusal") %in% names(fitRec$deArgs)))
-  expect_null(rec$args$crpsWeights)
-  expect_identical(rec$args$gateRefusal, "minLik")
+  ## defaults: the fit's arguments are what they were (no new names), the debug call gets the defaults
+  expect_false(any(c("crpsWeights", "gateRefusal") %in% names(fitArgs())))
+  dbg <- debugArgs()
+  expect_null(dbg$crpsWeights)
+  expect_identical(dbg$gateRefusal, "minLik")
 })

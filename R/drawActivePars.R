@@ -3,8 +3,7 @@
 #' Draws sets uniformly between `lower` and `upper` and keeps those `gates` accepts, until `n` are kept
 #' or `maxDraws` have been drawn. Uniform draws over the wide bounds mostly saturate the logistic
 #' (spreadProb at its asymptote or floor everywhere), which the objective refuses ("Too burny a
-#' landscape", "Not spread out enough"); for ELF 14.3 fold 1 only about 7% of them pass. A trial the
-#' objective refuses has no usable SNLL, so calibrating on such draws can leave no usable trial and no threshold.
+#' landscape", "Not spread out enough"); for ELF 14.3 fold 1 only about 7% of them pass.
 #'
 #' The draws are one `runif()` stream from the seed set by the caller, so the result is reproducible; the
 #' batch sizes depend only on how many draws were accepted so far, which is deterministic. Drawing
