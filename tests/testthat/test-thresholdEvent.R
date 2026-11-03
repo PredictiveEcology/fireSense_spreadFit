@@ -68,3 +68,24 @@ test_that("one option, fireSenseUtils.assertions, sets the objective's diagnosti
     expect_identical(rec$args$doObjFunAssertions, opt)
   }
 })
+
+test_that("an objective without an early stop skips the threshold calibration", {
+  fitRec <- new.env(); calls <- 0L
+  sim <- toySim(list(firstBlockThresh = NULL, DEoptimTests = "crps"))
+  mockFitAndLedger(sim, fitRec)
+  mockInModule(sim, runSpreadWithoutDEoptim = function(...) { calls <<- calls + 1L; stop("the calibration must not run") })
+  expect_message(sim <- SpaDES.core::spades(sim), "no early stop")
+  expect_identical(calls, 0L)
+  expect_identical(fitRec$deArgs$thresh, Inf)
+  expect_null(fitRec$deArgs$initialpop)
+})
+
+test_that("an objective with an early stop is still calibrated, once", {
+  rec <- new.env(); fitRec <- new.env(); calls <- 0L
+  sim <- toySim(list(firstBlockThresh = NULL, DEoptimTests = c("adTest", "SNLL_FS")))
+  mockFitAndLedger(sim, fitRec)
+  mockInModule(sim, runSpreadWithoutDEoptim = function(...) { calls <<- calls + 1L; 777 })
+  sim <- suppressMessages(SpaDES.core::spades(sim))
+  expect_identical(calls, 1L)
+  expect_identical(as.vector(fitRec$deArgs$thresh), 777)
+})

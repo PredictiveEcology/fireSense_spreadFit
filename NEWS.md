@@ -1,5 +1,7 @@
 # fireSense_spreadFit (development version)
 
+* The threshold calibration is skipped when the objective has no early stop (`fireSenseUtils::objectiveHasEarlyStop(DEoptimTests)` is `FALSE`, e.g. `DEoptimTests = "crps"`): `estimateFirstBlockThreshold()` returns `thresh = Inf` and no passing sets, as the fit already got from the calibration's all-`NA` result, without its 96 objective evaluations (2.7-7.4 h per ELF under `"crps"`). Fits are unchanged. Needs a `fireSenseUtils` with `objectiveHasEarlyStop()` (`Depends-on` fireSenseUtils PR; the `reqdPkgs` floor follows its bump).
+
 * Over several ELFs (`.ELFind` of a `studyAreaLarge`, from `fireSense_ELFs`), `doFit` needs a stored fit for each (only the first was checked), and a fit of several stops before anything runs: a fit is of one ELF.
 
 * `doFit` defaults to FALSE (was NA): a run never fits unless asked. With no ledger row for the ELF (under `fitFileSuffix`), `init` stops before any DEoptim call, with an error naming the ELF and the ledger suffix and saying how to fit (`doFit = NA`: fit when there is no stored fit; `TRUE`: always fit). A user who adds fireSense to a project only to predict can no longer start a fit by accident. The deprecated `refitExisting` and `stopIfNoPreRunFit` override the default `doFit = FALSE`, as they did `NA` (needs fireSenseUtils with the matching `resolveDoFit()`).

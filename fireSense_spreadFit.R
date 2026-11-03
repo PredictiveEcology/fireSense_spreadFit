@@ -69,7 +69,7 @@ defineModule(sim, list(
                                  "fires; weights in `crpsWeights`; no annual-area term, no early stop). The 2026-10-28 profile used it alone,",
                                  "with `gateRefusal = 'simulate'` and `objfunFireReps = 100L`. Passed to `tests` in",
                                  "`fireSenseUtils::.objfunSpreadFit()`. The threshold calibration has no first-block value to",
-                                 "calibrate under `'crps'`: it warns and the fit runs without an early stop.")),
+                                 "calibrate under `'crps'`: the calibration is skipped and the fit runs without an early stop.")),
     defineParameter("crpsWeights", "list", default = NULL,
                     desc = paste("Named list of the multipliers of the `'crps'` objective's terms: `fire`, `adTest`,",
                                  "`areaDist`, `totalArea`, `top10`. Names left out take `fireSenseUtils::crpsWeightsDefault()`",
@@ -1097,7 +1097,9 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 #' The early-stop threshold of the objective function, calibrated on the years in `covs`
 #'
 #' Uses `firstBlockThresh` if supplied; otherwise calibrates it with a cached
-#' `runSpreadWithoutDEoptim()` call on `covs`. The threshold bounds the per-fire score of the two
+#' `runSpreadWithoutDEoptim()` call on `covs`, unless the objective has no early stop
+#' (`fireSenseUtils::objectiveHasEarlyStop()`, e.g. `DEoptimTests = "crps"`): then there is nothing to
+#' calibrate and the threshold is `Inf`. The threshold bounds the per-fire score of the two
 #' largest fire years, per fire, so it does not depend on how many fires they hold: the
 #' cross-validation folds reuse the full data's (`fitAndScoreFold()`).
 #'
@@ -1108,7 +1110,14 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 #'   `NULL` if there are none, if `firstBlockThresh` was supplied, or if the cached calibration predates them
 #'   (it is a bare number). Separate, so `thresh` stays the plain number in DEoptim's cache key.
 estimateFirstBlockThreshold <- function(sim, covs) {
-  calibration <- if (is.null(Par$firstBlockThresh) || is.na(Par$firstBlockThresh)) {
+  uncalibrated <- is.null(Par$firstBlockThresh) || is.na(Par$firstBlockThresh)
+  calibration <- if (uncalibrated && !fireSenseUtils::objectiveHasEarlyStop(P(sim)$DEoptimTests)) {
+    ## no first-block value to calibrate on, and the fit would not use a threshold: the calibration's
+    ## 96 objective evaluations all came back NA and ended as Inf
+    message("Skipping the early-stop threshold calibration: the objective (DEoptimTests = ",
+            paste(P(sim)$DEoptimTests, collapse = ", "), ") has no early stop")
+    list(thresh = Inf, passingPars = NULL)
+  } else if (uncalibrated) {
     message("Estimating threshold for inside .objFunSpreadFit -- This can be supplied via firstBlockThresh parameter")
 
     runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)

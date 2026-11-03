@@ -127,11 +127,11 @@ test_that("the CRPS objective's options reach the fit and the calibration, and a
   mockFitAndLedger(sim, fitRec)
   mockInModule(sim, runSpreadWithoutDEoptim = recordingRSWD(rec, 777))
   sim <- suppressMessages(SpaDES.core::spades(sim))
-  for (a in list(rec$args, fitRec$deArgs)) {
-    expect_identical(a$tests, "crps")
-    expect_identical(a$crpsWeights, list(top10 = 5))
-    expect_identical(a$gateRefusal, "simulate")
-  }
+  ## the CRPS objective has no early stop, so its threshold is not calibrated (test-thresholdEvent.R)
+  expect_null(rec$args)
+  expect_identical(fitRec$deArgs$tests, "crps")
+  expect_identical(fitRec$deArgs$crpsWeights, list(top10 = 5))
+  expect_identical(fitRec$deArgs$gateRefusal, "simulate")
   ## defaults: the fit's arguments are what they were (no new names), the calibration gets the defaults
   rec <- new.env(); fitRec <- new.env()
   sim <- toySim(list(firstBlockThresh = NULL, iterThresh = 6L))
