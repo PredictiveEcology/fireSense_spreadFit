@@ -239,10 +239,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> DEoptimTests </td>
    <td style="text-align:left;"> character </td>
-   <td style="text-align:left;"> adTest, .... </td>
+   <td style="text-align:left;"> crps </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Any of `'SNLL_FS'`, `'adTest'` (pooled Anderson-Darling on fire sizes) and `'pitAD'` (rank-based Anderson-Darling: each fire's observed size ranked among its replicates; does not depend on the fit buffers), or `'crps'`: a different objective of proper scores (per-fire CRPS on log size, adTest, areaDist, CRPS of the log total area, CRPS of the 10 largest fires; weights in `crpsWeights`; no annual-area term, no early stop). The 2026-10-28 profile used it alone, with `gateRefusal = 'simulate'` and `objfunFireReps = 100L`. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. The threshold calibration has no first-block value to calibrate under `'crps'`: it warns and the fit runs without an early stop. </td>
+   <td style="text-align:left;"> `'crps'` (default): an objective of proper scores (per-fire CRPS on log size, adTest, areaDist, CRPS of the log total area, CRPS of the 10 largest fires; weights in `crpsWeights`; no annual-area term). Or any of `'adTest'` (pooled Anderson-Darling on fire sizes) and `'pitAD'` (rank-based Anderson-Darling: each fire's observed size ranked among its replicates; does not depend on the fit buffers). The 2026-10-28 profile used `'crps'` alone, with `gateRefusal = 'simulate'` and `objfunFireReps = 100L`. `'SNLL_FS'` was removed and stops the fit. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -278,7 +278,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Passed to `fireSenseUtils::.objfunSpreadFit()` and to the threshold calibration; TRUE runs diagnostics but is slower; FALSE for operational runs. The default follows `options(fireSenseUtils.assertions = )`. </td>
+   <td style="text-align:left;"> Passed to `fireSenseUtils::.objfunSpreadFit()`; TRUE runs diagnostics but is slower; FALSE for operational runs. The default follows `options(fireSenseUtils.assertions = )`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -296,7 +296,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> calibration </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Where DEoptim's starting population comes from. 'calibration' (default): the threshold calibration's passing sets, then uniform draws, or DEoptim's own draw when there are none. 'emulator': `nCoresNeeded` good, spread-out points evaluated by a Gaussian-process emulator search of the fit's objective (~1,000-1,600 real evaluations on the fit's `cores`, between `lower` and `upper`, wide one-sided parameters on a log1p scale; a global phase, then trust-region rounds; see `emulatorControl`). The search is cached. A fit seeded this way stops sooner: `convergence` defaults to `minGenerations = 200` and `window = 200` (elements of the `convergence` parameter win). The `initialpop` parameter, when set, wins over both. </td>
+   <td style="text-align:left;"> Where DEoptim's starting population comes from. 'calibration' (default; the name is historical): DEoptim's own draw, or, when no member of it passes the objective's spreadProb gates, a start of gate-passing draws. 'emulator': `nCoresNeeded` good, spread-out points evaluated by a Gaussian-process emulator search of the fit's objective (~1,000-1,600 real evaluations on the fit's `cores`, between `lower` and `upper`, wide one-sided parameters on a log1p scale; a global phase, then trust-region rounds; see `emulatorControl`). The search is cached. A fit seeded this way stops sooner: `convergence` defaults to `minGenerations = 200` and `window = 200` (elements of the `convergence` parameter win). The `initialpop` parameter, when set, wins over both. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -324,24 +324,6 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> integer defining the maximum number of iterations allowed (DEoptim optimizer). A ceiling: clusters (&gt;= 0.0.46) stops the fit earlier, once the population's median value has stopped improving. </td>
-   <td style="text-align:left;"> TRUE </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> iterThresh </td>
-   <td style="text-align:left;"> integer </td>
-   <td style="text-align:left;"> 96 </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Number of random parameter sets tried when calibrating `firstBlockThresh`. </td>
-   <td style="text-align:left;"> TRUE </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> thresholdMargin </td>
-   <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 2 </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> When calibrating `firstBlockThresh`, the threshold is this multiple of the best usable trial's first-block value per fire (trials run with no early stop; a trial that saturates spreadProb is not usable). Must be &gt;= 1. With 2, known-truth simulations of three ELFs never stopped a parameter set near the truth (2026-10-23). </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -449,7 +431,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA (default): unchanged behaviour, governed by `mode`. `1` or `2`: run ONLY that cross-validation fold, as its own job. `init` then schedules `spreadFitPrepare`, `estimateThreshold` and `crossValidate` -- never `run`, so the full fit and the ledger write never happen, and the ledger (`doFit`) is not consulted. `crossValidate` fits on the OTHER fold's years and scores this fold's held-out years (`cvFolds()` in `R/fitSpread.R`), and writes `spreadFitHeldOut_&lt;.runName&gt;_fold&lt;heldOutFold&gt;.rds` instead of `spreadFitHeldOut_&lt;.runName&gt;.rds`. A run script stops after `crossValidate`: `events = list(.stopAfter = list(fireSense_spreadFit = "crossValidate"))`. Any other value is an error. </td>
+   <td style="text-align:left;"> NA (default): unchanged behaviour, governed by `mode`. `1` or `2`: run ONLY that cross-validation fold, as its own job. `init` then schedules `spreadFitPrepare` and `crossValidate` -- never `run`, so the full fit and the ledger write never happen, and the ledger (`doFit`) is not consulted. `crossValidate` fits on the OTHER fold's years and scores this fold's held-out years (`cvFolds()` in `R/fitSpread.R`), and writes `spreadFitHeldOut_&lt;.runName&gt;_fold&lt;heldOutFold&gt;.rds` instead of `spreadFitHeldOut_&lt;.runName&gt;.rds`. A run script stops after `crossValidate`: `events = list(.stopAfter = list(fireSense_spreadFit = "crossValidate"))`. Any other value is an error. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -557,7 +539,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> A simulated fire that burns an open edge pixel of its year's buffers (one next to flammable land outside every buffer, `fireSenseUtils::bufferOpen()`) is cut: it has no density at the observed size in the size likelihood, and the other terms score the size it reached. TRUE also stops such a fire at the first open pixel of its own buffer, which saves time. Passed to `fireSenseUtils::runDEoptim()`; the threshold calibration uses the same setting. </td>
+   <td style="text-align:left;"> A simulated fire that burns an open edge pixel of its year's buffers (one next to flammable land outside every buffer, `fireSenseUtils::bufferOpen()`) is cut: it has no density at the observed size in the size likelihood, and the other terms score the size it reached. TRUE also stops such a fire at the first open pixel of its own buffer, which saves time. Passed to `fireSenseUtils::runDEoptim()`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -723,15 +705,6 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> firstBlockThresh </td>
-   <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;">  </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> The objective's early stop: a parameter set whose first block of years (the two with the most area burned) scores above this per fire is abandoned. NULL (default) calibrates it (`iterThresh`, `thresholdMargin`) once per ELF, and the cross-validation folds reuse it. Replaces `SNLL_FS_thresh`, which was per year. </td>
-   <td style="text-align:left;"> TRUE </td>
-  </tr>
-  <tr>
    <td style="text-align:left;"> refitExisting </td>
    <td style="text-align:left;"> logical </td>
    <td style="text-align:left;"> NA </td>
@@ -844,9 +817,8 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
 
 ### Events
 
-- `init`: schedules `spreadFitPrepare` and, if the polygon needs a fit, `estimateThreshold` then `run` (or `debug` when `mode` includes `"debug"`; `debug` and `plot` after `run` when it includes `"visualize"`);
+- `init`: schedules `spreadFitPrepare` and, if the polygon needs a fit, `run` (or `debug` when `mode` includes `"debug"`; `debug` and `plot` after `run` when it includes `"visualize"`);
 - `spreadFitPrepare`: sets default `lower`/`upper`, computes `covMinMax_spread` and `lociList`, converts covariates to integers (x 1000);
-- `estimateThreshold`: uses `firstBlockThresh`, or calibrates it from `iterThresh` random parameter sets (cached, with a seed derived from `.ELFind`);
 - `run`: runs DEoptim (cached per generation) and writes the polygon's row to the ledger;
 - `debug`: evaluates the objective function without DEoptim;
 - `plot`: histograms of the final population;
@@ -882,7 +854,7 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-sprea
   <tr>
    <td style="text-align:left;"> climateRef_spread </td>
    <td style="text-align:left;"> list </td>
-   <td style="text-align:left;"> With `spreadLink = 'climateOutside'`, the reference value of each climate covariate of the formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit's pixel-years (`fireSenseUtils::spreadClimateRef()`), the climate at which the spread probability is the fuel ceiling's p0. Given to the fit, the threshold, the validation and the ledger row. `NULL` with `spreadLink = 'ceiling'`. </td>
+   <td style="text-align:left;"> With `spreadLink = 'climateOutside'`, the reference value of each climate covariate of the formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit's pixel-years (`fireSenseUtils::spreadClimateRef()`), the climate at which the spread probability is the fuel ceiling's p0. Given to the fit, the validation and the ledger row. `NULL` with `spreadLink = 'ceiling'`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> powerLawCalibration </td>
