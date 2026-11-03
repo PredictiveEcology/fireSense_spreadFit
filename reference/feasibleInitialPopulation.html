@@ -3,8 +3,7 @@
 ELF whose feasible region is a sliver of that box, the start has no member the objective accepts, and
 DE never finds one: a trial is kept when it is no worse than its parent, and every value is the
 fail value (ELF 6.6.2, 2026-10-20: 0 of 2000 uniform draws passed the gates, with two climate terms
-each drawn over 0-50). This draws as the calibration does (drawActivePars(), with the same
-gates) and fills the rest of the population with uniform draws: DE's p-best strategy pulls the
+each drawn over 0-50). This draws by rejection (drawActivePars()) and fills the rest of the population with uniform draws: DE's p-best strategy pulls the
 population towards its accepted members, so a few are enough to start from."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -63,8 +62,7 @@ population towards its accepted members, so a few are enough to start from."><!-
 ELF whose feasible region is a sliver of that box, the start has no member the objective accepts, and
 DE never finds one: a trial is kept when it is no worse than its parent, and every value is the
 fail value (ELF 6.6.2, 2026-10-20: 0 of 2000 uniform draws passed the gates, with two climate terms
-each drawn over 0-50). This draws as the calibration does (<code><a href="drawActivePars.html">drawActivePars()</a></code>, with the same
-<code>gates</code>) and fills the rest of the population with uniform draws: DE's p-best strategy pulls the
+each drawn over 0-50). This draws by rejection (<code><a href="drawActivePars.html">drawActivePars()</a></code>) and fills the rest of the population with uniform draws: DE's p-best strategy pulls the
 population towards its accepted members, so a few are enough to start from.</p>
     </div>
 
@@ -108,7 +106,7 @@ draws. 4 is DEoptim's smallest population.</p></dd>
 
 
 <dt id="arg-maxdrawspermember">maxDrawsPerMember<a class="anchor" aria-label="anchor" href="#arg-maxdrawspermember"></a></dt>
-<dd><p>integer; the calibration's rule (<code>runSpreadWithoutDEoptim(maxDrawsPerTrial)</code>).</p></dd>
+<dd><p>integer; cap on the draws per member wanted.</p></dd>
 
 
 <dt id="arg-cores">cores<a class="anchor" aria-label="anchor" href="#arg-cores"></a></dt>

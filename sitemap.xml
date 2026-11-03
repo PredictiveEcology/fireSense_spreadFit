@@ -27,7 +27,6 @@
 <url><loc>/reference/emulatorStartPopulation.html</loc></url>
 <url><loc>/reference/emulatorTrustBox.html</loc></url>
 <url><loc>/reference/emulatorTrustStep.html</loc></url>
-<url><loc>/reference/estimateFirstBlockThreshold.html</loc></url>
 <url><loc>/reference/estimateSpreadParams.html</loc></url>
 <url><loc>/reference/feasibleInitialPopulation.html</loc></url>
 <url><loc>/reference/fitAndScoreFold.html</loc></url>
@@ -42,9 +41,6 @@
 <url><loc>/reference/makeFitDiagnostics.html</loc></url>
 <url><loc>/reference/mustFitThisPolygon.html</loc></url>
 <url><loc>/reference/needsPowerLawCalibration.html</loc></url>
-<url><loc>/reference/noEarlyStopThreshold.html</loc></url>
-<url><loc>/reference/passingPars.html</loc></url>
-<url><loc>/reference/pickThreshold.html</loc></url>
 <url><loc>/reference/powerLawGammaOf.html</loc></url>
 <url><loc>/reference/runSpreadWithoutDEoptim.html</loc></url>
 <url><loc>/reference/selectEmulatorBatch.html</loc></url>
@@ -54,11 +50,7 @@
 <url><loc>/reference/spreadFitValidationFigures.html</loc></url>
 <url><loc>/reference/spreadGates.html</loc></url>
 <url><loc>/reference/startPopulation.html</loc></url>
-<url><loc>/reference/stopIfTrialsErrored.html</loc></url>
 <url><loc>/reference/thresholdForks.html</loc></url>
-<url><loc>/reference/trialFirstBlock.html</loc></url>
-<url><loc>/reference/usableTrials.html</loc></url>
 <url><loc>/reference/useEmulator.html</loc></url>
-<url><loc>/reference/withPassingFirst.html</loc></url>
 </urlset>
 

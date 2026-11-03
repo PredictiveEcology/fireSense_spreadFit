@@ -63,7 +63,7 @@ members' fires, on the same workers; <code><a href="makeFitDiagnostics.html">mak
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">fitSpread</span><span class="op">(</span><span class="va">sim</span>, <span class="va">covs</span>, <span class="va">thresh</span>, <span class="va">runName</span>, diagnostics <span class="op">=</span> <span class="cn">TRUE</span>, passingPars <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">fitSpread</span><span class="op">(</span><span class="va">sim</span>, <span class="va">covs</span>, <span class="va">runName</span>, diagnostics <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -78,10 +78,6 @@ members' fires, on the same workers; <code><a href="makeFitDiagnostics.html">mak
 <dd><p>the covariates as integers x 1000 (<code>mod$covsX1000</code>, or a subset of its years).</p></dd>
 
 
-<dt id="arg-thresh">thresh<a class="anchor" aria-label="anchor" href="#arg-thresh"></a></dt>
-<dd><p>the objective's early-stop threshold, <code>mod$thresh</code>.</p></dd>
-
-
 <dt id="arg-runname">runName<a class="anchor" aria-label="anchor" href="#arg-runname"></a></dt>
 <dd><p>character; labels the run and its cache entry. Also names the fit's progress file,
 <code>DEoptimProgress_&lt;runName&gt;.csv</code> in the module's output folder.</p></dd>
@@ -90,19 +86,11 @@ members' fires, on the same workers; <code><a href="makeFitDiagnostics.html">mak
 <dt id="arg-diagnostics">diagnostics<a class="anchor" aria-label="anchor" href="#arg-diagnostics"></a></dt>
 <dd><p>logical; <code>FALSE</code> skips the profile and the simulations.</p></dd>
 
-
-<dt id="arg-passingpars">passingPars<a class="anchor" aria-label="anchor" href="#arg-passingpars"></a></dt>
-<dd><p>matrix or <code>NULL</code>; the threshold calibration's parameter sets that pass <code>thresh</code>
-(<code>mod$thresholdPassingPars</code>). They are the first members of DEoptim's starting population, on the first
-attempt and on the retry (<code><a href="withPassingFirst.html">withPassingFirst()</a></code>), unless the <code>initialpop</code> parameter is set or the emulator
-chose the start (<code>initialPopMethod = "emulator"</code>). The folds
-pass none: their first block is other years.</p></dd>
-
 </dl></div>
     <div id="value">
     <h2>Value</h2>
     <p>the <code>runDEoptim()</code> result. Stops if every member of the final population has the
-objective's fail value: no parameter set ever passed <code>thresh</code>, so there is no fit.</p>
+objective's fail value: no parameter set was ever accepted, so there is no fit.</p>
     </div>
 
   </div>

@@ -4,7 +4,7 @@ process that diverges as the garbage collector marks the heap, so budget one hea
 also leaves less garbage to copy), the memory available, the busy threads, parallelly::availableCores() and
 options(mc.cores), and capped by the host's load (fireSenseUtils::nThreads()). In a Slurm job given part of
 the node (parallelly::availableCores() below parallel::detectCores()) the busy threads and the load are other
-jobs' and are ignored, as clusters:::.limitToJob() does. Used by the threshold self-calibration and the &quot;powerLaw&quot; calibration, so several
+jobs' and are ignored, as clusters:::.limitToJob() does. Used by the start population and the &quot;powerLaw&quot; calibration, so several
 fits on one host, or a fit run inside a cluster worker, share the same caps."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -64,7 +64,7 @@ process that diverges as the garbage collector marks the heap, so budget one hea
 also leaves less garbage to copy), the memory available, the busy threads, <code><a href="https://parallelly.futureverse.org/reference/availableCores.html" class="external-link">parallelly::availableCores()</a></code> and
 <code>options(mc.cores)</code>, and capped by the host's load (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/nThreads.html" class="external-link">fireSenseUtils::nThreads()</a></code>). In a Slurm job given part of
 the node (<code><a href="https://parallelly.futureverse.org/reference/availableCores.html" class="external-link">parallelly::availableCores()</a></code> below <code><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">parallel::detectCores()</a></code>) the busy threads and the load are other
-jobs' and are ignored, as <code>clusters:::.limitToJob()</code> does. Used by the threshold self-calibration and the <code>"powerLaw"</code> calibration, so several
+jobs' and are ignored, as <code>clusters:::.limitToJob()</code> does. Used by the start population and the <code>"powerLaw"</code> calibration, so several
 fits on one host, or a fit run inside a cluster worker, share the same caps.</p>
     </div>
 
