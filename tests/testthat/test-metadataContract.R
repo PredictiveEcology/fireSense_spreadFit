@@ -170,9 +170,11 @@ test_that("the library path is not fixed in the parameter's default: it is read 
   }
   libA <- withr::local_tempdir("libA"); libB <- withr::local_tempdir("libB")
   withr::with_libpaths(libA, action = "prefix", a <- libPathAtFit())
-  withr::with_libpaths(libB, action = "prefix", b <- libPathAtFit())
-  expect_identical(a, reproducible::normPath(libA))
-  expect_identical(b, reproducible::normPath(libB))
-  ## a user's setting still wins
-  expect_identical(libPathAtFit(list(libPathDEoptim = libA)), reproducible::normPath(libA))
+  withr::with_libpaths(c(libB, libA), action = "prefix", b <- libPathAtFit())
+  ## every user library, in order, and not R's own
+  expect_identical(a[1], reproducible::normPath(libA))
+  expect_identical(b[1:2], reproducible::normPath(c(libB, libA)))
+  expect_false(any(reproducible::normPath(c(.Library, R.home("library"))) %in% b))
+  ## a user's setting still wins, as a vector too
+  expect_identical(libPathAtFit(list(libPathDEoptim = c(libB, libA))), reproducible::normPath(c(libB, libA)))
 })

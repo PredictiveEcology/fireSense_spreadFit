@@ -43,7 +43,7 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
                    cores = best$cluster,
                    doObjFunAssertions = P(sim)$doObjFunAssertions,
                    paths = getPaths(),
-                   libPath = normPath(if (is.na(P(sim)$libPathDEoptim)) .libPaths()[1] else P(sim)$libPathDEoptim),
+                   libPath = workerLibPaths(P(sim)$libPathDEoptim),
                    logPath = logPath(sim), ## TODO (#6): use tempdir()
                    lower = P(sim)$lower,
                    upper = P(sim)$upper,
@@ -158,6 +158,17 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
     stop("fireSense_spreadFit: fit '", runName, "' failed: every member of the final DEoptim ",
          "population has the fail value 1e6, i.e. the objective accepted no parameter set.")
   DE
+}
+
+## The libraries the workers load packages from: the parameter if given, else the user libraries of
+## `.libPaths()` when the fit runs, in order (a dev library, then a stable one) and without R's own, which every
+## host has. The same rule as clusters' `.shippableLibs()` (not exported). Never part of a cache key.
+workerLibPaths <- function(libPathDEoptim = NA_character_) {
+  libs <- if (all(is.na(libPathDEoptim))) {
+    own <- normPath(c(.Library, .Library.site, R.home("library")))
+    .libPaths()[!normPath(.libPaths()) %in% own]
+  } else libPathDEoptim
+  normPath(libs)
 }
 
 ## The spread objective's bodies, for the Cache key of the fit: the objective and
