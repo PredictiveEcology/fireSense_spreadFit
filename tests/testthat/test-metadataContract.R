@@ -152,3 +152,27 @@ test_that("only studyArea has a sourceURL", {
   io <- md$inputObjects
   expect_identical(io$objectName[!is.na(io$sourceURL)], "studyArea")
 })
+
+## A per-install library (`.libPaths()[1]` a new folder after every install) must not make a fit miss its saved
+## generations: the library says where workers load packages from, not what they compute.
+test_that("the fit's cache key omits the library path", {
+  expect_true("libPath" %in% omitArgsCO()$omit[[1]])
+})
+
+test_that("the library path is not fixed in the parameter's default: it is read when the fit runs", {
+  expect_true(is.na(def$libPathDEoptim))
+  libPathAtFit <- function(params = list()) {
+    rec <- new.env()
+    sim <- toySim(params)
+    mockFitAndLedger(sim, rec)
+    suppressMessages(SpaDES.core::spades(sim))
+    rec$deArgs$libPath
+  }
+  libA <- withr::local_tempdir("libA"); libB <- withr::local_tempdir("libB")
+  withr::with_libpaths(libA, action = "prefix", a <- libPathAtFit())
+  withr::with_libpaths(libB, action = "prefix", b <- libPathAtFit())
+  expect_identical(a, reproducible::normPath(libA))
+  expect_identical(b, reproducible::normPath(libB))
+  ## a user's setting still wins
+  expect_identical(libPathAtFit(list(libPathDEoptim = libA)), reproducible::normPath(libA))
+})
