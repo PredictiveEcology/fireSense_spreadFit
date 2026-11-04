@@ -422,7 +422,7 @@ emulatorDataArgs <- c("landscape", "annualDTx1000", "nonAnnualDTx1000", "fireBuf
 #' @param cores,nCoresNeeded,libPath,logPath,runName as for the fit (`runDEoptim()`).
 #' @return the `emulateObjective()` list.
 emulatorStartPopulation <- function(objArgs, lower, upper, NP, control, seed,
-                                    cores = NULL, nCoresNeeded = NP, libPath = workerLibPaths(), logPath = tempdir(),
+                                    cores = NULL, nCoresNeeded = NP, libPath = .libPaths(), logPath = tempdir(),
                                     runName = "") {
   ctl <- emulatorControlOf(control)
   if (isTRUE(is.na(cores))) cores <- NULL

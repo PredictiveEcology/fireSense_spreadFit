@@ -129,7 +129,7 @@ defineModule(sim, list(
                                  "Therefore, it's best use a directory in your user's `~` directory.",
                                  "If the directory does not exist at this path, will attempt to create it.",
                                  "A vector is allowed (a dev library, then a stable one); all are shipped to the workers, in order.",
-                                 "NA (default) means the user libraries of `.libPaths()` when the fit runs (without R's own),",
+                                 "NA (default) means `.libPaths()` when the fit runs (clusters ships the user libraries, not R's own),",
                                  "so the default is not a path of one machine or one install.",
                                  "Not part of this module's cache keys, nor of the fit's: it says where the workers load packages from,",
                                  "not what they compute."),
