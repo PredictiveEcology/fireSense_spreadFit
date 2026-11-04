@@ -422,7 +422,7 @@ emulatorDataArgs <- c("landscape", "annualDTx1000", "nonAnnualDTx1000", "fireBuf
 #' @param cores,nCoresNeeded,libPath,logPath,runName as for the fit (`runDEoptim()`).
 #' @return the `emulateObjective()` list.
 emulatorStartPopulation <- function(objArgs, lower, upper, NP, control, seed,
-                                    cores = NULL, nCoresNeeded = NP, libPath = .libPaths()[1], logPath = tempdir(),
+                                    cores = NULL, nCoresNeeded = NP, libPath = .libPaths(), logPath = tempdir(),
                                     runName = "") {
   ctl <- emulatorControlOf(control)
   if (isTRUE(is.na(cores))) cores <- NULL
@@ -432,7 +432,7 @@ emulatorStartPopulation <- function(objArgs, lower, upper, NP, control, seed,
                            getOption("clusters.workerMemoryGB", fireSenseUtils::spreadFitWorkerMemoryGB))
     shipped <- list2env(objArgs[emulatorDataArgs])
     built <- clusters::clusterSetup(messagePrefix = paste0("emulator_", runName, "_"), cores = cores,
-                                    nCoresNeeded = nCoresNeeded, libPath = libPath[1], logPath = logPath,
+                                    nCoresNeeded = nCoresNeeded, libPath = libPath, logPath = logPath,
                                     objsNeeded = as.list(emulatorDataArgs),
                                     pkgsNeeded = c("data.table", "fireSenseUtils"), envir = shipped,
                                     runName = paste0("emulator_", runName))

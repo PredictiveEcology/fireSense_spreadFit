@@ -43,7 +43,7 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
                    cores = best$cluster,
                    doObjFunAssertions = P(sim)$doObjFunAssertions,
                    paths = getPaths(),
-                   libPath = normPath(P(sim)$libPathDEoptim),
+                   libPath = normPath(if (all(is.na(P(sim)$libPathDEoptim))) .libPaths() else P(sim)$libPathDEoptim),
                    logPath = logPath(sim), ## TODO (#6): use tempdir()
                    lower = P(sim)$lower,
                    upper = P(sim)$upper,
@@ -119,7 +119,7 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
         .cacheExtra = list(fnName, objectiveBodies()),
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
-        omitArgs = c(".verbose", "cores", "paths", "logPath", "plotEvery", "progressFile", "runawayEdgeFrac", "runawayEdgeMin",
+        omitArgs = c(".verbose", "cores", "paths", "libPath", "logPath", "plotEvery", "progressFile", "runawayEdgeFrac", "runawayEdgeMin",
                      ## only the powerLaw link uses it
                      fireSenseUtils::powerLawOmitArgs(spreadLink(P(sim)), P(sim)$powerLawShape),
                      ## NULL without an intercept (or with runawayBufferMultiple NA, or with the default spreadLink):

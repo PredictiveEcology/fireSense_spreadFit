@@ -152,3 +152,28 @@ test_that("only studyArea has a sourceURL", {
   io <- md$inputObjects
   expect_identical(io$objectName[!is.na(io$sourceURL)], "studyArea")
 })
+
+## A per-install library (`.libPaths()[1]` a new folder after every install) must not make a fit miss its saved
+## generations: the library says where workers load packages from, not what they compute.
+test_that("the fit's cache key omits the library path", {
+  expect_true("libPath" %in% omitArgsCO()$omit[[1]])
+})
+
+test_that("the library path is not fixed in the parameter's default: it is read when the fit runs", {
+  expect_true(is.na(def$libPathDEoptim))
+  libPathAtFit <- function(params = list()) {
+    rec <- new.env()
+    sim <- toySim(params)
+    mockFitAndLedger(sim, rec)
+    suppressMessages(SpaDES.core::spades(sim))
+    rec$deArgs$libPath
+  }
+  libA <- withr::local_tempdir("libA"); libB <- withr::local_tempdir("libB")
+  withr::with_libpaths(libA, action = "prefix", a <- libPathAtFit())
+  withr::with_libpaths(c(libB, libA), action = "prefix", b <- libPathAtFit())
+  ## .libPaths() as is, in order; clusters decides what it ships
+  expect_identical(a, withr::with_libpaths(libA, reproducible::normPath(.libPaths()), action = "prefix"))
+  expect_identical(b[1:2], reproducible::normPath(c(libB, libA)))
+  ## a user's setting still wins, as a vector too
+  expect_identical(libPathAtFit(list(libPathDEoptim = c(libB, libA))), reproducible::normPath(c(libB, libA)))
+})
