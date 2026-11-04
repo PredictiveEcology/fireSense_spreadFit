@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9038"
-date: "Last updated: 2026-11-03"
+date: "Last updated: 2026-11-04"
 output:
   bookdown::html_document2:
     toc: true
@@ -298,7 +298,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> calibration </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Where DEoptim's starting population comes from. 'calibration' (default; the name is historical): DEoptim's own draw, or, when no member of it passes the objective's spreadProb gates, a start of gate-passing draws. 'emulator': `nCoresNeeded` good, spread-out points evaluated by a Gaussian-process emulator search of the fit's objective (~1,000-1,600 real evaluations on the fit's `cores`, between `lower` and `upper`, wide one-sided parameters on a log1p scale; a global phase, then trust-region rounds; see `emulatorControl`). The search is cached. A fit seeded this way stops sooner: `convergence` defaults to `minGenerations = 200` and `window = 200` (elements of the `convergence` parameter win). The `initialpop` parameter, when set, wins over both. </td>
+   <td style="text-align:left;"> Where DEoptim's starting population comes from. 'calibration' (default; the name is historical): DEoptim's own draw, or, when no member of it passes the objective's spreadProb gates, a start of gate-passing draws. 'emulator': `nCoresNeeded` good, spread-out points evaluated by a Gaussian-process emulator search of the fit's objective (~1,000-1,600 real evaluations on the fit's `cores`, between `lower` and `upper`, wide one-sided parameters on a log1p scale; a global phase, then trust-region rounds; see `emulatorControl`). The search is cached. The fit then stops by the same rule as any other (`convergence`). The `initialpop` parameter, when set, wins over both. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>

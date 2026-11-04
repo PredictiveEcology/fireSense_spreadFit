@@ -73,7 +73,7 @@
       <h1 data-toc-skip>fireSense_spreadFit Manual</h1>
             <h3 data-toc-skip class="subtitle">v.1.2.0.9038</h3>
             
-            <h4 data-toc-skip class="date">Last updated: 2026-11-03</h4>
+            <h4 data-toc-skip class="date">Last updated: 2026-11-04</h4>
       
 
       <div class="hidden name"><code>fireSense_spreadFit.Rmd</code></div>
@@ -679,7 +679,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Where DEoptim’s starting population comes from. ‘calibration’ (default; the name is historical): DEoptim’s own draw, or, when no member of it passes the objective’s spreadProb gates, a start of gate-passing draws. ‘emulator’: <code>nCoresNeeded</code> good, spread-out points evaluated by a Gaussian-process emulator search of the fit’s objective (~1,000-1,600 real evaluations on the fit’s <code>cores</code>, between <code>lower</code> and <code>upper</code>, wide one-sided parameters on a log1p scale; a global phase, then trust-region rounds; see <code>emulatorControl</code>). The search is cached. A fit seeded this way stops sooner: <code>convergence</code> defaults to <code>minGenerations = 200</code> and <code>window = 200</code> (elements of the <code>convergence</code> parameter win). The <code>initialpop</code> parameter, when set, wins over both.
+Where DEoptim’s starting population comes from. ‘calibration’ (default; the name is historical): DEoptim’s own draw, or, when no member of it passes the objective’s spreadProb gates, a start of gate-passing draws. ‘emulator’: <code>nCoresNeeded</code> good, spread-out points evaluated by a Gaussian-process emulator search of the fit’s objective (~1,000-1,600 real evaluations on the fit’s <code>cores</code>, between <code>lower</code> and <code>upper</code>, wide one-sided parameters on a log1p scale; a global phase, then trust-region rounds; see <code>emulatorControl</code>). The search is cached. The fit then stops by the same rule as any other (<code>convergence</code>). The <code>initialpop</code> parameter, when set, wins over both.
 </td>
 <td style="text-align:left;">
 TRUE
