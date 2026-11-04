@@ -22,7 +22,7 @@ defineModule(sim, list(
   documentation = list("README.txt", "fireSense_spreadFit.Rmd"),
   loadOrder = list(after = c("fireSense_dataPrepFit", "fireSense_ignitionFit")),
   reqdPkgs = list("data.table", "DEoptim", "dplyr", "fpCompare", "future",
-                  "ggplot2", "hetGP", "lhs", "scales", "kSamples", "munsell",
+                  "ggplot2", "googledrive", "hetGP", "lhs", "scales", "kSamples", "munsell",
                   "logging", "magrittr", "parallel", "parallelly", "raster", "RhpcBLASctl", "sf", "terra", "tidyr", "withr", ## TODO: remove magrittr
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
