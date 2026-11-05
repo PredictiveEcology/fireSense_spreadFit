@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9040"
-date: "Last updated: 2026-11-04"
+date: "Last updated: 2026-11-05"
 output:
   bookdown::html_document2:
     toc: true

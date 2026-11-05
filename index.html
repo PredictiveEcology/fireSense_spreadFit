@@ -736,16 +736,16 @@ libPathDEoptim
 character
 </td>
 <td style="text-align:left;">
-/home/ru….
-</td>
-<td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
-Absolute path specifying R package directory location to use when running DEotpim. NOTE: this path must be read/write accessible on ALL machines used for fitting (identified in cores). Therefore, it’s best use a directory in your user’s <code>~</code> directory. If the directory does not exist at this path, will attempt to create it. Not part of this module’s cache keys: it says where the workers load packages from, not what they compute, and its default is a machine-specific path.
+NA
+</td>
+<td style="text-align:left;">
+Absolute path specifying R package directory location to use when running DEotpim. NOTE: this path must be read/write accessible on ALL machines used for fitting (identified in cores). Therefore, it’s best use a directory in your user’s <code>~</code> directory. If the directory does not exist at this path, will attempt to create it. A vector is allowed (a dev library, then a stable one); all are shipped to the workers, in order. NA (default) means <code><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths()</a></code> when the fit runs (clusters ships the user libraries, not R’s own), so the default is not a path of one machine or one install. Not part of this module’s cache keys, nor of the fit’s: it says where the workers load packages from, not what they compute.
 </td>
 <td style="text-align:left;">
 FALSE
