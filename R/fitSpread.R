@@ -6,13 +6,15 @@
 #' members' fires, on the same workers; `makeFitDiagnostics()` turns those into `sim` objects.
 #'
 #' @param sim a `simList`.
-#' @param covs the covariates as integers x 1000 (`mod$covsX1000`, or a subset of its years).
+#' @param covs the covariates as integers x 1000 (`mod$covsX1000`, or a subset of its years), with
+#'   `mod$covsX1000Whole` (the tables and their digest) appended when `resimulateCutFires` is TRUE (see [wholeDeArgs()]).
 #' @param runName character; labels the run and its cache entry. Also names the fit's progress file,
 #'   `DEoptimProgress_<runName>.csv` in the module's output folder.
 #' @param diagnostics logical; `FALSE` skips the profile and the simulations.
 #' @return the `runDEoptim()` result. Stops if every member of the final population has the
 #'   objective's fail value: no parameter set was ever accepted, so there is no fit.
 fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
+  wholeArgs <- wholeDeArgs(covs, P(sim))
   if (!is.null(P(sim)$cores) && !any(is.na(P(sim)$cores)) &&
       identical(sort(unique(P(sim)$cores)), sort(P(sim)$cores))) {
     best <- list(cluster = P(sim)$cores)
@@ -28,7 +30,7 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
                             paste0("DEoptimProgress_", runName, ".csv"))
   ## runDEoptim()'s arguments, once: the fit gets them, and the emulator (`initialPopMethod = "emulator"`)
   ## evaluates the objective they define
-  deArgs <- c(crpsObjectiveArgs(P(sim)), list(landscape = sim$rasterToMatch,
+  deArgs <- c(crpsObjectiveArgs(P(sim)), wholeArgs, list(landscape = sim$rasterToMatch,
                    annualDTx1000 = covs$annualDTx1000,
                    nonAnnualDTx1000 = covs$nonAnnualDTx1000,
                    fireBufferedListDT = covs$fireBufferedListDT,
@@ -92,14 +94,18 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
   ## the population size runDEoptim() asks clusters for
   NP <- if (is.null(P(sim)$nCoresNeeded)) fireSenseUtils::deoptimPopulationSize(length(lower)) else
     as.integer(P(sim)$nCoresNeeded)
+  objArgs <- emulatorObjectiveArgs(deArgs)
+  wholeTables <- wholeArgs[intersect(wholeCovNames, names(wholeArgs))]
+  objArgs[names(wholeTables)] <- NULL
   emulated <- if (useEmulator(P(sim), length(lower)))
-    Cache(emulatorStartPopulation, objArgs = emulatorObjectiveArgs(deArgs), lower = lower, upper = P(sim)$upper,
+    Cache(emulatorStartPopulation, objArgs = objArgs, wholeTables = wholeTables, lower = lower, upper = P(sim)$upper,
           NP = NP, control = P(sim)$emulatorControl, seed = seed,
           cores = best$cluster, nCoresNeeded = NP, libPath = deArgs$libPath, logPath = deArgs$logPath, runName = runName,
           .functionName = paste0("emulatorStartPopulation_", runName),
           ## the emulator's own code and the objective's, which Cache() does not digest
-          .cacheExtra = list(emulatorBodies(), objectiveBodies()),
-          omitArgs = c("cores", "libPath", "logPath", "runName"),
+          ## and, for the whole-ELF tables (out of the key, below), the digest made once in spreadFitPrep()
+          .cacheExtra = c(list(emulatorBodies(), objectiveBodies()), wholeCacheExtra(covs, wholeArgs)),
+          omitArgs = c("cores", "libPath", "logPath", "runName", "wholeTables"),
           useCache = P(sim)$useCache_DE)
   seedPop <- if (is.null(emulated)) P(sim)$initialpop else emulated$pop
   ## the early-stop rule in full (parameter, else options, else clusters' defaults; the same whatever the start),
@@ -116,10 +122,12 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
         ## The objective is a callee Cache() does not digest; its bodies are in the key, so a change in
         ## how fits are scored (e.g. fireSenseUtils' runaway censoring, 2026-10-01) is a cache miss,
         ## not an old fit served under the new rules.
-        .cacheExtra = list(fnName, objectiveBodies()),
+        .cacheExtra = c(list(fnName, objectiveBodies()), wholeCacheExtra(covs, wholeArgs)),
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
         omitArgs = c(".verbose", "cores", "paths", "libPath", "logPath", "plotEvery", "progressFile", "runawayEdgeFrac", "runawayEdgeMin",
+                     ## the whole-ELF tables are huge: the digest made once in spreadFitPrep() stands for them
+                     intersect(wholeCovNames, names(wholeArgs)),
                      ## only the powerLaw link uses it
                      fireSenseUtils::powerLawOmitArgs(spreadLink(P(sim)), P(sim)$powerLawShape),
                      ## NULL without an intercept (or with runawayBufferMultiple NA, or with the default spreadLink):
@@ -158,6 +166,57 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
     stop("fireSense_spreadFit: fit '", runName, "' failed: every member of the final DEoptim ",
          "population has the fail value 1e6, i.e. the objective accepted no parameter set.")
   DE
+}
+
+## The whole-ELF covariate tables of `resimulateCutFires`, as the objective's arguments
+wholeCovNames <- c("annualDTx1000Whole", "nonAnnualDTx1000Whole")
+
+#' The arguments `resimulateCutFires` adds to the objective
+#'
+#' @param covs the covariates list handed to `fitSpread()`: `mod$covsX1000`, with `mod$covsX1000Whole` appended.
+#' @param Par `P(sim)`.
+#' @return `list()` with `resimulateCutFires` FALSE, so the objective's arguments and the fit's cache key are what
+#'   they were before it existed; else `annualDTx1000Whole`, `nonAnnualDTx1000Whole` and `cutMaxTries`.
+wholeDeArgs <- function(covs, Par) {
+  if (!isTRUE(Par$resimulateCutFires)) return(list())
+  c(covs[wholeCovNames], list(cutMaxTries = as.integer(Par$cutMaxTries)))
+}
+
+## What stands for the whole-ELF tables in the fit's Cache key (they are in `omitArgs`): the digest
+## `spreadFitPrep()` made of them once. Nothing without them.
+wholeCacheExtra <- function(covs, wholeArgs) {
+  if (length(wholeArgs)) list(wholeCovsDigest = covs$wholeDigest)
+}
+
+## `resimulateCutFires` needs the whole-ELF tables, and cannot go with `penaliseRunaways`, which stops a fire at
+## the first open pixel of its buffer on purpose (so there is no cut fire to re-simulate)
+checkResimulateCutFires <- function(sim) {
+  if (!isTRUE(P(sim)$resimulateCutFires)) return(invisible(NULL))
+  if (isTRUE(P(sim)$penaliseRunaways))
+    stop("fireSense_spreadFit: resimulateCutFires = TRUE cannot be combined with penaliseRunaways = TRUE")
+  missingInputs <- c("fireSense_annualSpreadFitCovariatesWhole", "fireSense_nonAnnualSpreadFitCovariatesWhole")
+  missingInputs <- missingInputs[vapply(missingInputs, function(nm) is.null(sim[[nm]]), logical(1))]
+  if (length(missingInputs))
+    stop("fireSense_spreadFit: resimulateCutFires = TRUE needs ", paste(missingInputs, collapse = " and "),
+         " (fireSense_dataPrepFit, wholeLandscapeSpreadCovariates = TRUE)")
+  ## fireSenseUtils needs the same data years in both non-annual tables, and every fire year in the annual one
+  if (!setequal(names(sim$fireSense_nonAnnualSpreadFitCovariatesWhole), names(sim$fireSense_nonAnnualSpreadFitCovariates)))
+    stop("fireSense_spreadFit: fireSense_nonAnnualSpreadFitCovariatesWhole must have the same data years (list names) as ",
+         "fireSense_nonAnnualSpreadFitCovariates")
+  noYear <- setdiff(intersect(names(sim$fireSense_annualSpreadFitCovariates), names(sim$fireBufferedListDT)),
+                    names(sim$fireSense_annualSpreadFitCovariatesWhole))
+  if (length(noYear))
+    stop("fireSense_spreadFit: fireSense_annualSpreadFitCovariatesWhole lacks the fire years ", paste(noYear, collapse = ", "))
+  invisible(NULL)
+}
+
+## The non-annual covariates with fuel biomass on the linear scale (see `spreadFitPrep()`); the input is not changed
+nonAnnualToLinear <- function(nonAnnualList, fuelCols) {
+  lapply(nonAnnualList, function(dt) {
+    dt <- data.table::copy(dt)
+    for (cn in intersect(fuelCols, names(dt))) set(dt, NULL, cn, fireSenseUtils::fuelLogToLinear(dt[[cn]]))
+    dt
+  })
 }
 
 ## The spread objective's bodies, for the Cache key of the fit: the objective and
@@ -280,7 +339,7 @@ cvFolds <- function(years) {
 #' @return list: `sims`, this fold's simulated held-out years (`fireSenseUtils::simulateFireSizes()`), with
 #'   `fold`; and `fit`, the fold's fit as a ledger row (`spreadFitLedgerRow()`) with all `simulateMembers` members.
 fitAndScoreFold <- function(sim, covs, fold, k) {
-  yearLists <- c("annualDTx1000", "fireBufferedListDT", "historicalFires")
+  yearLists <- intersect(c("annualDTx1000", "fireBufferedListDT", "historicalFires", "annualDTx1000Whole"), names(covs))
   years <- names(covs$historicalFires)
   fitCovs <- heldCovs <- covs
   fitCovs[yearLists] <- lapply(covs[yearLists], function(x) x[years[fold != k]])

@@ -153,8 +153,18 @@ mockFitAndLedger <- function(sim, rec = new.env()) {
 
 ## The module's source, parsed: the main file and its R/ helpers. For the tests that check a call by
 ## reading it, because running it needs a full simList.
-moduleSource <- function() {
+moduleCodeParsed <- function() {
   files <- c(testthat::test_path("..", "..", "fireSense_spreadFit.R"),
              list.files(testthat::test_path("..", "..", "R"), "\\.R$", full.names = TRUE))
   do.call(c, lapply(files, parse, keep.source = FALSE))
+}
+
+## The whole-ELF tables of `resimulateCutFires` for the toy inputs: the buffer tables, and pixel 1 (outside every buffer)
+toyWholeObjects <- function() {
+  o <- toyObjects()
+  list(fireSense_annualSpreadFitCovariatesWhole = lapply(o$fireSense_annualSpreadFitCovariates, function(dt)
+         data.table::rbindlist(list(data.table::data.table(pixelID = 1L, CMDsm = 5, youngAge = 0), dt))),
+       fireSense_nonAnnualSpreadFitCovariatesWhole = lapply(o$fireSense_nonAnnualSpreadFitCovariates, function(dt)
+         data.table::rbindlist(list(data.table::data.table(pixelID = 1L, class1 = fireSenseUtils::logMinB(100),
+                                                           class2 = fireSenseUtils::logMinB(0), nf = 0), dt))))
 }

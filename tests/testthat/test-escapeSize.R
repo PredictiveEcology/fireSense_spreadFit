@@ -10,7 +10,7 @@ test_that("escapeSizeHa is a numeric parameter, 50 by default", {
 })
 
 test_that("the fit and the debug call pass escapeSizeHa", {
-  exprs <- moduleSource()
+  exprs <- moduleCodeParsed()
   calls <- list()
   walk <- function(x) {
     if (is.call(x)) {
