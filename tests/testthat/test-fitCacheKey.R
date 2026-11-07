@@ -25,5 +25,5 @@ test_that("the fit's cache key includes the objective's bodies", {
   expect_identical(ob$dataYearBefore, deparse(fireSenseUtils::dataYearBefore))
   expect_identical(ob$objFunInner, deparse(utils::getFromNamespace("objFunInner", "fireSenseUtils")))
   fit <- paste(readLines("../../R/fitSpread.R", warn = FALSE), collapse = "\n")
-  expect_match(fit, ".cacheExtra = c(list(fnName, objectiveBodies()), wholeCacheExtra(covs, wholeArgs))", fixed = TRUE)
+  expect_match(fit, ".cacheExtra = list(fnName, objectiveBodies())", fixed = TRUE)
 })

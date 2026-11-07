@@ -407,9 +407,6 @@ emulatorObjectiveArgs <- function(deArgs) {
 ## sent with each evaluation
 emulatorDataArgs <- c("landscape", "annualDTx1000", "nonAnnualDTx1000", "fireBufferedListDT", "historicalFires")
 
-## ... and the whole-ELF tables, when the objective has them (`resimulateCutFires`)
-emulatorShipped <- function(objArgs) c(emulatorDataArgs, intersect(wholeCovNames, names(objArgs)))
-
 #' Run the emulator on the fit's objective, on a cluster built as the fit's is
 #'
 #' With `cores`, the evaluations run on a cluster from `clusters::clusterSetup()`, asked for `nCoresNeeded` workers
@@ -417,9 +414,7 @@ emulatorShipped <- function(objArgs) c(emulatorDataArgs, intersect(wholeCovNames
 #' cluster is stopped and its booking released when this function returns, as `runDEoptim()`'s is. Without `cores`
 #' (`NULL` or `NA`) the evaluations run here, one at a time.
 #'
-#' @param objArgs `emulatorObjectiveArgs()`, without the whole-ELF tables.
-#' @param wholeTables the whole-ELF tables (`wholeCovNames`) of `emulatorObjectiveArgs()`, or `list()`; apart from
-#'   `objArgs` so that the caller's `Cache()` can leave them out of what it digests.
+#' @param objArgs `emulatorObjectiveArgs()`.
 #' @param lower,upper the bounds, named.
 #' @param NP integer; the starting population's size.
 #' @param control list; see `emulatorDefaults()`.
@@ -428,18 +423,17 @@ emulatorShipped <- function(objArgs) c(emulatorDataArgs, intersect(wholeCovNames
 #' @return the `emulateObjective()` list.
 emulatorStartPopulation <- function(objArgs, lower, upper, NP, control, seed,
                                     cores = NULL, nCoresNeeded = NP, libPath = .libPaths(), logPath = tempdir(),
-                                    runName = "", wholeTables = list()) {
-  objArgs <- c(objArgs, wholeTables)
+                                    runName = "") {
   ctl <- emulatorControlOf(control)
   if (isTRUE(is.na(cores))) cores <- NULL
   cl <- NULL
   if (!is.null(cores)) {
     withr::local_options(clusters.workerMemoryGB =
                            getOption("clusters.workerMemoryGB", fireSenseUtils::spreadFitWorkerMemoryGB))
-    shipped <- list2env(objArgs[emulatorShipped(objArgs)])
+    shipped <- list2env(objArgs[emulatorDataArgs])
     built <- clusters::clusterSetup(messagePrefix = paste0("emulator_", runName, "_"), cores = cores,
                                     nCoresNeeded = nCoresNeeded, libPath = libPath, logPath = logPath,
-                                    objsNeeded = as.list(emulatorShipped(objArgs)),
+                                    objsNeeded = as.list(emulatorDataArgs),
                                     pkgsNeeded = c("data.table", "fireSenseUtils"), envir = shipped,
                                     runName = paste0("emulator_", runName))
     cl <- built$cluster
@@ -454,7 +448,7 @@ emulatorStartPopulation <- function(objArgs, lower, upper, NP, control, seed,
 ## Evaluates parameter sets (rows) once each with fireSenseUtils::rescorePopulation(), on `cl` (whose workers hold
 ## the data) or here (the data go with the arguments)
 emulatorEvaluator <- function(objArgs, cl = NULL) {
-  fnArgs <- if (is.null(cl)) objArgs else objArgs[setdiff(names(objArgs), emulatorShipped(objArgs))]
+  fnArgs <- if (is.null(cl)) objArgs else objArgs[setdiff(names(objArgs), emulatorDataArgs)]
   function(P, seed) {
     if (!is.null(cl)) cl <- clusters::currentCluster(cl)
     fireSenseUtils::rescorePopulation(P, fn = fireSenseUtils::.objfunSpreadFit, reps = 1L, cl = cl,

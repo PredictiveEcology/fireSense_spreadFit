@@ -27,7 +27,7 @@ test_that("parameter classes", {
       link = "character", spreadLink = "character", powerLawGamma = "numeric", powerLawShape = "numeric", powerLawPcMargin = "numeric", powerLawFires = "integer", powerLawPGrid = "numeric", profileReps = "integer", simulateMembers = "integer",
       sizeLik = "character", sizeLikDf = "numeric", escapeSizeHa = "numeric", weighted = "logical|character",
       adWeight = "character|numeric", yearAreaWeight = "numeric|character",
-      areaDistWeight = "numeric|character", crpsWeights = "list", gateRefusal = "character", penaliseRunaways = "logical", resimulateCutFires = "logical", cutMaxTries = "integer", runawayEdgeFrac = "numeric", runawayEdgeMin = "integer", runawayBufferMultiple = "numeric", jumpTries = "numeric", jumpMeanDist = "numeric",
+      areaDistWeight = "numeric|character", crpsWeights = "list", gateRefusal = "character", penaliseRunaways = "logical", wholeLandscapeSpread = "logical", runawayEdgeFrac = "numeric", runawayEdgeMin = "integer", runawayBufferMultiple = "numeric", jumpTries = "numeric", jumpMeanDist = "numeric",
       upperTailBounds = "numeric", yearSpreadSDBounds = "numeric",
       verbose = "numeric", visualizeDEoptim = "Path"))
   )
