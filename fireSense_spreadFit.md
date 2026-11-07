@@ -97,18 +97,6 @@ Table \@ref(tab:moduleInputs-fireSense-spreadFit) shows the full list of module 
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> fireSense_annualSpreadFitCovariatesWhole </td>
-   <td style="text-align:left;"> list </td>
-   <td style="text-align:left;"> Optional; `fireSense_annualSpreadFitCovariates` for every flammable pixel of the ELF, not only the buffers, from `fireSense_dataPrepFit`. Used with `resimulateCutFires`. </td>
-   <td style="text-align:left;"> NA </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> fireSense_nonAnnualSpreadFitCovariatesWhole </td>
-   <td style="text-align:left;"> list </td>
-   <td style="text-align:left;"> Optional; `fireSense_nonAnnualSpreadFitCovariates` for every flammable pixel of the ELF, from `fireSense_dataPrepFit`. Used with `resimulateCutFires`. </td>
-   <td style="text-align:left;"> NA </td>
-  </tr>
-  <tr>
    <td style="text-align:left;"> spreadFitAdditionalColNames </td>
    <td style="text-align:left;"> character </td>
    <td style="text-align:left;"> Names of the list-columns of the ledger row. Reset to `fireSenseUtils::spreadFitAdditionalColNamesTxt` if different. </td>
@@ -555,21 +543,12 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> resimulateCutFires </td>
+   <td style="text-align:left;"> wholeLandscapeSpread </td>
    <td style="text-align:left;"> logical </td>
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> TRUE re-simulates, on the whole ELF, each fire that a replicate lets burn an open edge pixel of its year's buffers (a cut fire), so it is scored at the size it reaches there, not the size it was cut at. Needs `fireSense_annualSpreadFitCovariatesWhole` and `fireSense_nonAnnualSpreadFitCovariatesWhole` (`fireSense_dataPrepFit`, parameter `wholeLandscapeSpreadCovariates`), and cannot go with `penaliseRunaways = TRUE`. Passed to `fireSenseUtils::runDEoptim()` as `annualDTx1000Whole`, `nonAnnualDTx1000Whole` and `cutMaxTries`. FALSE changes nothing, including the fit's cache key. Refits need a new `fitFileSuffix`. </td>
-   <td style="text-align:left;"> TRUE </td>
-  </tr>
-  <tr>
-   <td style="text-align:left;"> cutMaxTries </td>
-   <td style="text-align:left;"> integer </td>
-   <td style="text-align:left;"> 50 </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> With `resimulateCutFires`, the most times a cut fire is run again on the whole ELF while it does not burn an open edge pixel; a fire still short of one keeps its cut size. Passed to `fireSenseUtils::runDEoptim()` as `cutMaxTries`. </td>
+   <td style="text-align:left;"> TRUE spreads every fire of the fit on all pixels of the covariate tables, with no buffer edge, so no fire is cut and every fire is scored at the size it burns. For tables of the whole ELF (`fireSense_dataPrepFit`, parameter `wholeLandscapeSpreadCovariates`); the spread probability is computed only on the cells a fire reaches, so an evaluation costs about what a buffered one does. Needs `spreadLink = "powerLaw"` and `penaliseRunaways = FALSE`. Passed to `fireSenseUtils::runDEoptim()` and `.objfunSpreadFit()` as `wholeLandscape`. FALSE changes nothing, including the fit's cache key. Refits need a new `fitFileSuffix`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
