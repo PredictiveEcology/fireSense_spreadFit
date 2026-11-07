@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9040</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9041</span>
       </span>
     </div>
 
@@ -96,7 +96,8 @@
 <span>  penaliseRunaways <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  runawayEdgeFrac <span class="op">=</span> <span class="fu">fireSenseUtils</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseSharedDefaults.html" class="external-link">fireSenseRunawayEdgeFrac</a></span>,</span>
 <span>  runawayEdgeMin <span class="op">=</span> <span class="fu">fireSenseUtils</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseSharedDefaults.html" class="external-link">fireSenseRunawayEdgeMin</a></span>,</span>
-<span>  runawayBufferMultiple <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  runawayBufferMultiple <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  wholeLandscape <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -196,6 +197,10 @@ rescaled covariates, as in the fit; <code>NULL</code> (no intercept) centres not
 
 <dt id="arg-powerlawshape">powerLawShape<a class="anchor" aria-label="anchor" href="#arg-powerlawshape"></a></dt>
 <dd><p>numeric; the <code>"powerLaw"</code> link's <code>shape</code>, passed like <code>powerLawGamma</code>.</p></dd>
+
+
+<dt id="arg-wholelandscape">wholeLandscape<a class="anchor" aria-label="anchor" href="#arg-wholelandscape"></a></dt>
+<dd><p>passed to <code>.objfunSpreadFit()</code>: spread every fire on all pixels of the tables.</p></dd>
 
 </dl></div>
     <div id="value">

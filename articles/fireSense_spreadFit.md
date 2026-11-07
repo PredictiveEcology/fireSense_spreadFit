@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9040"
-date: "Last updated: 2026-11-05"
+subtitle: "v.1.2.0.9041"
+date: "Last updated: 2026-11-07"
 output:
   bookdown::html_document2:
     toc: true
@@ -542,6 +542,15 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> A simulated fire that burns an open edge pixel of its year's buffers (one next to flammable land outside every buffer, `fireSenseUtils::bufferOpen()`) is cut: it has no density at the observed size in the size likelihood, and the other terms score the size it reached. TRUE also stops such a fire at the first open pixel of its own buffer, which saves time. Passed to `fireSenseUtils::runDEoptim()`. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> wholeLandscapeSpread </td>
+   <td style="text-align:left;"> logical </td>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> TRUE spreads every fire of the fit on all pixels of the covariate tables, with no buffer edge, so no fire is cut and every fire is scored at the size it burns. For tables of the whole ELF (`fireSense_dataPrepFit`, parameter `wholeLandscapeSpreadCovariates`); the spread probability is computed only on the cells a fire reaches, so an evaluation costs about what a buffered one does. Needs `spreadLink = "powerLaw"` and `penaliseRunaways = FALSE`. Passed to `fireSenseUtils::runDEoptim()` and `.objfunSpreadFit()` as `wholeLandscape`. FALSE changes nothing, including the fit's cache key. Refits need a new `fitFileSuffix`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
