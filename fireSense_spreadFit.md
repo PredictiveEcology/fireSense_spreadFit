@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9040"
-date: "Last updated: 2026-11-05"
+date: "Last updated: 2026-11-07"
 output:
   bookdown::html_document2:
     toc: true
@@ -94,6 +94,18 @@ Table \@ref(tab:moduleInputs-fireSense-spreadFit) shows the full list of module 
    <td style="text-align:left;"> fireSense_nonAnnualSpreadFitCovariates </td>
    <td style="text-align:left;"> data.table </td>
    <td style="text-align:left;"> table of veg covariates, burn status, polyID, and pixelID </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> fireSense_annualSpreadFitCovariatesWhole </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> Optional; `fireSense_annualSpreadFitCovariates` for every flammable pixel of the ELF, not only the buffers, from `fireSense_dataPrepFit`. Used with `resimulateCutFires`. </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> fireSense_nonAnnualSpreadFitCovariatesWhole </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> Optional; `fireSense_nonAnnualSpreadFitCovariates` for every flammable pixel of the ELF, from `fireSense_dataPrepFit`. Used with `resimulateCutFires`. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -540,6 +552,24 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> A simulated fire that burns an open edge pixel of its year's buffers (one next to flammable land outside every buffer, `fireSenseUtils::bufferOpen()`) is cut: it has no density at the observed size in the size likelihood, and the other terms score the size it reached. TRUE also stops such a fire at the first open pixel of its own buffer, which saves time. Passed to `fireSenseUtils::runDEoptim()`. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> resimulateCutFires </td>
+   <td style="text-align:left;"> logical </td>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> TRUE re-simulates, on the whole ELF, each fire that a replicate lets burn an open edge pixel of its year's buffers (a cut fire), so it is scored at the size it reaches there, not the size it was cut at. Needs `fireSense_annualSpreadFitCovariatesWhole` and `fireSense_nonAnnualSpreadFitCovariatesWhole` (`fireSense_dataPrepFit`, parameter `wholeLandscapeSpreadCovariates`), and cannot go with `penaliseRunaways = TRUE`. Passed to `fireSenseUtils::runDEoptim()` as `annualDTx1000Whole`, `nonAnnualDTx1000Whole` and `cutMaxTries`. FALSE changes nothing, including the fit's cache key. Refits need a new `fitFileSuffix`. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> cutMaxTries </td>
+   <td style="text-align:left;"> integer </td>
+   <td style="text-align:left;"> 50 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> With `resimulateCutFires`, the most times a cut fire is run again on the whole ELF while it does not burn an open edge pixel; a fire still short of one keeps its cut size. Passed to `fireSenseUtils::runDEoptim()` as `cutMaxTries`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
