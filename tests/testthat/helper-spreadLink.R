@@ -28,9 +28,9 @@ runCalibration <- function(FUN, ...) {
 }
 
 ## what Cache(omitArgs =) the fit is given
-omitArgsCO <- function(params = list()) {
+omitArgsCO <- function(params = list(), objects = list()) {
   rec <- new.env()
-  sim <- toySim(params, toyObjectsCO())
+  sim <- toySim(params, c(toyObjectsCO(), objects))
   mockFitAndLedger(sim, rec)
   mockInModule(sim,
     Cache = function(FUN, ..., omitArgs = NULL) {

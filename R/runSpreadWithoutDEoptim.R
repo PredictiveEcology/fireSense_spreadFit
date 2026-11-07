@@ -31,6 +31,8 @@
 #' @param escapeSizeHa passed to `.objfunSpreadFit()`: fit escaped fires only (NULL: any fire over 1 pixel).
 #' @param sizeLik,sizeLikDf,adWeight,link,jumpTries,jumpMeanDist,yearAreaWeight,areaDistWeight,penaliseRunaways,runawayEdgeFrac,runawayEdgeMin,runawayBufferMultiple passed to
 #'   `.objfunSpreadFit()`, so it runs the objective the fit uses. The defaults are that function's.
+#' @param objfunArgs named list of further arguments to `.objfunSpreadFit()`: with `resimulateCutFires`,
+#'   `annualDTx1000Whole`, `nonAnnualDTx1000Whole` and `cutMaxTries` (`wholeDeArgs()`); none by default.
 #' @return `NULL`.
 runSpreadWithoutDEoptim <- function(nSets = 1L, lower, upper, fireSense_spreadFormula, flammableRTM,
                                     annualDTx1000, nonAnnualDTx1000, fireBufferedListDT,
@@ -48,7 +50,7 @@ runSpreadWithoutDEoptim <- function(nSets = 1L, lower, upper, fireSense_spreadFo
                                     penaliseRunaways = TRUE,
                                     runawayEdgeFrac = fireSenseUtils::fireSenseRunawayEdgeFrac,
                                     runawayEdgeMin = fireSenseUtils::fireSenseRunawayEdgeMin,
-                                    runawayBufferMultiple = NULL) {
+                                    runawayBufferMultiple = NULL, objfunArgs = list()) {
   if (is.null(seed)) seed <- sample(1e6, 1)
   set.seed(seed)
 
@@ -70,7 +72,7 @@ runSpreadWithoutDEoptim <- function(nSets = 1L, lower, upper, fireSense_spreadFo
 
   for (i in seq(pars)) {
     print(paste(i, "logit params:", paste(round(pars[[i]], 2), collapse = ", ")))
-    .objfunSpreadFit(par = pars[[i]],
+    do.call(.objfunSpreadFit, c(list(par = pars[[i]],
                      FS_formula = fireSense_spreadFormula,
                      landscape = flammableRTM,
                      annualDTx1000 = annualDTx1000,
@@ -94,7 +96,7 @@ runSpreadWithoutDEoptim <- function(nSets = 1L, lower, upper, fireSense_spreadFo
                      penaliseRunaways = penaliseRunaways,
                      runawayEdgeFrac = runawayEdgeFrac, runawayEdgeMin = runawayEdgeMin,
                      runawayBufferMultiple = runawayBufferMultiple,
-                     plot.it = plot.it)
+                     plot.it = plot.it), objfunArgs))
   }
   invisible(NULL)
 }

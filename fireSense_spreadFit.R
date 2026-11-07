@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.87)", # .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9144)", # 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9156)", # 9156: annualDTx1000Whole, nonAnnualDTx1000Whole, cutMaxTries (CHECK after the whole-ELF cut-fire PR merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
@@ -281,6 +281,18 @@ defineModule(sim, list(
                                  "density at the observed size in the size likelihood, and the other terms score the size",
                                  "it reached. TRUE also stops such a fire at the first open pixel of its own buffer, which",
                                  "saves time. Passed to `fireSenseUtils::runDEoptim()`.")),
+    defineParameter("resimulateCutFires", "logical", default = FALSE,
+                    desc = paste("TRUE re-simulates, on the whole ELF, each fire that a replicate lets burn an open edge pixel",
+                                 "of its year's buffers (a cut fire), so it is scored at the size it reaches there, not the",
+                                 "size it was cut at. Needs `fireSense_annualSpreadFitCovariatesWhole` and",
+                                 "`fireSense_nonAnnualSpreadFitCovariatesWhole` (`fireSense_dataPrepFit`, parameter",
+                                 "`wholeLandscapeSpreadCovariates`), and cannot go with `penaliseRunaways = TRUE`. Passed to",
+                                 "`fireSenseUtils::runDEoptim()` as `annualDTx1000Whole`, `nonAnnualDTx1000Whole` and `cutMaxTries`.",
+                                 "FALSE changes nothing, including the fit's cache key. Refits need a new `fitFileSuffix`.")),
+    defineParameter("cutMaxTries", "integer", default = 50L,
+                    desc = paste("With `resimulateCutFires`, the most times a cut fire is run again on the whole ELF while",
+                                 "it does not burn an open edge pixel; a fire still short of one keeps its cut size.",
+                                 "Passed to `fireSenseUtils::runDEoptim()` as `cutMaxTries`.")),
     defineParameter("runawayBufferMultiple", "numeric", default = NA_real_,
                     desc = paste("Retired: a cut fire is scored at the size it reached. It set the size a runaway counted",
                                  "as in the Anderson-Darling, annual-area and area-distribution terms.",
@@ -434,6 +446,12 @@ defineModule(sim, list(
                  desc = "table of climate and/or veg covariates, burn status, polyID, and pixelID"),
     expectsInput("fireSense_nonAnnualSpreadFitCovariates", "data.table",
                  desc = "table of veg covariates, burn status, polyID, and pixelID"),
+    expectsInput("fireSense_annualSpreadFitCovariatesWhole", "list",
+                 desc = paste("Optional; `fireSense_annualSpreadFitCovariates` for every flammable pixel of the ELF, not only the",
+                              "buffers, from `fireSense_dataPrepFit`. Used with `resimulateCutFires`.")),
+    expectsInput("fireSense_nonAnnualSpreadFitCovariatesWhole", "list",
+                 desc = paste("Optional; `fireSense_nonAnnualSpreadFitCovariates` for every flammable pixel of the ELF, from",
+                              "`fireSense_dataPrepFit`. Used with `resimulateCutFires`.")),
     expectsInput("spreadFitAdditionalColNames", "character",
                  desc = paste0("Names of the list-columns of the ledger row. Reset to ",
                                "`fireSenseUtils::spreadFitAdditionalColNamesTxt` if different.")),
@@ -625,7 +643,8 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         penaliseRunaways = P(sim)$penaliseRunaways,
         runawayEdgeFrac = P(sim)$runawayEdgeFrac, runawayEdgeMin = P(sim)$runawayEdgeMin,
         runawayBufferMultiple = runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple),
-        maxFireSpread = P(sim)$maxFireSpread)
+        maxFireSpread = P(sim)$maxFireSpread,
+        objfunArgs = wholeDeArgs(c(mod$covsX1000, mod$covsX1000Whole), P(sim)))
     },
     run = {
       if (mustFitThisPolygon(sim)) {
@@ -633,7 +652,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         if (!identical(basename(Par$visualizeDEoptim), currentModule(sim))) {
           params(sim)[[currentModule(sim)]][["visualizeDEoptim"]] <- figurePath(sim)
         }
-        DE <- fitSpread(sim, mod$covsX1000, runName = P(sim)$.runName)
+        DE <- fitSpread(sim, c(mod$covsX1000, mod$covsX1000Whole), runName = P(sim)$.runName)
         mod$fitDE <- DE # sim$DE is reordered below, which drops the attributes postFitDiagnostics reads
         sim$DE <- DE
         objFunVal <- vapply(sim$DE, function(D) D$member$bestvalit, FUN.VALUE = numeric(1))
@@ -686,11 +705,11 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
     },
     crossValidate = {
       if (isTRUE(is.na(Par$heldOutFold))) {
-        sim$spreadFitHeldOut <- crossValidateSpread(sim, mod$covsX1000)
+        sim$spreadFitHeldOut <- crossValidateSpread(sim, c(mod$covsX1000, mod$covsX1000Whole))
         heldOutPath <- file.path(outputPath(sim), currentModule(sim),
                                  paste0("spreadFitHeldOut_", P(sim)$.runName, ".rds"))
       } else {
-        sim$spreadFitHeldOut <- crossValidateSpreadOneFold(sim, mod$covsX1000, Par$heldOutFold)
+        sim$spreadFitHeldOut <- crossValidateSpreadOneFold(sim, c(mod$covsX1000, mod$covsX1000Whole), Par$heldOutFold)
         heldOutPath <- file.path(outputPath(sim), currentModule(sim),
                                  paste0("spreadFitHeldOut_", P(sim)$.runName, "_fold", Par$heldOutFold, ".rds"))
       }
@@ -755,11 +774,7 @@ spreadFitPrep <- function(sim) {
   ## The input is left as it is; everything below that feeds the fit uses this copy.
   ## fireSense_spreadPredict applies the same function, recognising a linear fit by covMinMax_spread.
   fuelCols <- fuelColumns(sim$fireSense_nonAnnualSpreadFitCovariates)
-  nonAnnualLinear <- lapply(sim$fireSense_nonAnnualSpreadFitCovariates, function(dt) {
-    dt <- data.table::copy(dt)
-    for (cn in intersect(fuelCols, names(dt))) set(dt, NULL, cn, fireSenseUtils::fuelLogToLinear(dt[[cn]]))
-    dt
-  })
+  nonAnnualLinear <- nonAnnualToLinear(sim$fireSense_nonAnnualSpreadFitCovariates, fuelCols)
 
   # veg coefficients should probably have bounds of 4
   # however youngAge should have an upper limit of zero to prevent self-propagating fires
@@ -768,6 +783,7 @@ spreadFitPrep <- function(sim) {
   ## yearSpreadSD (the per-year random effect) is in the default bounds unless turned off; when one bound
   ## is supplied, the one filled in includes it only if the supplied one does, so the two stay aligned
   checkSpreadLink(Par)
+  checkResimulateCutFires(sim)
   sim <- calibratePowerLawFor(sim)
   fsdBounds <- if (!anyNA(Par$yearSpreadSDBounds)) Par$yearSpreadSDBounds
   upperMissing <- is.null(P(sim)$upper) || any(is.na(P(sim)$upper))
@@ -871,6 +887,22 @@ spreadFitPrep <- function(sim) {
   keepYearsNamed <- table(unname(unlist(namesWithGTZeroRows[annualDataNames]))) == length(annualDataNames)
   keepYears <- names(keepYearsNamed)[keepYearsNamed]
   mod$covsX1000[annualDataNames] <- lapply(mod$covsX1000[annualDataNames], function(x) x[keepYears])
+
+  ## The whole-ELF tables, prepared as the buffer tables are (same fuel scale, same x1000 integers, same years). They
+  ## stay out of the centre and the climate reference above, which come from the buffer data.
+  mod$covsX1000Whole <- NULL
+  if (isTRUE(P(sim)$resimulateCutFires)) {
+    whole <- covsX1000AndSetDF(
+      annualList = sim$fireSense_annualSpreadFitCovariatesWhole[keepYears],
+      nonAnnualList = nonAnnualToLinear(sim$fireSense_nonAnnualSpreadFitCovariatesWhole, fuelCols),
+      fireBufferedList = sim$fireBufferedListDT[keepNames],
+      fireLociList = sim$lociList,
+      paramOrder = P(sim)$upper)
+    mod$covsX1000Whole <- list(annualDTx1000Whole = whole$annualDTx1000,
+                               nonAnnualDTx1000Whole = whole$nonAnnualDTx1000)
+    ## once, here: fitSpread() keeps the tables out of its Cache key and puts this in
+    mod$covsX1000Whole$wholeDigest <- .robustDigest(mod$covsX1000Whole)
+  }
 
   return(sim)
 }
