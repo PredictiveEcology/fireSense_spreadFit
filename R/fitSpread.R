@@ -94,14 +94,18 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
   ## the population size runDEoptim() asks clusters for
   NP <- if (is.null(P(sim)$nCoresNeeded)) fireSenseUtils::deoptimPopulationSize(length(lower)) else
     as.integer(P(sim)$nCoresNeeded)
+  objArgs <- emulatorObjectiveArgs(deArgs)
+  wholeTables <- wholeArgs[intersect(wholeCovNames, names(wholeArgs))]
+  objArgs[names(wholeTables)] <- NULL
   emulated <- if (useEmulator(P(sim), length(lower)))
-    Cache(emulatorStartPopulation, objArgs = emulatorObjectiveArgs(deArgs), lower = lower, upper = P(sim)$upper,
+    Cache(emulatorStartPopulation, objArgs = objArgs, wholeTables = wholeTables, lower = lower, upper = P(sim)$upper,
           NP = NP, control = P(sim)$emulatorControl, seed = seed,
           cores = best$cluster, nCoresNeeded = NP, libPath = deArgs$libPath, logPath = deArgs$logPath, runName = runName,
           .functionName = paste0("emulatorStartPopulation_", runName),
           ## the emulator's own code and the objective's, which Cache() does not digest
-          .cacheExtra = list(emulatorBodies(), objectiveBodies()),
-          omitArgs = c("cores", "libPath", "logPath", "runName"),
+          ## and, for the whole-ELF tables (out of the key, below), the digest made once in spreadFitPrep()
+          .cacheExtra = c(list(emulatorBodies(), objectiveBodies()), wholeCacheExtra(covs, wholeArgs)),
+          omitArgs = c("cores", "libPath", "logPath", "runName", "wholeTables"),
           useCache = P(sim)$useCache_DE)
   seedPop <- if (is.null(emulated)) P(sim)$initialpop else emulated$pop
   ## the early-stop rule in full (parameter, else options, else clusters' defaults; the same whatever the start),

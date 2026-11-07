@@ -87,3 +87,36 @@ test_that("the debug event and the emulator carry the whole tables", {
   suppressMessages(SpaDES.core::spades(sim))
   expect_identical(seen$objfunArgs, list())
 })
+
+## what the emulator's Cache() is given, with the whole tables (or without)
+emulatorCacheCall <- function(objects, params = wholeParams) {
+  rec <- new.env()
+  sim <- toySim(c(list(initialPopMethod = "emulator"), params), objects)
+  mockFitAndLedger(sim, rec)
+  mockInModule(sim, Cache = function(FUN, ..., .functionName = "", omitArgs = NULL, .cacheExtra = NULL) {
+    if (startsWith(.functionName, "emulatorStartPopulation")) {
+      rec$emu <- list(args = list(...), omitArgs = omitArgs, cacheExtra = .cacheExtra)
+      lower <- rec$deLower <- list(...)$lower
+      return(list(pop = matrix(rep(lower, each = 10L), 10L, dimnames = list(NULL, names(lower)))))
+    }
+    if (is.function(FUN)) FUN(...) else FUN
+  })
+  suppressMessages(SpaDES.core::spades(sim))
+  rec$emu
+}
+
+test_that("the emulator's cache key follows the whole tables' digest, and never digests the tables", {
+  a <- emulatorCacheCall(toyWholeObjects())
+  expect_true("wholeTables" %in% a$omitArgs)
+  expect_false(any(wholeCovNames %in% names(a$args$objArgs)))
+  expect_true(all(wholeCovNames %in% names(a$args$wholeTables)))
+  o <- toyWholeObjects()
+  o$fireSense_annualSpreadFitCovariatesWhole$year2001$CMDsm[1] <- 99
+  b <- emulatorCacheCall(o)
+  expect_false(identical(a$cacheExtra, b$cacheExtra))
+  expect_identical(a$cacheExtra[-length(a$cacheExtra)], b$cacheExtra[-length(b$cacheExtra)])
+  ## FALSE: the key is what it was (no digest, no tables)
+  off <- emulatorCacheCall(toyWholeObjects(), list(resimulateCutFires = FALSE))
+  expect_length(off$cacheExtra, 2L)
+  expect_length(off$args$wholeTables, 0L)
+})

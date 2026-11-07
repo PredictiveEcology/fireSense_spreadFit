@@ -417,7 +417,9 @@ emulatorShipped <- function(objArgs) c(emulatorDataArgs, intersect(wholeCovNames
 #' cluster is stopped and its booking released when this function returns, as `runDEoptim()`'s is. Without `cores`
 #' (`NULL` or `NA`) the evaluations run here, one at a time.
 #'
-#' @param objArgs `emulatorObjectiveArgs()`.
+#' @param objArgs `emulatorObjectiveArgs()`, without the whole-ELF tables.
+#' @param wholeTables the whole-ELF tables (`wholeCovNames`) of `emulatorObjectiveArgs()`, or `list()`; apart from
+#'   `objArgs` so that the caller's `Cache()` can leave them out of what it digests.
 #' @param lower,upper the bounds, named.
 #' @param NP integer; the starting population's size.
 #' @param control list; see `emulatorDefaults()`.
@@ -426,7 +428,8 @@ emulatorShipped <- function(objArgs) c(emulatorDataArgs, intersect(wholeCovNames
 #' @return the `emulateObjective()` list.
 emulatorStartPopulation <- function(objArgs, lower, upper, NP, control, seed,
                                     cores = NULL, nCoresNeeded = NP, libPath = .libPaths(), logPath = tempdir(),
-                                    runName = "") {
+                                    runName = "", wholeTables = list()) {
+  objArgs <- c(objArgs, wholeTables)
   ctl <- emulatorControlOf(control)
   if (isTRUE(is.na(cores))) cores <- NULL
   cl <- NULL
