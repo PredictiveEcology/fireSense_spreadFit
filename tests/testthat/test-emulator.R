@@ -166,6 +166,34 @@ test_that("emulatorControl names are checked", {
   expect_error(emulatorControlOf(list(maxEval = 10L)), "unknown element")
 })
 
+test_that("the GP is fitted to at most gpMaxPoints evaluations, always the best, and Inf keeps every one", {
+  set.seed(3)
+  U <- matrix(stats::runif(300 * 3), ncol = 3)
+  U <- rbind(U, U[rep(1:2, each = 5), ])                                 # two points with 5 more replicates each
+  y <- 100 + 50 * rowSums((U - 0.5)^2) + stats::rnorm(nrow(U))
+  y[7] <- NA                                                             # a failed evaluation is the worst
+  rows <- emulatorTrainRows(U, y, maxPoints = 80L, bestFrac = 0.5)
+  expect_lte(length(rows), 80L)
+  expect_gt(length(rows), 70L)                                           # the cap is filled, not just respected
+  expect_identical(rows, sort(unique(rows)))
+  ## the best distinct points by mean are all in, with their replicates
+  keys <- emulatorPointKeys(U)
+  m <- tapply(ifelse(is.na(y), Inf, y), keys, mean)
+  bestKeys <- names(sort(m))[1:20]
+  expect_true(all(which(keys %in% bestKeys) %in% rows))
+  expect_false(7L %in% rows)
+  ## a replicated point is in with all its rows or not at all
+  for (k in unique(keys[301:310])) expect_true(all(which(keys == k) %in% rows) || !any(which(keys == k) %in% rows))
+  ## the rest are spread out: the thinned points are farther apart than a random draw of the same size
+  rest <- setdiff(rows, which(keys %in% names(sort(m))[1:40]))
+  nn <- function(X) mean(apply(as.matrix(stats::dist(X)) + diag(Inf, nrow(X)), 1, min))
+  expect_gt(nn(U[rest, ]), nn(U[sample(setdiff(seq_len(nrow(U)), rows), length(rest)), ]))
+  ## Inf, or a cap above the evaluations, is every row: the earlier behaviour
+  expect_identical(emulatorTrainRows(U, y, Inf, 0.5), seq_len(nrow(U)))
+  expect_identical(emulatorTrainRows(U, y, nrow(U), 0.5), seq_len(nrow(U)))
+  expect_identical(emulatorControlOf(list(gpMaxPoints = Inf))$gpMaxPoints, Inf)
+})
+
 ## A noisy quadratic with its minimum near the 0 bound of two wide one-sided parameters, as fuel coefficients
 ## (bounds 0-100, fitted 0.5-2) and youngAge (-50-0, fitted -1) are; the objective changes by ~10 per unit of them
 quadLower <- c(a = 0, b = -5, fuel = 0, young = -50); quadUpper <- c(a = 1, b = 5, fuel = 100, young = 0)
@@ -185,6 +213,16 @@ quadEmulate <- function(ctl, NP = 8L) {
 }
 quadCtl <- list(designPerParam = 10L, globalMaxEvals = 150L, maxEvals = 400L, minEvals = 100L, batchSize = 12L,
                 nCandidates = 500L, nPerturb = 300L, gpThreads = 1L)
+
+test_that("the emulator fits its GP to the capped rows only, and to every row with gpMaxPoints = Inf", {
+  fitted <- integer(0)
+  testthat::local_mocked_bindings(fitEmulatorGP = function(U, z, ctl) { fitted <<- c(fitted, nrow(U)); stop("stop here") })
+  for (cap in c(40L, Inf)) {
+    fitted <- integer(0)
+    expect_error(quadEmulate(utils::modifyList(quadCtl, list(gpMaxPoints = cap))), "stop here")
+    expect_identical(fitted, if (is.finite(cap)) 40L else 64L)
+  }
+})
 
 test_that("the emulator finds a minimum near the sign constraints of wide one-sided parameters within its budget", {
   ## the shape of a spread fit (ELF 6.6.1/6.6.2 bounds): the optimum's fuel coefficients, CMD and youngAge are 0.5-1.5

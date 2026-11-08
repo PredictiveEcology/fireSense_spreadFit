@@ -47,7 +47,12 @@
 #'     than `popMinDist` GP lengthscales to one already picked, the distance halved until `NP` are picked
 #'     (`emulatorSpreadPopulation()`), so separate good regions are all in it;
 #'   - `thetaBounds` (c(0.01, 5)), `gpMaxit` (200), `gpThreads` (6): the GP's lengthscale bounds (unit cube),
-#'     optimiser iterations (`hetGP::mleHetGP()`) and BLAS threads (the rest of the search runs on one).
+#'     optimiser iterations (`hetGP::mleHetGP()`) and BLAS threads (the rest of the search runs on one);
+#'   - `gpMaxPoints` (400), `gpBestFrac` (0.5): the GP is fitted to at most `gpMaxPoints` evaluations, because
+#'     a fit costs seconds at 200 points and over a minute at 1,000, with the workers idle. The best distinct points
+#'     by mean value (all their replicates) fill `gpBestFrac` of them, the rest are the evaluated points farthest
+#'     from those already kept (`emulatorTrainRows()`). `Inf` fits every evaluation (the behaviour before this
+#'     setting); batch choice and the starting population still look at all of them.
 emulatorDefaults <- function() {
   list(designPerParam = 20L, designRepPoints = 4L, designReps = 6L,
        globalMaxEvals = 1000L, maxEvals = 1600L, minEvals = 600L,
@@ -58,7 +63,8 @@ emulatorDefaults <- function() {
        trustRoundBatches = 2L, localTopFrac = 0.1, localWiden = 0.5, trustTolSD = 1,
        trustShrink = 0.5, trustExpand = 1.25, trustSuccessTol = 1L, trustFailureTol = 2L, trustMinWidth = 0.01,
        popPoolFrac = 0.2, popMinDist = 1,
-       thetaBounds = c(0.01, 5), gpMaxit = 200L, gpThreads = 6L)
+       thetaBounds = c(0.01, 5), gpMaxit = 200L, gpThreads = 6L,
+       gpMaxPoints = 400, gpBestFrac = 0.5)
 }
 
 ## `control` merged onto the defaults; an unknown name is an error, not a silently ignored setting
@@ -205,7 +211,8 @@ emulateObjective <- function(evaluate, lower, upper, NP, control = list(), seed 
       best <- if (is.null(status)) min(y, na.rm = TRUE) else min(status$bestMean)
       cap <- if (local) ctl$localCapRatio * best else ctl$globalCapRatio * min(y, na.rm = TRUE)
       sc <- emulatorScale(y, cap, ctl$floorFrac)
-      list(m = fitEmulatorGP(U, sc$z, ctl), sc = sc)
+      rows <- emulatorTrainRows(U, y, ctl$gpMaxPoints, ctl$gpBestFrac)
+      list(m = fitEmulatorGP(U[rows, , drop = FALSE], sc$z[rows], ctl), sc = sc)
     }
     ## evaluate a batch and record it; trustScale NULL is the global phase
     evaluateBatch <- function(sel, sc, trustScale = NULL, round = NA_integer_) {
@@ -275,7 +282,38 @@ emulatorScale <- function(y, cap, floorFrac = 0.8) {
   list(z = log(pmin(y, cap) - floor), untr = function(z) floor + exp(z))
 }
 
-## The GP fitted to every evaluation, on the unit cube (hetGP pools replicates)
+## The rows of `U` (evaluations) the GP is fitted to: all of them up to `maxPoints`; above that, the best distinct
+## points by mean `y` (a missing value is the worst), all their replicates, until `bestFrac` of `maxPoints` rows
+## are taken, then repeatedly the distinct point farthest (unit cube) from those taken, until none fits. Never
+## more than `maxPoints` rows.
+emulatorTrainRows <- function(U, y, maxPoints, bestFrac) {
+  if (nrow(U) <= maxPoints) return(seq_len(nrow(U)))
+  keys <- emulatorPointKeys(U)
+  id <- match(keys, unique(keys))
+  rowsOf <- split(seq_len(nrow(U)), id)
+  size <- lengths(rowsOf)
+  m <- as.numeric(tapply(ifelse(is.na(y), Inf, y), id, mean))
+  X <- U[match(seq_along(rowsOf), id), , drop = FALSE]
+  taken <- integer(0); used <- 0L
+  for (i in order(m)) {
+    if (used + size[i] > maxPoints || used >= bestFrac * maxPoints) break
+    taken <- c(taken, i); used <- used + size[i]
+  }
+  gap <- rep(Inf, nrow(X)) # distance to the nearest taken point
+  near <- function(i) sqrt(colSums((t(X) - X[i, ])^2))
+  for (i in taken) gap <- pmin(gap, near(i))
+  open <- setdiff(seq_len(nrow(X)), taken)
+  repeat {
+    open <- open[size[open] <= maxPoints - used]
+    if (!length(open)) break
+    i <- open[which.max(gap[open])]
+    taken <- c(taken, i); used <- used + size[i]; open <- setdiff(open, i)
+    gap <- pmin(gap, near(i))
+  }
+  sort(unlist(rowsOf[taken], use.names = FALSE))
+}
+
+## The GP fitted to the evaluations in `U` (see `emulatorTrainRows()`), on the unit cube (hetGP pools replicates)
 fitEmulatorGP <- function(U, z, ctl) {
   localSingleThreadBLAS(threads = ctl$gpThreads)
   d <- ncol(U)

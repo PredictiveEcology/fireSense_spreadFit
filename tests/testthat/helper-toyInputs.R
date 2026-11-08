@@ -153,7 +153,7 @@ mockFitAndLedger <- function(sim, rec = new.env()) {
 
 ## The module's source, parsed: the main file and its R/ helpers. For the tests that check a call by
 ## reading it, because running it needs a full simList.
-moduleSource <- function() {
+moduleCodeParsed <- function() {
   files <- c(testthat::test_path("..", "..", "fireSense_spreadFit.R"),
              list.files(testthat::test_path("..", "..", "R"), "\\.R$", full.names = TRUE))
   do.call(c, lapply(files, parse, keep.source = FALSE))
