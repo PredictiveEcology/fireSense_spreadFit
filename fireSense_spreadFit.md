@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9042"
-date: "Last updated: 2026-11-07"
+date: "Last updated: 2026-11-08"
 output:
   bookdown::html_document2:
     toc: true
@@ -305,7 +305,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;">  </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Settings of the emulator search (`initialPopMethod = 'emulator'`), by name; what is missing comes from `emulatorDefaults()`: the design size (`designPerParam`, 20), the budget (`globalMaxEvals` 1000, `maxEvals` 1600, `minEvals` 600), the global phase's stopping rule (`globalWindow`, `relTol`), the response caps (`globalCapRatio`, `localCapRatio`), the log1p rule (`logSpanMin`), the trust-region rounds (`trustRoundBatches`, `localTopFrac`, `localWiden`, `trustTolSD`, `trustShrink`, `trustExpand`, `trustSuccessTol`, `trustFailureTol`, `trustMinWidth`) and the starting population's pool and spacing (`popPoolFrac`, `popMinDist`). Part of the search's cache key. </td>
+   <td style="text-align:left;"> Settings of the emulator search (`initialPopMethod = 'emulator'`), by name; what is missing comes from `emulatorDefaults()`: the design size (`designPerParam`, 20), the budget (`globalMaxEvals` 1000, `maxEvals` 1600, `minEvals` 600), the global phase's stopping rule (`globalWindow`, `relTol`), the response caps (`globalCapRatio`, `localCapRatio`), the log1p rule (`logSpanMin`), the trust-region rounds (`trustRoundBatches`, `localTopFrac`, `localWiden`, `trustTolSD`, `trustShrink`, `trustExpand`, `trustSuccessTol`, `trustFailureTol`, `trustMinWidth`), the starting population's pool and spacing (`popPoolFrac`, `popMinDist`) and the most evaluations the GP is fitted to (`gpMaxPoints`, 400: the best points and the most spread out of the rest; `Inf` fits all of them, slower with the workers idle). Part of the search's cache key. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
