@@ -100,7 +100,12 @@ distinct evaluated points (by their mean value; at least <code>NP</code> of them
 than <code>popMinDist</code> GP lengthscales to one already picked, the distance halved until <code>NP</code> are picked
 (<code><a href="emulatorSpreadPopulation.html">emulatorSpreadPopulation()</a></code>), so separate good regions are all in it;</p></li>
 <li><p><code>thetaBounds</code> (c(0.01, 5)), <code>gpMaxit</code> (200), <code>gpThreads</code> (6): the GP's lengthscale bounds (unit cube),
-optimiser iterations (<code><a href="https://rdrr.io/pkg/hetGP/man/mleHetGP.html" class="external-link">hetGP::mleHetGP()</a></code>) and BLAS threads (the rest of the search runs on one).</p></li>
+optimiser iterations (<code><a href="https://rdrr.io/pkg/hetGP/man/mleHetGP.html" class="external-link">hetGP::mleHetGP()</a></code>) and BLAS threads (the rest of the search runs on one);</p></li>
+<li><p><code>gpMaxPoints</code> (400), <code>gpBestFrac</code> (0.5): the GP is fitted to at most <code>gpMaxPoints</code> evaluations, because
+a fit costs seconds at 200 points and over a minute at 1,000, with the workers idle. The best distinct points
+by mean value (all their replicates) fill <code>gpBestFrac</code> of them, the rest are the evaluated points farthest
+from those already kept (<code>emulatorTrainRows()</code>). <code>Inf</code> fits every evaluation (the behaviour before this
+setting); batch choice and the starting population still look at all of them.</p></li>
 </ul></div>
 
   </div>

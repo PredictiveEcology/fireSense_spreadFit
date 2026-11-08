@@ -73,7 +73,7 @@
       <h1 data-toc-skip>fireSense_spreadFit Manual</h1>
             <h3 data-toc-skip class="subtitle">v.1.2.0.9042</h3>
             
-            <h4 data-toc-skip class="date">Last updated: 2026-11-07</h4>
+            <h4 data-toc-skip class="date">Last updated: 2026-11-08</h4>
       
 
       <div class="hidden name"><code>fireSense_spreadFit.Rmd</code></div>
@@ -701,7 +701,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Settings of the emulator search (<code>initialPopMethod = 'emulator'</code>), by name; what is missing comes from <code><a href="../reference/emulatorDefaults.html">emulatorDefaults()</a></code>: the design size (<code>designPerParam</code>, 20), the budget (<code>globalMaxEvals</code> 1000, <code>maxEvals</code> 1600, <code>minEvals</code> 600), the global phase’s stopping rule (<code>globalWindow</code>, <code>relTol</code>), the response caps (<code>globalCapRatio</code>, <code>localCapRatio</code>), the log1p rule (<code>logSpanMin</code>), the trust-region rounds (<code>trustRoundBatches</code>, <code>localTopFrac</code>, <code>localWiden</code>, <code>trustTolSD</code>, <code>trustShrink</code>, <code>trustExpand</code>, <code>trustSuccessTol</code>, <code>trustFailureTol</code>, <code>trustMinWidth</code>) and the starting population’s pool and spacing (<code>popPoolFrac</code>, <code>popMinDist</code>). Part of the search’s cache key.
+Settings of the emulator search (<code>initialPopMethod = 'emulator'</code>), by name; what is missing comes from <code><a href="../reference/emulatorDefaults.html">emulatorDefaults()</a></code>: the design size (<code>designPerParam</code>, 20), the budget (<code>globalMaxEvals</code> 1000, <code>maxEvals</code> 1600, <code>minEvals</code> 600), the global phase’s stopping rule (<code>globalWindow</code>, <code>relTol</code>), the response caps (<code>globalCapRatio</code>, <code>localCapRatio</code>), the log1p rule (<code>logSpanMin</code>), the trust-region rounds (<code>trustRoundBatches</code>, <code>localTopFrac</code>, <code>localWiden</code>, <code>trustTolSD</code>, <code>trustShrink</code>, <code>trustExpand</code>, <code>trustSuccessTol</code>, <code>trustFailureTol</code>, <code>trustMinWidth</code>), the starting population’s pool and spacing (<code>popPoolFrac</code>, <code>popMinDist</code>) and the most evaluations the GP is fitted to (<code>gpMaxPoints</code>, 400: the best points and the most spread out of the rest; <code>Inf</code> fits all of them, slower with the workers idle). Part of the search’s cache key.
 </td>
 <td style="text-align:left;">
 TRUE

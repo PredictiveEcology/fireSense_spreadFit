@@ -138,30 +138,6 @@ table of veg covariates, burn status, polyID, and pixelID
 NA
 </td>
 </tr><tr><td style="text-align:left;">
-fireSense_annualSpreadFitCovariatesWhole
-</td>
-<td style="text-align:left;">
-list
-</td>
-<td style="text-align:left;">
-Optional; <code>fireSense_annualSpreadFitCovariates</code> for every flammable pixel of the ELF, not only the buffers, from <code>fireSense_dataPrepFit</code>. Used with <code>resimulateCutFires</code>.
-</td>
-<td style="text-align:left;">
-NA
-</td>
-</tr><tr><td style="text-align:left;">
-fireSense_nonAnnualSpreadFitCovariatesWhole
-</td>
-<td style="text-align:left;">
-list
-</td>
-<td style="text-align:left;">
-Optional; <code>fireSense_nonAnnualSpreadFitCovariates</code> for every flammable pixel of the ELF, from <code>fireSense_dataPrepFit</code>. Used with <code>resimulateCutFires</code>.
-</td>
-<td style="text-align:left;">
-NA
-</td>
-</tr><tr><td style="text-align:left;">
 spreadFitAdditionalColNames
 </td>
 <td style="text-align:left;">
@@ -1159,7 +1135,7 @@ A simulated fire that burns an open edge pixel of its year’s buffers (one next
 TRUE
 </td>
 </tr><tr><td style="text-align:left;">
-resimulateCutFires
+wholeLandscapeSpread
 </td>
 <td style="text-align:left;">
 logical
@@ -1174,28 +1150,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-TRUE re-simulates, on the whole ELF, each fire that a replicate lets burn an open edge pixel of its year’s buffers (a cut fire), so it is scored at the size it reaches there, not the size it was cut at. Needs <code>fireSense_annualSpreadFitCovariatesWhole</code> and <code>fireSense_nonAnnualSpreadFitCovariatesWhole</code> (<code>fireSense_dataPrepFit</code>, parameter <code>wholeLandscapeSpreadCovariates</code>), and cannot go with <code>penaliseRunaways = TRUE</code>. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code> as <code>annualDTx1000Whole</code>, <code>nonAnnualDTx1000Whole</code> and <code>cutMaxTries</code>. FALSE changes nothing, including the fit’s cache key. Refits need a new <code>fitFileSuffix</code>.
-</td>
-<td style="text-align:left;">
-TRUE
-</td>
-</tr><tr><td style="text-align:left;">
-cutMaxTries
-</td>
-<td style="text-align:left;">
-integer
-</td>
-<td style="text-align:left;">
-50
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-With <code>resimulateCutFires</code>, the most times a cut fire is run again on the whole ELF while it does not burn an open edge pixel; a fire still short of one keeps its cut size. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code> as <code>cutMaxTries</code>.
+TRUE spreads every fire of the fit on all pixels of the covariate tables, with no buffer edge, so no fire is cut and every fire is scored at the size it burns. For tables of the whole ELF (<code>fireSense_dataPrepFit</code>, parameter <code>wholeLandscapeSpreadCovariates</code>); the spread probability is computed only on the cells a fire reaches, so an evaluation costs about what a buffered one does. Needs <code>spreadLink = "powerLaw"</code> and <code>penaliseRunaways = FALSE</code>. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code> and <code>.objfunSpreadFit()</code> as <code>wholeLandscape</code>. FALSE changes nothing, including the fit’s cache key. Refits need a new <code>fitFileSuffix</code>.
 </td>
 <td style="text-align:left;">
 TRUE
