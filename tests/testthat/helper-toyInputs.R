@@ -80,6 +80,10 @@ toyObjects <- function() {
   )
 }
 
+## The ledger row's columns that are not in fireSenseUtils::spreadFitAdditionalColNamesTxt: the polygon, its geometry
+## and the escape definition (escapeSizeHa, fireCauses)
+ledgerKeyCols <- c("polygonID", "geometry", names(fireSenseUtils::escapeDefinition()))
+
 ## A ledger as fireSense_dataPrepFit hands it over: one row per fitted polygon.
 toyLedger <- function(ids) {
   sa <- toyStudyArea()

@@ -426,7 +426,7 @@ emulatorSpreadPopulation <- function(X, value, theta, NP, poolFrac, minDist) {
 #' The objective's arguments, from the fit's `runDEoptim()` arguments
 #'
 #' What `runDEoptim()` hands `fireSenseUtils::.objfunSpreadFit()`: its arguments that the objective also has, plus
-#' `doAssertions` (its `doObjFunAssertions`) and `fitYearSpreadSD` (whether `lower` has `yearSpreadSD`), and the
+#' `doAssertions` (its `doObjFunAssertions`) and `fitYearSpreadSD` and `fitFireSpreadSD` (whether `lower` has `yearSpreadSD`, `fireSpreadSD`), and the
 #' buffer edges it adds to `fireBufferedListDT` before the fit (`fireSenseUtils::addBufferEdge()`).
 #'
 #' @param deArgs named list, the arguments `fitSpread()` gives `runDEoptim()`.
@@ -437,6 +437,8 @@ emulatorObjectiveArgs <- function(deArgs) {
   args$fireBufferedListDT <- fireSenseUtils::addBufferEdge(deArgs$fireBufferedListDT, deArgs$landscape)
   args$doAssertions <- deArgs$doObjFunAssertions
   args$fitYearSpreadSD <- "yearSpreadSD" %in% names(deArgs$lower)
+  ## only a fit with fireSpreadSD in its bounds has it, so the other fits' emulator keys are what they were
+  args$fitFireSpreadSD <- if ("fireSpreadSD" %in% names(deArgs$lower)) TRUE
   args$verbose <- 0
   args
 }

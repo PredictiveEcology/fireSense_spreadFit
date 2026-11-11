@@ -111,7 +111,7 @@ test_that("the ledger row: polygon id, 5 best members, their values, and the cov
   expect_identical(nrow(row), 1L)
   expect_identical(names(row), c("geometry", "numIterations", "objFunVal", "params", "sppEquiv",
                                  "nonForestedLCCGroups", "missingLCCgroup", "covMinMax_spread",
-                                 "polygonID"))
+                                 names(fireSenseUtils::escapeDefinition()), "polygonID"))
   expect_identical(row$polygonID, "9.9")                 # .ELFind, not .runName
   expect_identical(row$numIterations[[1]], 3L)           # toyDE() has 3 blocks
   ## toyDE(): member k has first parameter k and value 8 - k, so the 5 best are members 7..3

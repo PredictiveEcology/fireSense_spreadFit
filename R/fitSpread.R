@@ -197,6 +197,38 @@ checkWholeLandscapeSpread <- function(Par) {
   invisible(NULL)
 }
 
+## The bounds of the random effects' sds (`fireSenseUtils::spreadRandomEffectTxt`) for `estimateSpreadParams()`: a
+## named list, NULL for one that is off. Off are: `NA` in its `*Bounds` parameter; `fireSpreadSD` when the fit is not
+## `wholeLandscapeSpread` (fireSenseUtils stops otherwise; said in a message); one the supplied `upper` or `lower` lacks,
+## so the bound filled in stays aligned with the supplied one.
+randomEffectBounds <- function(Par, upper = NULL, lower = NULL) {
+  upperMissing <- is.null(upper) || any(is.na(upper))
+  lowerMissing <- is.null(lower) || any(is.na(lower))
+  out <- lapply(stats::setNames(nm = fireSenseUtils::spreadRandomEffectTxt), function(nm) {
+    b <- Par[[paste0(nm, "Bounds")]]
+    if (anyNA(b)) return(NULL)
+    if (upperMissing && !lowerMissing && !nm %in% names(lower)) return(NULL)
+    if (lowerMissing && !upperMissing && !nm %in% names(upper)) return(NULL)
+    b
+  })
+  if (!is.null(out$fireSpreadSD) && !isTRUE(Par$wholeLandscapeSpread)) {
+    message("fireSense_spreadFit: fireSpreadSD is left out of the bounds: it needs wholeLandscapeSpread = TRUE")
+    out$fireSpreadSD <- NULL
+  }
+  out
+}
+
+## The escape definition the fit uses (`fireSenseUtils::escapeDefinition()`), from this module's `escapeSizeHa` and
+## `fireCauses`, which must equal the other modules' (an error if they are set differently). `escapeSizeHa` NA (the
+## old fit: any fire over 1 pixel) gives NA, as a ledger row without the definition has.
+escapeDefinitionOf <- function(sim) {
+  size <- SpaDES.core::paramCheckOtherMods(sim, "escapeSizeHa", ifSetButDifferent = "error")
+  causes <- SpaDES.core::paramCheckOtherMods(sim, "fireCauses", ifSetButDifferent = "error")
+  def <- fireSenseUtils::escapeDefinition(if (length(size) && !is.na(size)) size else 0, causes)
+  if (!length(size) || is.na(size)) data.table::set(def, NULL, "escapeSizeHa", NA_real_)
+  def
+}
+
 ## The `link` the objective is given, from the parameters `Par` (`P(sim)`): "powerLaw" for `spreadLink = "powerLaw"`,
 ## else the `link` parameter's "logistic3pUpper", else NULL, its default, logistic3p
 spreadLink <- function(Par) {

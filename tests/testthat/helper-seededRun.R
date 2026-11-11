@@ -35,3 +35,12 @@ seededRun <- function(failFirst = FALSE, params = list(), mocks = function(rec) 
   suppressMessages(SpaDES.core::spades(sim))
   rec
 }
+
+## The emulator's search, replaced by a recorder that returns NP points at 0.3 of the way from lower to upper
+emulatorMock <- function(rec) list(
+  emulatorStartPopulation = function(objArgs, lower, upper, NP, control, seed, cores, nCoresNeeded, ...) {
+    rec$emu <- list(objArgs = objArgs, NP = NP, cores = cores, nCoresNeeded = nCoresNeeded)
+    pop <- matrix(rep(lower + 0.3 * (upper - lower), each = NP), NP, dimnames = list(NULL, names(lower)))
+    rec$emuPop <- pop
+    list(pop = pop)
+  })

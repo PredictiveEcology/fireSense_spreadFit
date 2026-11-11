@@ -1,14 +1,6 @@
 ## initialPopMethod = "emulator": a Gaussian-process emulator of the objective chooses DEoptim's starting population
 ## (prototype 2026-10-25/26: ELF 6.3.1 seeded reached in 16 generations the median the unseeded fit took 249 for).
 
-## The emulator's search, replaced by a recorder that returns NP points at 0.3 of the way from lower to upper
-emulatorMock <- function(rec) list(
-  emulatorStartPopulation = function(objArgs, lower, upper, NP, control, seed, cores, nCoresNeeded, ...) {
-    rec$emu <- list(objArgs = objArgs, NP = NP, cores = cores, nCoresNeeded = nCoresNeeded)
-    pop <- matrix(rep(lower + 0.3 * (upper - lower), each = NP), NP, dimnames = list(NULL, names(lower)))
-    rec$emuPop <- pop
-    list(pop = pop)
-  })
 test_that("with initialPopMethod = 'emulator' the emulator's points start DEoptim", {
   rec <- seededRun(params = list(initialPopMethod = "emulator"), mocks = emulatorMock)
   expect_false(is.null(rec$emu))
