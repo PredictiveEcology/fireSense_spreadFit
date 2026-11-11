@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9043"
-date: "Last updated: 2026-11-08"
+date: "Last updated: 2026-11-11"
 output:
   bookdown::html_document2:
     toc: true
@@ -487,7 +487,16 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 50 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Size (ha) a fire must reach to count as escaped. The spread model is fitted to escaped fires only, and each simulated fire first grows to this size with its own spread probabilities (its burning cells stay active until it gets there), then spreads normally. `NULL` or `NA` gives the old fit (any fire over 1 pixel). Passed to `fireSenseUtils::runDEoptim()`. </td>
+   <td style="text-align:left;"> Size (ha) a fire must reach to count as escaped. The spread model is fitted to escaped fires only, and each simulated fire first grows to this size with its own spread probabilities (its burning cells stay active until it gets there), then spreads normally. `NULL` or `NA` gives the old fit (any fire over 1 pixel). Passed to `fireSenseUtils::runDEoptim()`. Written to the ledger row with `fireCauses` (`fireSenseUtils::escapeDefinition()`); it must equal the same parameter of the other fireSense modules (`SpaDES.core::paramCheckOtherMods()`, an error if it does not). </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> fireCauses </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> natural,.... </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Cause groups of the fires the fit's escape definition counts (`fireSenseUtils::escapeDefinition()`). Written to the ledger row; it must equal the same parameter of the other fireSense modules (`SpaDES.core::paramCheckOtherMods()`, an error if it does not). </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -785,6 +794,15 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Named list of `c(min, max)`: the FIXED range every climate covariate is rescaled with, not the range of this polygon's data. Default `fireSenseUtils::climateCovRanges`, the one table of climate ranges, which documents each variable's units and says its values are provisional. `CMDsm = c(0, 100)` makes the covariate CMDsm / 100 in every polygon. With the data's range, 1 meant a CMDsm of 104 in one polygon and 297 in another, so the coefficient could not be compared across polygons, and a polygon that never gets dry stretched its small range over [0, 1]. A climate covariate with no entry stops the fit; there is no fallback to the data's range. `youngAge`, the `nfLCC_ ` groups and the `treedWetland` indicator are always `c(0, 1)` (`fireSenseUtils::spreadIndicatorRanges()`). `fireSense_spreadPredict` rescales with the stored `covMinMax_spread`, so it follows. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> fireSpreadSDBounds </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> 0, 10 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Bounds of `fireSpreadSD`, the sd of a per-fire random effect on spread (added to the linear predictor like `yearSpreadSD`; each fire draws its own eps), when `lower`/`upper` are not supplied. It comes just before `yearSpreadSD` in the bounds. Only a fit with `wholeLandscapeSpread = TRUE` can fit it (`fireSenseUtils::runDEoptim()` stops otherwise): with FALSE it is left out of the bounds, with a message, and the fit is what it was. `NA` turns it off. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
