@@ -252,12 +252,19 @@ defineModule(sim, list(
                                  "log scale, `fireSenseUtils::kernelLogScore()`), passed to",
                                  "`fireSenseUtils::runDEoptim()`. 't' with `weighted = FALSE` predicted held-out",
                                  "years best in the 2026-09-21 cross-validation.")),
-    defineParameter("escapeSizeHa", "numeric", default = 50,
+    defineParameter("escapeSizeHa", "numeric", default = fireSenseUtils::fireSenseEscapeSizeHa,
                     desc = paste("Size (ha) a fire must reach to count as escaped. The spread model is fitted to",
                                  "escaped fires only, and each simulated fire first grows to this size with its",
                                  "own spread probabilities (its burning cells stay active until it gets there),",
                                  "then spreads normally. `NULL` or `NA` gives the old fit (any fire over 1",
-                                 "pixel). Passed to `fireSenseUtils::runDEoptim()`.")),
+                                 "pixel). Passed to `fireSenseUtils::runDEoptim()`. Written to the ledger row with",
+                                 "`fireCauses` (`fireSenseUtils::escapeDefinition()`); it must equal the same parameter of the",
+                                 "other fireSense modules (`SpaDES.core::paramCheckOtherMods()`, an error if it does not).")),
+    defineParameter("fireCauses", "character", default = fireSenseUtils::fireSenseFireCauses,
+                    desc = paste("Cause groups of the fires the fit's escape definition counts",
+                                 "(`fireSenseUtils::escapeDefinition()`). Written to the ledger row; it must equal the same",
+                                 "parameter of the other fireSense modules (`SpaDES.core::paramCheckOtherMods()`, an error",
+                                 "if it does not).")),
     defineParameter("sizeLikDf", "numeric", default = 5,
                     desc = "Degrees of freedom of the 't' size likelihood."),
     defineParameter("weighted", "logical|character", default = FALSE,
@@ -405,6 +412,13 @@ defineModule(sim, list(
                                  "range. `youngAge`, the `nfLCC_*` groups and the `treedWetland` indicator are always `c(0, 1)`",
                                  "(`fireSenseUtils::spreadIndicatorRanges()`). `fireSense_spreadPredict` rescales with the",
                                  "stored `covMinMax_spread`, so it follows.")),
+    defineParameter("fireSpreadSDBounds", "numeric", default = c(0, 10),
+                    desc = paste("Bounds of `fireSpreadSD`, the sd of a per-fire random effect on spread (added to the",
+                                 "linear predictor like `yearSpreadSD`; each fire draws its own eps), when `lower`/`upper` are",
+                                 "not supplied. It comes just before `yearSpreadSD` in the bounds. Only a fit with",
+                                 "`wholeLandscapeSpread = TRUE` can fit it (`fireSenseUtils::runDEoptim()` stops otherwise): with",
+                                 "FALSE it is left out of the bounds, with a message, and the fit is what it was. `NA` turns it",
+                                 "off.")),
     defineParameter("yearSpreadSDBounds", "numeric", default = c(0, 10),
                     desc = paste("Bounds of `yearSpreadSD`, the sd of a per-year random effect on spread",
                                  "(`fireSenseUtils::.objfunSpreadFit()`), when `lower`/`upper` are not supplied. It is",
@@ -780,18 +794,15 @@ spreadFitPrep <- function(sim) {
   checkSpreadLink(Par)
   checkWholeLandscapeSpread(Par)
   sim <- calibratePowerLawFor(sim)
-  fsdBounds <- if (!anyNA(Par$yearSpreadSDBounds)) Par$yearSpreadSDBounds
-  upperMissing <- is.null(P(sim)$upper) || any(is.na(P(sim)$upper))
-  lowerMissing <- is.null(P(sim)$lower) || any(is.na(P(sim)$lower))
-  if (upperMissing && !lowerMissing && !"yearSpreadSD" %in% names(P(sim)$lower)) fsdBounds <- NULL
-  if (lowerMissing && !upperMissing && !"yearSpreadSD" %in% names(P(sim)$upper)) fsdBounds <- NULL
+  fireSenseUtils::escapeDefinitionOf(sim) # stops now, not after the fit, if the escape definition differs from the other modules'
+  sdBounds <- randomEffectBounds(Par, P(sim)$upper, P(sim)$lower)
   if (is.null(P(sim)$upper) || any(is.na(P(sim)$upper))) {
     P(sim)$upper <- estimateSpreadParams(sim$fireSense_spreadFormula,
                                          sim$fireSense_annualSpreadFitCovariates,
                                          whichBound = "upper", upperAndLower = Par$upperAndLowerVal,
                                          fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
                                          upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
-                                         yearSpreadSDBounds = fsdBounds,
+                                         fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
                                          maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin))
   }
 
@@ -802,7 +813,7 @@ spreadFitPrep <- function(sim) {
                                           whichBound = "lower", upperAndLower = Par$upperAndLowerVal,
                                           fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
                                          upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
-                                         yearSpreadSDBounds = fsdBounds,
+                                         fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
                                          maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin))
   }
   ## hillSlope1 (the spread link's slope) and inflectionPoint1 (its Richards exponent) are fixed at 1,
@@ -1110,6 +1121,8 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 #' @param fuelTerms,upperAndLowerFuel character names of the fuel biomass terms, and their upper bound (lower is 0).
 #' @param upperTailBounds numeric; if not `NULL`, the bounds of `upperTail1`, which is added after
 #'   `maxAsymptote` (link "logistic3pUpper").
+#' @param fireSpreadSDBounds,yearSpreadSDBounds numeric(2) or `NULL`; the bounds of the per-fire and per-year random
+#'   effects' sds, added last, `fireSpreadSD` before `yearSpreadSD` (`randomEffectBounds()`). `NULL` leaves one out.
 #' @param maxAsymptoteBounds numeric(2); the bounds of `maxAsymptote` (`maxAsymptoteBoundsOf()`).
 #' @return named numeric vector: `maxAsymptote` (bounded by `maxAsymptoteBounds`, by default
 #'   `fireSenseUtils::spreadProbFloor` and `fireSenseUtils::spreadProbCeiling`), `upperTail1` (with `upperTailBounds`), then
@@ -1117,7 +1130,7 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 #'   terms. No `hillSlope1` or `inflectionPoint1` -- both are fixed at 1, not fitted.
 estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, whichBound,
                                  upperAndLower, fuelTerms = character(), upperAndLowerFuel = upperAndLower,
-                                 upperTailBounds = NULL, yearSpreadSDBounds = NULL,
+                                 upperTailBounds = NULL, fireSpreadSDBounds = NULL, yearSpreadSDBounds = NULL,
                                  maxAsymptoteBounds = maxAsymptoteBoundsOf()) {
 
   stopifnot(whichBound %in% c("upper", "lower"))
@@ -1152,10 +1165,11 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
   if (!is.null(upperTailBounds))
     newParams <- append(newParams, c(upperTail1 = if (whichBound == "upper") max(upperTailBounds)
                                                   else min(upperTailBounds)), after = 1L)
-  ## the per-year random effect's sd; the objective finds it by name and requires it LAST
-  if (!is.null(yearSpreadSDBounds))
-    newParams <- c(newParams, yearSpreadSD = if (whichBound == "upper") max(yearSpreadSDBounds)
-                                             else min(yearSpreadSDBounds))
+  ## the random effects' sds (fireSpreadSD, then yearSpreadSD); the objective finds them by name and requires them LAST
+  sdBounds <- list(fireSpreadSD = fireSpreadSDBounds, yearSpreadSD = yearSpreadSDBounds)
+  for (nm in fireSenseUtils::spreadRandomEffectTxt)
+    if (!is.null(sdBounds[[nm]]))
+      newParams <- c(newParams, stats::setNames(if (whichBound == "upper") max(sdBounds[[nm]]) else min(sdBounds[[nm]]), nm))
 
   return(newParams)
 }

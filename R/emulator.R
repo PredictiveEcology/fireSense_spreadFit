@@ -426,7 +426,7 @@ emulatorSpreadPopulation <- function(X, value, theta, NP, poolFrac, minDist) {
 #' The objective's arguments, from the fit's `runDEoptim()` arguments
 #'
 #' What `runDEoptim()` hands `fireSenseUtils::.objfunSpreadFit()`: its arguments that the objective also has, plus
-#' `doAssertions` (its `doObjFunAssertions`) and `fitYearSpreadSD` (whether `lower` has `yearSpreadSD`), and the
+#' `doAssertions` (its `doObjFunAssertions`) and `fitYearSpreadSD` and `fitFireSpreadSD` (whether `lower` has `yearSpreadSD`, `fireSpreadSD`), and the
 #' buffer edges it adds to `fireBufferedListDT` before the fit (`fireSenseUtils::addBufferEdge()`).
 #'
 #' @param deArgs named list, the arguments `fitSpread()` gives `runDEoptim()`.
@@ -436,7 +436,10 @@ emulatorObjectiveArgs <- function(deArgs) {
   args <- deArgs[intersect(names(deArgs), setdiff(names(formals(fn)), "..."))]
   args$fireBufferedListDT <- fireSenseUtils::addBufferEdge(deArgs$fireBufferedListDT, deArgs$landscape)
   args$doAssertions <- deArgs$doObjFunAssertions
-  args$fitYearSpreadSD <- "yearSpreadSD" %in% names(deArgs$lower)
+  ## the random effects of the fit's bounds, as runDEoptim() gives them (`fitFireSpreadSD` only when fitted, so the
+  ## other fits' emulator keys are what they were)
+  re <- fireSenseUtils::spreadRandomEffectArgs(deArgs$lower, deArgs$wholeLandscape)
+  args[names(re)] <- re
   args$verbose <- 0
   args
 }

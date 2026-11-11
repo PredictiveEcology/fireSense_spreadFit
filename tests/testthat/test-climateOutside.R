@@ -22,7 +22,7 @@ test_that("the 'ceiling' link leaves the fit, the ledger row and the cache keys 
   row <- out$rec$geoArgs$studyAreaFireSense
   expect_false(refCol %in% names(row))
   expect_false(linkCol %in% names(row))
-  expect_identical(setdiff(names(row), c("polygonID", "geometry")), fireSenseUtils::spreadFitAdditionalColNamesTxt)
+  expect_identical(setdiff(names(row), ledgerKeyCols), fireSenseUtils::spreadFitAdditionalColNamesTxt)
 })
 
 test_that("with climateOutside the fit gets the climate reference, found once from the data the objective uses", {

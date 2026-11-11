@@ -82,7 +82,7 @@ test_that("off, there is no centre, no ledger column, and the fit's cache key om
   expect_null(out$rec$deArgs$covCentre)
   row <- out$rec$geoArgs$studyAreaFireSense
   expect_false(fireSenseUtils::spreadFitCovCentreTxt %in% names(row))
-  expect_identical(setdiff(names(row), c("polygonID", "geometry")), fireSenseUtils::spreadFitAdditionalColNamesTxt)
+  expect_identical(setdiff(names(row), ledgerKeyCols), fireSenseUtils::spreadFitAdditionalColNamesTxt)
   expect_false(icptName %in% names(row$params[[1]]))
   expect_false(icptName %in% names(out$rec$deArgs$lower))
 })

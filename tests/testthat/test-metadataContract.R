@@ -28,7 +28,7 @@ test_that("parameter classes", {
       sizeLik = "character", sizeLikDf = "numeric", escapeSizeHa = "numeric", weighted = "logical|character",
       adWeight = "character|numeric", yearAreaWeight = "numeric|character",
       areaDistWeight = "numeric|character", crpsWeights = "list", gateRefusal = "character", penaliseRunaways = "logical", wholeLandscapeSpread = "logical", runawayEdgeFrac = "numeric", runawayEdgeMin = "integer", runawayBufferMultiple = "numeric", jumpTries = "numeric", jumpMeanDist = "numeric",
-      upperTailBounds = "numeric", yearSpreadSDBounds = "numeric",
+      upperTailBounds = "numeric", fireSpreadSDBounds = "numeric", yearSpreadSDBounds = "numeric", fireCauses = "character",
       verbose = "numeric", visualizeDEoptim = "Path"))
   )
 })
