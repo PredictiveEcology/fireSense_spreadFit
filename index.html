@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9043</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9044</span>
       </span>
     </div>
 
@@ -1134,7 +1134,30 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Size (ha) a fire must reach to count as escaped. The spread model is fitted to escaped fires only, and each simulated fire first grows to this size with its own spread probabilities (its burning cells stay active until it gets there), then spreads normally. <code>NULL</code> or <code>NA</code> gives the old fit (any fire over 1 pixel). Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>.
+Size (ha) a fire must reach to count as escaped. The spread model is fitted to escaped fires only, and each simulated fire first grows to this size with its own spread probabilities (its burning cells stay active until it gets there), then spreads normally. <code>NULL</code> or <code>NA</code> gives the old fit (any fire over 1 pixel). Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>. Written to the ledger row with <code>fireCauses</code> (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/escapeDefinition.html" class="external-link">fireSenseUtils::escapeDefinition()</a></code>); it must equal the same parameter of the other fireSense modules (<code><a href="https://spades-core.predictiveecology.org/reference/paramCheckOtherMods.html" class="external-link">SpaDES.core::paramCheckOtherMods()</a></code>, an error if it does not).
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fireCauses
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+natural,….
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Cause groups of the fires the fit’s escape definition counts (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/escapeDefinition.html" class="external-link">fireSenseUtils::escapeDefinition()</a></code>). Written to the ledger row; it must equal the same parameter of the other fireSense modules (<code><a href="https://spades-core.predictiveecology.org/reference/paramCheckOtherMods.html" class="external-link">SpaDES.core::paramCheckOtherMods()</a></code>, an error if it does not).
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1893,6 +1916,29 @@ NA
 </td>
 <td style="text-align:left;">
 Named list of <code>c(min, max)</code>: the FIXED range every climate covariate is rescaled with, not the range of this polygon’s data. Default <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/climateCovRanges.html" class="external-link">fireSenseUtils::climateCovRanges</a></code>, the one table of climate ranges, which documents each variable’s units and says its values are provisional. <code>CMDsm = c(0, 100)</code> makes the covariate CMDsm / 100 in every polygon. With the data’s range, 1 meant a CMDsm of 104 in one polygon and 297 in another, so the coefficient could not be compared across polygons, and a polygon that never gets dry stretched its small range over [0, 1]. A climate covariate with no entry stops the fit; there is no fallback to the data’s range. <code>youngAge</code>, the <code>nfLCC_</code> groups and the <code>treedWetland</code> indicator are always <code>c(0, 1)</code> (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadIndicators.html" class="external-link">fireSenseUtils::spreadIndicatorRanges()</a></code>). <code>fireSense_spreadPredict</code> rescales with the stored <code>covMinMax_spread</code>, so it follows.
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fireSpreadSDBounds
+</td>
+<td style="text-align:left;">
+numeric
+</td>
+<td style="text-align:left;">
+0, 10
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Bounds of <code>fireSpreadSD</code>, the sd of a per-fire random effect on spread (added to the linear predictor like <code>yearSpreadSD</code>; each fire draws its own eps), when <code>lower</code>/<code>upper</code> are not supplied. It comes just before <code>yearSpreadSD</code> in the bounds. Only a fit with <code>wholeLandscapeSpread = TRUE</code> can fit it (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code> stops otherwise): with FALSE it is left out of the bounds, with a message, and the fit is what it was. <code>NA</code> turns it off.
 </td>
 <td style="text-align:left;">
 TRUE
