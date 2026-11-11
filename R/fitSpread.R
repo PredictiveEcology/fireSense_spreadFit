@@ -218,17 +218,6 @@ randomEffectBounds <- function(Par, upper = NULL, lower = NULL) {
   out
 }
 
-## The escape definition the fit uses (`fireSenseUtils::escapeDefinition()`), from this module's `escapeSizeHa` and
-## `fireCauses`, which must equal the other modules' (an error if they are set differently). `escapeSizeHa` NA (the
-## old fit: any fire over 1 pixel) gives NA, as a ledger row without the definition has.
-escapeDefinitionOf <- function(sim) {
-  size <- SpaDES.core::paramCheckOtherMods(sim, "escapeSizeHa", ifSetButDifferent = "error")
-  causes <- SpaDES.core::paramCheckOtherMods(sim, "fireCauses", ifSetButDifferent = "error")
-  def <- fireSenseUtils::escapeDefinition(if (length(size) && !is.na(size)) size else 0, causes)
-  if (!length(size) || is.na(size)) data.table::set(def, NULL, "escapeSizeHa", NA_real_)
-  def
-}
-
 ## The `link` the objective is given, from the parameters `Par` (`P(sim)`): "powerLaw" for `spreadLink = "powerLaw"`,
 ## else the `link` parameter's "logistic3pUpper", else NULL, its default, logistic3p
 spreadLink <- function(Par) {

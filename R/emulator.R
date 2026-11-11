@@ -436,9 +436,10 @@ emulatorObjectiveArgs <- function(deArgs) {
   args <- deArgs[intersect(names(deArgs), setdiff(names(formals(fn)), "..."))]
   args$fireBufferedListDT <- fireSenseUtils::addBufferEdge(deArgs$fireBufferedListDT, deArgs$landscape)
   args$doAssertions <- deArgs$doObjFunAssertions
-  args$fitYearSpreadSD <- "yearSpreadSD" %in% names(deArgs$lower)
-  ## only a fit with fireSpreadSD in its bounds has it, so the other fits' emulator keys are what they were
-  args$fitFireSpreadSD <- if ("fireSpreadSD" %in% names(deArgs$lower)) TRUE
+  ## the random effects of the fit's bounds, as runDEoptim() gives them (`fitFireSpreadSD` only when fitted, so the
+  ## other fits' emulator keys are what they were)
+  re <- fireSenseUtils::spreadRandomEffectArgs(deArgs$lower, deArgs$wholeLandscape)
+  args[names(re)] <- re
   args$verbose <- 0
   args
 }

@@ -6,7 +6,7 @@
 #' ledger, and a held-out fold saves it beside its held-out result, so `fireSense_spreadPredict` reads
 #' either the same way.
 #'
-#' @param sim a `simList`; uses `escapeDefinitionOf()` (parameters `escapeSizeHa` and `fireCauses`), `.ELFind`, `studyArea`, `sppEquiv`, `nonForestedLCCGroups`,
+#' @param sim a `simList`; uses `fireSenseUtils::escapeDefinitionOf()` (parameters `escapeSizeHa` and `fireCauses`), `.ELFind`, `studyArea`, `sppEquiv`, `nonForestedLCCGroups`,
 #'   `missingLCCgroup`, `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`, and the parameters
 #'   `spreadLink`, `powerLawGamma`, `powerLawShape` and `powerLawPcMargin`, and `powerLawCalibration`.
 #' @param numIterations integer, the number of DEoptim generations.
@@ -43,7 +43,7 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params) {
   }
   ## the escape definition the fit was made under: prediction and scoring check theirs against it
   ## (fireSenseUtils::checkEscapeDefinition())
-  df <- data.frame(df, as.data.frame(escapeDefinitionOf(sim)))
+  df <- data.frame(df, as.data.frame(fireSenseUtils::escapeDefinitionOf(sim)))
   # The ledger is keyed by polygon identity, NOT by run label -- see the
   # `.ELFind` input declaration. This row is shared cloud state that every
   # other project reads, so validate before writing.

@@ -794,7 +794,7 @@ spreadFitPrep <- function(sim) {
   checkSpreadLink(Par)
   checkWholeLandscapeSpread(Par)
   sim <- calibratePowerLawFor(sim)
-  escapeDefinitionOf(sim) # stops now, not after the fit, if the escape definition differs from the other modules'
+  fireSenseUtils::escapeDefinitionOf(sim) # stops now, not after the fit, if the escape definition differs from the other modules'
   sdBounds <- randomEffectBounds(Par, P(sim)$upper, P(sim)$lower)
   if (is.null(P(sim)$upper) || any(is.na(P(sim)$upper))) {
     P(sim)$upper <- estimateSpreadParams(sim$fireSense_spreadFormula,
