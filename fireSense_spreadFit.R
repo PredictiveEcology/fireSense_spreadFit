@@ -15,7 +15,7 @@ defineModule(sim, list(
     person("Alex M.", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(fireSense_spreadFit = "1.2.0.9044"),
+  version = list(fireSense_spreadFit = "1.2.0.9045"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = NA_character_, # e.g., "year",
   citation = list("citation.bib"),
@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.87)", # .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9158)", # 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9159)", # 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.1.3.9008)"),
   parameters = rbind(
