@@ -387,5 +387,10 @@ spreadObjFunArgs <- function(sim, covs) {
   args$climateRef <- sim$climateRef_spread
   args$powerLawGamma <- if (identical(args$link, "powerLaw")) powerLawGammaOf(sim)
   args$powerLawShape <- if (!"powerLawShape" %in% fireSenseUtils::powerLawOmitArgs(args$link, P(sim)$powerLawShape)) P(sim)$powerLawShape
+  ## a whole-landscape fit simulates on the whole landscape (which the objective refuses with `penaliseRunaways`, so the fit's
+  ## setting, FALSE: checkWholeLandscapeSpread()); a buffered fit adds nothing, as above
+  whole <- isTRUE(P(sim)$wholeLandscapeSpread)
+  args$wholeLandscape <- if (whole) TRUE
+  args$penaliseRunaways <- if (whole) P(sim)$penaliseRunaways
   args
 }

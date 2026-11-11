@@ -88,3 +88,14 @@ test_that("a held-out fold's figures score only its held-out years, from that fo
   expect_identical(rec$heldOutArgs$escapeSizeHa, 50)
   expect_identical(rec$heldOutArgs$jumpTries, 20)
 })
+
+## a whole-landscape fit (wholeLandscapeSpread) simulates every fire on the whole landscape, so the figures' simulation and
+## the cross-validation's (both from spreadObjFunArgs()) must say so; a buffered fit's arguments are what they were
+test_that("the validation simulation of a whole-landscape fit is a whole-landscape one; a buffered fit's is unchanged", {
+  wholeP <- list(wholeLandscapeSpread = TRUE, spreadLink = "powerLaw", powerLawGamma = 1.9, penaliseRunaways = FALSE)
+  whole <- fitWithPlots(c(wholeP, list(.plots = "png")))$rec$data[[1]]$args
+  expect_true(whole$wholeLandscape)
+  expect_false(whole$penaliseRunaways)             # the objective refuses wholeLandscape with penaliseRunaways = TRUE
+  buffered <- fitWithPlots(list(.plots = "png"))$rec$data[[1]]$args
+  expect_false(any(c("wholeLandscape", "penaliseRunaways") %in% names(buffered)))
+})
