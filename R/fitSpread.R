@@ -70,10 +70,8 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
                    sizeLik = P(sim)$sizeLik,
                    sizeLikDf = P(sim)$sizeLikDf,
                    weighted = P(sim)$weighted,
-                   adWeight = P(sim)$adWeight,
-                   link = spreadLink(P(sim)),
-                   powerLawGamma = powerLawGammaOf(sim),
-                   powerLawShape = P(sim)$powerLawShape,
+                   adWeight = P(sim)$adWeight),
+                   spreadLinkArgs(sim), list(
                    escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
                    jumpTries = P(sim)$jumpTries,
                    jumpMeanDist = P(sim)$jumpMeanDist,
@@ -120,7 +118,7 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
         ## runawayEdgeFrac/Min only change how quickly DEoptim moves away from an unlucky draw, not what a
         ## fit means, so fits cached under the 1-cell rule stay valid and must not rerun.
         omitArgs = c(".verbose", "cores", "paths", "libPath", "logPath", "plotEvery", "progressFile", "runawayEdgeFrac", "runawayEdgeMin",
-                     ## only the powerLaw link uses it
+                     ## only the links that use them have gamma, shape, the lower asymptote and nu
                      fireSenseUtils::powerLawOmitArgs(spreadLink(P(sim)), P(sim)$powerLawShape),
                      ## NULL without an intercept (or with runawayBufferMultiple NA, or with the default spreadLink):
                      ## omitted then, so fits cached before it existed are found
@@ -138,12 +136,11 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
   DE <- tryCatch(fit(initialpop = firstStart), deoptimNoFeasibleMember = function(e) {
     message("fireSense_spreadFit: ", conditionMessage(e),
             "\nDrawing a starting population that passes the spreadProb gates")
-    gates <- spreadGates(covs, formulaToFit = sim$fireSense_spreadFormula, covMinMax = sim$covMinMax_spread,
+    gates <- do.call(spreadGates, c(list(covs, formulaToFit = sim$fireSense_spreadFormula, covMinMax = sim$covMinMax_spread,
                          covCentre = sim$covCentre_spread, climateRef = sim$climateRef_spread,
                          mutuallyExclusive = P(sim)$mutuallyExclusiveCols, maxFireSpread = P(sim)$maxFireSpread,
-                         escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa), landscape = sim$rasterToMatch,
-                         link = spreadLink(P(sim)), powerLawGamma = powerLawGammaOf(sim),
-                         powerLawShape = P(sim)$powerLawShape)
+                         escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa), landscape = sim$rasterToMatch),
+                         spreadLinkArgs(sim)))
     localSingleThreadBLAS()
     pop <- feasibleInitialPopulation(n, lower = lower, upper = P(sim)$upper, gates = gates,
                                      seed = seed, cores = forkBudget(n))
@@ -166,6 +163,7 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
 objectiveBodies <- function() {
   fns <- c("crpsEnsemble", "crpsFireSizes", "crpsTotalArea", "crpsTopFires", "crpsWeightsDefault", # fireSenseUtils >= the CRPS objective
            "spreadProbFromIntegerCovs", "spreadProbCovsOfYear", "spreadProbFromCovs", "logisticAll", "powerLawLink",
+           "powerLawSmoothLink", "richardsLink", "linearLinkPars", "linearLinkProb", "spreadLinkLower",
            "dataYearBefore", "addBufferEdge", "bufferEdge", "bufferOpen", "sizeLikT",
            "adStatistic", "adWeightAuto", "pooledFireSizes", "yearAreaNLL", "areaWeightedCvM",
            "pitMidRank", "adUniform")
@@ -186,12 +184,13 @@ crpsObjectiveArgs <- function(Par) {
   out
 }
 
-## `wholeLandscapeSpread` needs the powerLaw link (fireSenseUtils computes p per cell from it), and cannot go with
+## `wholeLandscapeSpread` needs a link of `fireSenseUtils::spreadLinearLinks` (fireSenseUtils computes p per cell from it), and cannot go with
 ## `penaliseRunaways`, which stops a fire at the first open pixel of its buffer
 checkWholeLandscapeSpread <- function(Par) {
   if (!isTRUE(Par$wholeLandscapeSpread)) return(invisible(NULL))
-  if (!identical(Par$spreadLink, "powerLaw"))
-    stop("fireSense_spreadFit: wholeLandscapeSpread = TRUE needs spreadLink = 'powerLaw'")
+  if (!Par$spreadLink %in% fireSenseUtils::spreadLinearLinks)
+    stop("fireSense_spreadFit: wholeLandscapeSpread = TRUE needs spreadLink = ",
+         paste(dQuote(fireSenseUtils::spreadLinearLinks, FALSE), collapse = ", "))
   if (isTRUE(Par$penaliseRunaways))
     stop("fireSense_spreadFit: wholeLandscapeSpread = TRUE cannot be combined with penaliseRunaways = TRUE")
   invisible(NULL)
@@ -218,16 +217,33 @@ randomEffectBounds <- function(Par, upper = NULL, lower = NULL) {
   out
 }
 
-## The `link` the objective is given, from the parameters `Par` (`P(sim)`): "powerLaw" for `spreadLink = "powerLaw"`,
-## else the `link` parameter's "logistic3pUpper", else NULL, its default, logistic3p
+## The `link` the objective is given, from the parameters `Par` (`P(sim)`): the `spreadLink` if it is one of
+## `fireSenseUtils::spreadLinearLinks` ("powerLaw", "powerLawSmooth", "richards"), else the `link` parameter's
+## "logistic3pUpper", else NULL, its default, logistic3p
 spreadLink <- function(Par) {
-  if (identical(Par$spreadLink, "powerLaw")) "powerLaw" else if (identical(Par$link, "logistic3pUpper")) Par$link
+  if (Par$spreadLink %in% fireSenseUtils::spreadLinearLinks) Par$spreadLink else if (identical(Par$link, "logistic3pUpper")) Par$link
 }
 
-## The bounds of `maxAsymptote`: for `spreadLink = "powerLaw"` it is p_c, which must stay above the floor and,
-## per ELF, within `margin` of the calibrated threshold `p50` (fireSenseUtils::powerLawPcBounds())
+## The link's arguments of the objective, `fireSenseUtils::runDEoptim()`, `spreadProbGates()` and
+## `runSpreadWithoutDEoptim()`: `link`, the power law's `gamma` (calibrated unless given) and `shape`, and
+## `lowerAsymptote` and `richardsNu` for the links that use them (the others keep the objective's defaults).
+## With `forKey` (arguments that are also a cache key) every argument that `fireSenseUtils::powerLawOmitArgs()` leaves
+## out of the key is left out, so the key is what it was
+spreadLinkArgs <- function(sim, forKey = FALSE) {
+  Par <- P(sim)
+  link <- spreadLink(Par)
+  args <- list(powerLawGamma = powerLawGammaOf(sim), powerLawShape = Par$powerLawShape,
+               lowerAsymptote = Par$lowerAsymptote, richardsNu = Par$richardsNu)
+  omit <- fireSenseUtils::powerLawOmitArgs(link, Par$powerLawShape)
+  c(list(link = link), args[setdiff(names(args), if (forKey) omit else intersect(omit, c("lowerAsymptote", "richardsNu")))])
+}
+
+## The bounds of `maxAsymptote`: for `spreadLink = "powerLaw"` or "powerLawSmooth" it is p_c, which must stay above the floor and,
+## per ELF, within `margin` of the calibrated threshold `p50` (fireSenseUtils::powerLawPcBounds()). "richards" has no
+## calibration, so p_c is bounded by the outer limits, `fireSenseUtils::spreadPowerLawPcBounds`
 maxAsymptoteBoundsOf <- function(spreadLink = "ceiling", p50 = NULL, margin = 0.005) {
-  if (identical(spreadLink, "powerLaw") && !is.null(p50)) fireSenseUtils::powerLawPcBounds(p50, margin)
+  if (spreadLink %in% fireSenseUtils::spreadPowerLawLinks && !is.null(p50)) fireSenseUtils::powerLawPcBounds(p50, margin)
+  else if (identical(spreadLink, "richards")) fireSenseUtils::spreadPowerLawPcBounds # no calibration: the outer limits
   else c(fireSenseUtils::spreadProbFloor, fireSenseUtils::spreadProbCeiling)
 }
 
@@ -236,9 +252,18 @@ checkSpreadLink <- function(Par) {
   if (!Par$spreadLink %in% fireSenseUtils::spreadLinkOptions)
     stop("fireSense_spreadFit: spreadLink must be one of ", paste(dQuote(fireSenseUtils::spreadLinkOptions, FALSE), collapse = ", "),
          "; got ", dQuote(Par$spreadLink, FALSE))
-  if (identical(Par$spreadLink, "powerLaw")) {
-    if (identical(Par$link, "logistic3pUpper"))
-      stop("fireSense_spreadFit: spreadLink = 'powerLaw' cannot be combined with link = 'logistic3pUpper'")
+  if (Par$spreadLink %in% fireSenseUtils::spreadLinearLinks && identical(Par$link, "logistic3pUpper"))
+    stop("fireSense_spreadFit: spreadLink = '", Par$spreadLink, "' cannot be combined with link = 'logistic3pUpper'")
+  if (Par$spreadLink %in% fireSenseUtils::spreadAsymptoteLinks) {
+    if (!(is.numeric(Par$lowerAsymptote) && length(Par$lowerAsymptote) == 1L && is.finite(Par$lowerAsymptote) &&
+          Par$lowerAsymptote >= 0 && Par$lowerAsymptote <= fireSenseUtils::spreadProbFloor))
+      stop("fireSense_spreadFit: lowerAsymptote must be one number from 0 to ", fireSenseUtils::spreadProbFloor,
+           "; got ", format(Par$lowerAsymptote))
+  }
+  if (identical(Par$spreadLink, "richards") &&
+      !(is.numeric(Par$richardsNu) && length(Par$richardsNu) == 1L && is.finite(Par$richardsNu) && Par$richardsNu >= 0))
+    stop("fireSense_spreadFit: richardsNu must be one number, 0 or more; got ", format(Par$richardsNu))
+  if (Par$spreadLink %in% fireSenseUtils::spreadPowerLawLinks) {
     if (!(is.numeric(Par$powerLawGamma) && length(Par$powerLawGamma) == 1L &&
           (is.na(Par$powerLawGamma) || (is.finite(Par$powerLawGamma) && Par$powerLawGamma > 0))))
       stop("fireSense_spreadFit: powerLawGamma must be one positive number, or NA to calibrate it; got ", format(Par$powerLawGamma))
@@ -371,6 +396,7 @@ crossValidateSpreadOneFold <- function(sim, covs, k) {
 ## The objective's arguments for simulating `covs`' years; the likelihood options do not matter, the
 ## escape rule does (the fit simulates every fire from its escape size)
 spreadObjFunArgs <- function(sim, covs) {
+  linkArgs <- spreadLinkArgs(sim, forKey = TRUE)
   args <- list(landscape = sim$rasterToMatch,
        annualDTx1000 = covs$annualDTx1000, nonAnnualDTx1000 = covs$nonAnnualDTx1000,
        fireBufferedListDT = covs$fireBufferedListDT, historicalFires = covs$historicalFires,
@@ -378,15 +404,14 @@ spreadObjFunArgs <- function(sim, covs) {
        tests = P(sim)$DEoptimTests, maxFireSpread = P(sim)$maxFireSpread,
        objFunCoresInternal = P(sim)$objFunCoresInternal, Nreps = P(sim)$objfunFireReps,
        mutuallyExclusive = P(sim)$mutuallyExclusiveCols, doAssertions = FALSE, verbose = 0,
-       link = spreadLink(P(sim)), escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
+       link = linkArgs$link, escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
        jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist)
   ## the fit's centre and climate reference, not the held-out years': assigning NULL adds nothing, so without
-  ## an intercept (or with the default spreadLink, or without powerLawGamma) the arguments (and the cache key of the simulation that
-  ## holds them) are what they were
+  ## an intercept (or with the default spreadLink) the arguments (and the cache key of the simulation that
+  ## holds them) are what they were. The link's arguments are only those its cache key has (`powerLawOmitArgs()`).
   args$covCentre <- sim$covCentre_spread
   args$climateRef <- sim$climateRef_spread
-  args$powerLawGamma <- if (identical(args$link, "powerLaw")) powerLawGammaOf(sim)
-  args$powerLawShape <- if (!"powerLawShape" %in% fireSenseUtils::powerLawOmitArgs(args$link, P(sim)$powerLawShape)) P(sim)$powerLawShape
+  args <- c(args, linkArgs[names(linkArgs) != "link"])
   ## a whole-landscape fit simulates on the whole landscape (which the objective refuses with `penaliseRunaways`, so the fit's
   ## setting, FALSE: checkWholeLandscapeSpread()); a buffered fit adds nothing, as above
   whole <- isTRUE(P(sim)$wholeLandscapeSpread)

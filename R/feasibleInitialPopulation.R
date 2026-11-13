@@ -6,23 +6,25 @@
 #' one the objective refuses (its fail value, 1e6).
 #'
 #' @param covs `mod$covsX1000`, or the subset of its years being fitted.
-#' @param formulaToFit,covMinMax,covCentre,climateRef,mutuallyExclusive,maxFireSpread,escapeSizeHa,landscape,link,powerLawGamma,powerLawShape
+#' @param formulaToFit,covMinMax,covCentre,climateRef,mutuallyExclusive,maxFireSpread,escapeSizeHa,landscape,link,powerLawGamma,powerLawShape,lowerAsymptote,richardsNu
 #'   as given to `fireSenseUtils::runDEoptim()` for the same fit.
 #' @return a function of a list of parameter sets (named numeric vectors, as `drawActivePars()` draws
 #'   them) returning a logical vector, TRUE for a set that passes; with `pass = FALSE` the
 #'   `spreadProbGates()` data.frame (`pass`, `burny`, `notSpread`, `medianOK`) instead.
 spreadGates <- function(covs, formulaToFit, covMinMax, covCentre, climateRef, mutuallyExclusive,
-                        maxFireSpread, escapeSizeHa, landscape, link, powerLawGamma, powerLawShape) {
+                        maxFireSpread, escapeSizeHa, landscape, link, powerLawGamma, powerLawShape,
+                        lowerAsymptote = fireSenseUtils::spreadProbFloor, richardsNu = fireSenseUtils::spreadRichardsNu) {
   force(covs); force(formulaToFit); force(covMinMax); force(covCentre); force(climateRef)
   force(mutuallyExclusive); force(maxFireSpread); force(escapeSizeHa); force(landscape); force(link)
-  force(powerLawGamma); force(powerLawShape)
+  force(powerLawGamma); force(powerLawShape); force(lowerAsymptote); force(richardsNu)
   function(parList, pass = TRUE) {
     g <- fireSenseUtils::spreadProbGates(
       parList, annualDTx1000 = covs$annualDTx1000, nonAnnualDTx1000 = covs$nonAnnualDTx1000,
       historicalFires = covs$historicalFires, formulaToFit = formulaToFit,
       covMinMax = covMinMax, covCentre = covCentre, climateRef = climateRef,
       mutuallyExclusive = mutuallyExclusive, maxFireSpread = maxFireSpread, escapeSizeHa = escapeSizeHa,
-      landscape = landscape, link = link, powerLawGamma = powerLawGamma, powerLawShape = powerLawShape, doAssertions = FALSE)
+      landscape = landscape, link = link, powerLawGamma = powerLawGamma, powerLawShape = powerLawShape,
+      lowerAsymptote = lowerAsymptote, richardsNu = richardsNu, doAssertions = FALSE)
     if (pass) g$pass else g
   }
 }

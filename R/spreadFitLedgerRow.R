@@ -8,7 +8,7 @@
 #'
 #' @param sim a `simList`; uses `fireSenseUtils::escapeDefinitionOf()` (parameters `escapeSizeHa` and `fireCauses`), `.ELFind`, `studyArea`, `sppEquiv`, `nonForestedLCCGroups`,
 #'   `missingLCCgroup`, `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`, and the parameters
-#'   `spreadLink`, `powerLawGamma`, `powerLawShape` and `powerLawPcMargin`, and `powerLawCalibration`.
+#'   `spreadLink`, `powerLawGamma`, `powerLawShape`, `lowerAsymptote`, `richardsNu` and `powerLawPcMargin`, and `powerLawCalibration`.
 #' @param numIterations integer, the number of DEoptim generations.
 #' @param objFunVal numeric, the objective values of the members in `params`.
 #' @param params `data.table`, one row per member, with `hillSlope1` and `inflectionPoint1` (see `addFixedParsToLedger()`).
@@ -28,12 +28,17 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params) {
   if (!is.null(sim$covCentre_spread))
     df[[fireSenseUtils::spreadFitCovCentreTxt]] <- I(list(sim$covCentre_spread))
   ## spreadLink: a fit with another link than the default records it, with what the link needs (climateRef_spread
-  ## for climate outside the ceiling, powerLawGamma for the power law), and prediction applies the same link.
+  ## for climate outside the ceiling, powerLawGamma for the power laws, lowerAsymptote and richardsNu for the links that
+  ## have them -- never powerLawGamma for "richards", which does not use it), and prediction applies the same link.
   ## A fit with the default link writes none of these columns.
   if (!identical(P(sim)$spreadLink, "ceiling")) df[[fireSenseUtils::spreadLinkTxt]] <- P(sim)$spreadLink
   if (!is.null(sim$climateRef_spread))
     df[[fireSenseUtils::spreadFitClimateRefTxt]] <- I(list(sim$climateRef_spread))
-  if (identical(P(sim)$spreadLink, "powerLaw")) {
+  if (P(sim)$spreadLink %in% fireSenseUtils::spreadAsymptoteLinks)
+    df[[fireSenseUtils::spreadFitLowerAsymptoteTxt]] <- P(sim)$lowerAsymptote
+  if (identical(P(sim)$spreadLink, "richards"))
+    df[[fireSenseUtils::spreadFitRichardsNuTxt]] <- P(sim)$richardsNu
+  if (P(sim)$spreadLink %in% fireSenseUtils::spreadPowerLawLinks) {
     df[[fireSenseUtils::spreadFitPowerLawGammaTxt]] <- powerLawGammaOf(sim)
     df[[fireSenseUtils::spreadFitPowerLawShapeTxt]] <- P(sim)$powerLawShape
     ## the calibration that set gamma (unless given) and p_c's upper bound (p50 + margin), to compare p_c with
