@@ -254,15 +254,8 @@ checkSpreadLink <- function(Par) {
          "; got ", dQuote(Par$spreadLink, FALSE))
   if (Par$spreadLink %in% fireSenseUtils::spreadLinearLinks && identical(Par$link, "logistic3pUpper"))
     stop("fireSense_spreadFit: spreadLink = '", Par$spreadLink, "' cannot be combined with link = 'logistic3pUpper'")
-  if (Par$spreadLink %in% fireSenseUtils::spreadAsymptoteLinks) {
-    if (!(is.numeric(Par$lowerAsymptote) && length(Par$lowerAsymptote) == 1L && is.finite(Par$lowerAsymptote) &&
-          Par$lowerAsymptote >= 0 && Par$lowerAsymptote <= fireSenseUtils::spreadProbFloor))
-      stop("fireSense_spreadFit: lowerAsymptote must be one number from 0 to ", fireSenseUtils::spreadProbFloor,
-           "; got ", format(Par$lowerAsymptote))
-  }
-  if (identical(Par$spreadLink, "richards") &&
-      !(is.numeric(Par$richardsNu) && length(Par$richardsNu) == 1L && is.finite(Par$richardsNu) && Par$richardsNu >= 0))
-    stop("fireSense_spreadFit: richardsNu must be one number, 0 or more; got ", format(Par$richardsNu))
+  tryCatch(fireSenseUtils::checkLinkParams(Par$spreadLink, Par$lowerAsymptote, Par$richardsNu),
+           error = function(e) stop("fireSense_spreadFit: ", conditionMessage(e), call. = FALSE))
   if (Par$spreadLink %in% fireSenseUtils::spreadPowerLawLinks) {
     if (!(is.numeric(Par$powerLawGamma) && length(Par$powerLawGamma) == 1L &&
           (is.na(Par$powerLawGamma) || (is.finite(Par$powerLawGamma) && Par$powerLawGamma > 0))))
