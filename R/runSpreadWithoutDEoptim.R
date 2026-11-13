@@ -20,6 +20,8 @@
 #' @param powerLawGamma numeric; the `"powerLaw"` link's `gamma` (`fireSenseUtils::powerLawLink()`), used with
 #'   `link = "powerLaw"`. Passed to `.objfunSpreadFit()`.
 #' @param powerLawShape numeric; the `"powerLaw"` link's `shape`, passed like `powerLawGamma`.
+#' @param lowerAsymptote,richardsNu numeric; the lower asymptote of the `"powerLawSmooth"` and `"richards"` links and the
+#'   `nu` of `"richards"` (`fireSenseUtils::powerLawSmoothLink()`, `richardsLink()`), passed like `powerLawGamma`.
 #' @param objfunFireReps integer; passed to `Nreps`, the replicates per fire.
 #' @param maxFireSpread numeric; upper limit on mean spread probability.
 #' @param weighted passed to `.objfunSpreadFit()`.
@@ -44,7 +46,9 @@ runSpreadWithoutDEoptim <- function(nSets = 1L, lower, upper, fireSense_spreadFo
                                     seed = NULL, escapeSizeHa = NULL,
                                     sizeLik = "kde", sizeLikDf = 5, adWeight = "auto", link = NULL,
                                     powerLawGamma = fireSenseUtils::spreadPowerLawGamma,
-                                    powerLawShape = fireSenseUtils::spreadPowerLawShape, jumpTries = 0, jumpMeanDist = 0, yearAreaWeight = 0, areaDistWeight = 0,
+                                    powerLawShape = fireSenseUtils::spreadPowerLawShape,
+                                    lowerAsymptote = fireSenseUtils::spreadProbFloor,
+                                    richardsNu = fireSenseUtils::spreadRichardsNu, jumpTries = 0, jumpMeanDist = 0, yearAreaWeight = 0, areaDistWeight = 0,
                                     crpsWeights = NULL, gateRefusal = "minLik",
                                     penaliseRunaways = TRUE,
                                     runawayEdgeFrac = fireSenseUtils::fireSenseRunawayEdgeFrac,
@@ -89,7 +93,8 @@ runSpreadWithoutDEoptim <- function(nSets = 1L, lower, upper, fireSense_spreadFo
                      weighted = weighted,
                      escapeSizeHa = escapeSizeHa,
                      sizeLik = sizeLik, sizeLikDf = sizeLikDf, adWeight = adWeight, link = link,
-                     powerLawGamma = powerLawGamma, powerLawShape = powerLawShape, jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
+                     powerLawGamma = powerLawGamma, powerLawShape = powerLawShape,
+                     lowerAsymptote = lowerAsymptote, richardsNu = richardsNu, jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
                      yearAreaWeight = yearAreaWeight, areaDistWeight = areaDistWeight,
                      crpsWeights = crpsWeights, gateRefusal = gateRefusal,
                      penaliseRunaways = penaliseRunaways,

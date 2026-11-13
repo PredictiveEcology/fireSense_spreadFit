@@ -5,7 +5,8 @@ test_that("the fit's cache key includes the objective's bodies", {
   ob <- objectiveBodies()
   expect_named(ob, c("objfunSpreadFit", "objFunInner", "crpsEnsemble", "crpsFireSizes", "crpsTotalArea",
                      "crpsTopFires", "crpsWeightsDefault", "spreadProbFromIntegerCovs", "spreadProbCovsOfYear",
-                     "spreadProbFromCovs", "logisticAll", "powerLawLink", "dataYearBefore",
+                     "spreadProbFromCovs", "logisticAll", "powerLawLink", "powerLawSmoothLink", "richardsLink",
+                     "linearLinkPars", "linearLinkProb", "spreadLinkLower", "dataYearBefore",
                      "addBufferEdge", "bufferEdge", "bufferOpen", "sizeLikT",
                      "adStatistic", "adWeightAuto", "pooledFireSizes", "yearAreaNLL", "areaWeightedCvM",
                      "pitMidRank", "adUniform"))
@@ -16,6 +17,9 @@ test_that("the fit's cache key includes the objective's bodies", {
   expect_identical(ob$bufferOpen, deparse(fireSenseUtils::bufferOpen))
   ## the power-law link, and the dispatcher that reaches it
   expect_identical(ob$powerLawLink, deparse(fireSenseUtils::powerLawLink))
+  expect_identical(ob$powerLawSmoothLink, deparse(fireSenseUtils::powerLawSmoothLink))
+  expect_identical(ob$richardsLink, deparse(fireSenseUtils::richardsLink))
+  expect_identical(ob$linearLinkProb, deparse(fireSenseUtils::linearLinkProb))
   expect_identical(ob$logisticAll, deparse(fireSenseUtils::logisticAll))
   ## the spread link itself: a change in how spreadProb is computed from the covariates is a cache miss
   expect_identical(ob$spreadProbFromCovs, deparse(fireSenseUtils::spreadProbFromCovs))
