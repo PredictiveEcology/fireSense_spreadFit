@@ -43,7 +43,7 @@ test_that("powerLawSmooth is calibrated like powerLaw; the link, lowerAsymptote 
 
 test_that("richards runs no calibration, needs no flammableRTM, and writes no gamma", {
   rec <- new.env()
-  sim <- toySim(list(spreadLink = "richards", lowerAsymptote = 0, richardsNu = 2, powerLawGamma = 5),
+  sim <- toySim(list(spreadLink = "richards", lowerAsymptote = fireSenseUtils::spreadLowerAsymptoteMin, richardsNu = 2, powerLawGamma = 5),
                 c(toyObjectsCO(), list(flammableRTM = NULL)))
   mockFitAndLedger(sim, rec)
   calls <- 0L
@@ -56,12 +56,12 @@ test_that("richards runs no calibration, needs no flammableRTM, and writes no ga
   expect_null(sim$powerLawCalibration)
   a <- rec$deArgs
   expect_identical(a$link, "richards")
-  expect_identical(a$lowerAsymptote, 0)
+  expect_identical(a$lowerAsymptote, fireSenseUtils::spreadLowerAsymptoteMin)
   expect_identical(a$richardsNu, 2)
   expect_equal(c(unname(a$lower[["maxAsymptote"]]), unname(a$upper[["maxAsymptote"]])), fireSenseUtils::spreadPowerLawPcBounds)
   row <- rec$geoArgs$studyAreaFireSense
   expect_identical(row[[linkCol]], "richards")
-  expect_identical(row[[lowerCol]], 0)
+  expect_identical(row[[lowerCol]], fireSenseUtils::spreadLowerAsymptoteMin)
   expect_identical(row[[nuCol]], 2)
   expect_false(any(c(gammaCol, shapeCol, fireSenseUtils::spreadFitPowerLawPc50Txt) %in% names(row)))
   ## the key has the lower asymptote and nu, and not gamma or shape
@@ -83,12 +83,13 @@ test_that("powerLaw and the default link are as they were: no new ledger columns
   }
 })
 
-test_that("a lowerAsymptote outside 0 to the floor, or a negative richardsNu, stops", {
+test_that("a lowerAsymptote outside the minimum (0.001) to the floor, 0 included, or a negative richardsNu, stops", {
   run <- function(params) { sim <- toySim(params, toyObjectsCO()); mockFitAndLedger(sim); suppressMessages(SpaDES.core::spades(sim)) }
   for (lk in c("powerLawSmooth", "richards")) {
     expect_error(run(list(spreadLink = lk, lowerAsymptote = 0.2)), "lowerAsymptote must be")
     expect_error(run(list(spreadLink = lk, lowerAsymptote = -0.01)), "lowerAsymptote must be")
-    expect_error(run(list(spreadLink = lk, lowerAsymptote = c(0, 0.1))), "lowerAsymptote must be")
+    expect_error(run(list(spreadLink = lk, lowerAsymptote = 0)), "never 0")
+    expect_error(run(list(spreadLink = lk, lowerAsymptote = c(0.01, 0.1))), "lowerAsymptote must be")
   }
   expect_error(run(list(spreadLink = "richards", richardsNu = -1)), "richardsNu must be")
   expect_error(run(list(spreadLink = "richards", link = "logistic3pUpper")), "cannot be combined")
