@@ -507,7 +507,7 @@ withObjectiveCluster <- function(objArgs, cores, nCoresNeeded, libPath = .libPat
 ## Evaluates parameter sets (rows) once each with fireSenseUtils::rescorePopulation(), on `cl` (whose workers hold
 ## the data) or here (the data go with the arguments)
 emulatorEvaluator <- function(objArgs, cl = NULL) {
-  fnArgs <- if (is.null(cl)) objArgs else objArgs[setdiff(names(objArgs), emulatorDataArgs)]
+  fnArgs <- objectiveFnArgs(objArgs, cl)
   function(P, seed) {
     if (!is.null(cl)) cl <- clusters::currentCluster(cl)
     fireSenseUtils::rescorePopulation(P, fn = fireSenseUtils::.objfunSpreadFit, reps = 1L, cl = cl,
@@ -515,11 +515,17 @@ emulatorEvaluator <- function(objArgs, cl = NULL) {
   }
 }
 
+## The objective's arguments for each evaluation: all of `objArgs` here, or without the data the workers of `cl` hold
+objectiveFnArgs <- function(objArgs, cl) {
+  if (is.null(cl)) objArgs else objArgs[setdiff(names(objArgs), emulatorDataArgs)]
+}
+
 ## The emulator's code, for the Cache key of its result: Cache() digests the arguments, not the functions they reach
 emulatorBodies <- function() {
   fns <- c("emulatorDefaults", "emulatorControlOf", "emulatorSpace", "emulatorTrustBox", "emulatorTrustStep",
            "emulatorNoiseSD", "emulatorPointKeys", "emulateObjective", "emulatorScale", "fitEmulatorGP",
-           "emulatorConverged", "selectEmulatorBatch", "emulatorSpreadPopulation", "emulatorEvaluator")
+           "emulatorConverged", "selectEmulatorBatch", "emulatorSpreadPopulation", "emulatorEvaluator",
+           "objectiveFnArgs")
   stats::setNames(lapply(fns, function(f) deparse(get(f, mode = "function"))), fns)
 }
 

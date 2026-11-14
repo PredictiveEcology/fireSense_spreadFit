@@ -21,8 +21,7 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
   ## forced only when a start is drawn: a bad .ELFind is reported by the ledger's check, after the fit
   delayedAssign("seed", .elfSeed(sim$.ELFind))
   ## the population size runDEoptim() asks clusters for
-  NP <- if (is.null(P(sim)$nCoresNeeded)) fireSenseUtils::deoptimPopulationSize(length(lower)) else
-    as.integer(P(sim)$nCoresNeeded)
+  NP <- spreadFitNP(sim)
   emulated <- if (useEmulator(P(sim), length(lower)))
     Cache(emulatorStartPopulation, objArgs = emulatorObjectiveArgs(deArgs), lower = lower, upper = P(sim)$upper,
           NP = NP, control = P(sim)$emulatorControl, seed = seed,
@@ -168,6 +167,12 @@ spreadFitDEArgs <- function(sim, covs, runName, diagnostics = TRUE) {
                    profileReps = if (diagnostics) P(sim)$profileReps else 0L,
                    simulateMembers = if (diagnostics) P(sim)$simulateMembers else 0L))
   deArgs
+}
+
+## The population size runDEoptim() asks clusters for: `nCoresNeeded`, else fireSenseUtils::deoptimPopulationSize()
+spreadFitNP <- function(sim) {
+  if (is.null(P(sim)$nCoresNeeded)) fireSenseUtils::deoptimPopulationSize(length(P(sim)$lower)) else
+    as.integer(P(sim)$nCoresNeeded)
 }
 
 ## The spread objective's bodies, for the Cache key of the fit: the objective and

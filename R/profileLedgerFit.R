@@ -36,7 +36,7 @@ profileLedgerFit <- function(sim, covs, runName) {
   ## the same data and link as the fit, or the profile is not about the fit
   same <- function(a, b) isTRUE(all.equal(as.numeric(a), as.numeric(b), tolerance = 1e-6))
   centre <- sim$covCentre_spread
-  rowCentre <- row$covCentre_spread[[1]]
+  rowCentre <- row[[fireSenseUtils::spreadFitCovCentreTxt]][[1]]
   if (!is.null(centre) && !same(unlist(rowCentre[names(centre)]), unlist(centre)))
     stop("fireSense_spreadFit: this run's covariate centre differs from the ledger fit's, so its data differ",
          call. = FALSE)
@@ -57,15 +57,13 @@ profileLedgerFit <- function(sim, covs, runName) {
 
   deArgs <- spreadFitDEArgs(sim, covs, runName, diagnostics = FALSE)
   objArgs <- emulatorObjectiveArgs(deArgs)
-  NP <- if (is.null(P(sim)$nCoresNeeded)) fireSenseUtils::deoptimPopulationSize(length(parNames)) else
-    as.integer(P(sim)$nCoresNeeded)
   message("fireSense_spreadFit: profiling the ledger fit of ", paste(sim$.ELFind, collapse = ", "), ": ",
           paste(coefs, collapse = ", "), " at ", paste(at[[1]], collapse = ", "), ", ", P(sim)$profileReps, " reps each")
-  prof <- withObjectiveCluster(objArgs, cores = deArgs$cores, nCoresNeeded = NP, libPath = deArgs$libPath,
+  prof <- withObjectiveCluster(objArgs, cores = deArgs$cores, nCoresNeeded = spreadFitNP(sim), libPath = deArgs$libPath,
                                logPath = deArgs$logPath, runName = paste0("profile_", runName), FUN = function(cl)
     fireSenseUtils::profileCoefficients(best, pop = NULL, fn = fireSenseUtils::.objfunSpreadFit,
                                         reps = as.integer(P(sim)$profileReps), cl = cl,
-                                        fnArgs = if (is.null(cl)) objArgs else objArgs[setdiff(names(objArgs), emulatorDataArgs)],
+                                        fnArgs = objectiveFnArgs(objArgs, cl),
                                         coefs = coefs, at = at))
   prof[, ledgerObjFunVal := as.numeric(row$objFunVal[[1]][1])]
   out <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
