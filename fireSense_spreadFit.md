@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9046"
-date: "Last updated: 2026-11-13"
+date: "Last updated: 2026-11-14"
 output:
   bookdown::html_document2:
     toc: true
@@ -395,7 +395,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 0.13 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> The lower asymptote L of `spreadLink = 'powerLawSmooth'` or 'richards', from 0 to `fireSenseUtils::spreadProbFloor` (0.13, the default). Fixed, not fitted. Ignored with the other links. The spread-probability gates use it as their lower bound with these links. </td>
+   <td style="text-align:left;"> The lower asymptote L of `spreadLink = 'powerLawSmooth'` or 'richards', from `fireSenseUtils::spreadLowerAsymptoteMin` (0.001) to `fireSenseUtils::spreadProbFloor` (0.13, the default), checked by `fireSenseUtils::checkLinkParams()`. Never 0: a fire under its `minSize` keeps trying to spread until it has reached it, which with a probability near 0 takes an unbounded number of generations. Fixed, not fitted. Ignored with the other links. The spread-probability gates use it as their lower bound with these links. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
