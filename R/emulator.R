@@ -466,24 +466,42 @@ emulatorStartPopulation <- function(objArgs, lower, upper, NP, control, seed,
                                     cores = NULL, nCoresNeeded = NP, libPath = .libPaths(), logPath = tempdir(),
                                     runName = "") {
   ctl <- emulatorControlOf(control)
-  if (isTRUE(is.na(cores))) cores <- NULL
-  cl <- NULL
-  if (!is.null(cores)) {
-    withr::local_options(clusters.workerMemoryGB =
-                           getOption("clusters.workerMemoryGB", fireSenseUtils::spreadFitWorkerMemoryGB))
-    shipped <- list2env(objArgs[emulatorDataArgs])
-    built <- clusters::clusterSetup(messagePrefix = paste0("emulator_", runName, "_"), cores = cores,
-                                    nCoresNeeded = nCoresNeeded, libPath = libPath, logPath = logPath,
-                                    objsNeeded = as.list(emulatorDataArgs),
-                                    pkgsNeeded = c("data.table", "fireSenseUtils"), envir = shipped,
-                                    runName = paste0("emulator_", runName))
-    cl <- built$cluster
-    if (is.null(ctl$batchSize)) ctl$batchSize <- length(cl)
-  }
-  message("fireSense_spreadFit: emulator search for the starting population (", length(lower), " parameters, ",
-          if (is.null(cl)) "evaluated here" else paste(length(cl), "workers"), ", between lower and upper; on a log1p ",
-          "scale: ", paste(emulatorSpace(lower, upper, ctl$logSpanMin)$logPars, collapse = ", "), ")")
-  emulateObjective(emulatorEvaluator(objArgs, cl), lower, upper, NP, ctl, seed)
+  withObjectiveCluster(objArgs, cores = cores, nCoresNeeded = nCoresNeeded, libPath = libPath, logPath = logPath,
+                       runName = paste0("emulator_", runName), FUN = function(cl) {
+    if (!is.null(cl) && is.null(ctl$batchSize)) ctl$batchSize <- length(cl)
+    message("fireSense_spreadFit: emulator search for the starting population (", length(lower), " parameters, ",
+            if (is.null(cl)) "evaluated here" else paste(length(cl), "workers"), ", between lower and upper; on a log1p ",
+            "scale: ", paste(emulatorSpace(lower, upper, ctl$logSpanMin)$logPars, collapse = ", "), ")")
+    emulateObjective(emulatorEvaluator(objArgs, cl), lower, upper, NP, ctl, seed)
+  })
+}
+
+#' Run code on a cluster that holds the spread objective's data, built as the fit's is
+#'
+#' With `cores`, a cluster from `clusters::clusterSetup()`, asked for `nCoresNeeded` workers on `cores` (booked in
+#' clusters' reservations, so other fits see it), with the objective's data (`emulatorDataArgs` of `objArgs`) shipped
+#' once. `FUN(cl)` runs on it, and the cluster is stopped and its booking released when this function returns, as
+#' `runDEoptim()`'s is (`clusterSetup()` ties that to its caller). Without `cores` (`NULL` or `NA`) `FUN(NULL)` runs
+#' here, and the objective's data must go with each evaluation's arguments. Used by the emulator
+#' ([emulatorStartPopulation()]) and the profile of a ledger fit ([profileLedgerFit()]).
+#'
+#' @param objArgs `emulatorObjectiveArgs()`.
+#' @param cores,nCoresNeeded,libPath,logPath as for the fit (`runDEoptim()`).
+#' @param runName character; labels the cluster's log and its booking.
+#' @param FUN a function of the cluster (or `NULL`).
+#' @return what `FUN` returns.
+withObjectiveCluster <- function(objArgs, cores, nCoresNeeded, libPath = .libPaths(), logPath = tempdir(),
+                                 runName = "", FUN) {
+  if (isTRUE(is.na(cores)) || is.null(cores)) return(FUN(NULL))
+  withr::local_options(clusters.workerMemoryGB =
+                         getOption("clusters.workerMemoryGB", fireSenseUtils::spreadFitWorkerMemoryGB))
+  shipped <- list2env(objArgs[emulatorDataArgs])
+  built <- clusters::clusterSetup(messagePrefix = paste0(runName, "_"), cores = cores,
+                                  nCoresNeeded = nCoresNeeded, libPath = libPath, logPath = logPath,
+                                  objsNeeded = as.list(emulatorDataArgs),
+                                  pkgsNeeded = c("data.table", "fireSenseUtils"), envir = shipped,
+                                  runName = runName)
+  FUN(built$cluster)
 }
 
 ## Evaluates parameter sets (rows) once each with fireSenseUtils::rescorePopulation(), on `cl` (whose workers hold

@@ -13,76 +13,9 @@
 #' @return the `runDEoptim()` result. Stops if every member of the final population has the
 #'   objective's fail value: no parameter set was ever accepted, so there is no fit.
 fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
-  if (!is.null(P(sim)$cores) && !any(is.na(P(sim)$cores)) &&
-      identical(sort(unique(P(sim)$cores)), sort(P(sim)$cores))) {
-    best <- list(cluster = P(sim)$cores)
-  } else {
-    best <- list(cluster = P(sim)$cores,
-                 bestCluster = as.data.table(table(P(sim)$cores)))
-  }
-  messageDF(best$bestCluster)
   fnName <- paste0("runDEoptim_", runName, "_", P(sim)$.rep)
   runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)
-  ## one progress file per fit (the main fit, each fold), in the run's own output folder
-  progressFile <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
-                            paste0("DEoptimProgress_", runName, ".csv"))
-  ## runDEoptim()'s arguments, once: the fit gets them, and the emulator (`initialPopMethod = "emulator"`)
-  ## evaluates the objective they define
-  deArgs <- c(crpsObjectiveArgs(P(sim)), list(landscape = sim$rasterToMatch,
-                   annualDTx1000 = covs$annualDTx1000,
-                   nonAnnualDTx1000 = covs$nonAnnualDTx1000,
-                   fireBufferedListDT = covs$fireBufferedListDT,
-                   historicalFires = covs$historicalFires,
-                   itermax = P(sim)$iterDEoptim,
-                   iterStep = 1L, ## hard-coded: iterStep > 1 crashed fits (clusters' c = 0 adaptation, see NEWS)
-                   ## the cluster's size is the population size; see the parameter's doc
-                   nCoresNeeded = P(sim)$nCoresNeeded,
-                   trace = P(sim)$trace,
-                   initialpop = P(sim)$initialpop,
-                   strategy = P(sim)$strategy,
-                   cores = best$cluster,
-                   doObjFunAssertions = P(sim)$doObjFunAssertions,
-                   paths = getPaths(),
-                   libPath = normPath(if (all(is.na(P(sim)$libPathDEoptim))) .libPaths() else P(sim)$libPathDEoptim),
-                   logPath = logPath(sim), ## TODO (#6): use tempdir()
-                   lower = P(sim)$lower,
-                   upper = P(sim)$upper,
-                   mutuallyExclusive = P(sim)$mutuallyExclusiveCols, ## TODO: test
-                   formulaToFit = sim$fireSense_spreadFormula,
-                   covMinMax = sim$covMinMax_spread,
-                   covCentre = sim$covCentre_spread,
-                   climateRef = sim$climateRef_spread,
-                   objFunCoresInternal = P(sim)$objFunCoresInternal,
-                   tests = P(sim)$DEoptimTests,
-                   maxFireSpread = P(sim)$maxFireSpread,
-                   Nreps = P(sim)$objfunFireReps,
-                   .c = P(sim)$.c,
-                   DEoptimControl = P(sim)$DEoptimControl,
-                   .verbose = P(sim)$verbose,
-                   visualizeDEoptim = P(sim)$visualizeDEoptim,
-                   .plotSize = P(sim)$.plotSize,
-                   .plots = P(sim)$.plots,
-                   plotEvery = P(sim)$.plotInterval,
-                   rep = P(sim)$.rep,
-                   runName = runName,
-                   progressFile = progressFile,
-                   convergence = NULL, # set below: it depends on the start
-                   sizeLik = P(sim)$sizeLik,
-                   sizeLikDf = P(sim)$sizeLikDf,
-                   weighted = P(sim)$weighted,
-                   adWeight = P(sim)$adWeight),
-                   spreadLinkArgs(sim), list(
-                   escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
-                   jumpTries = P(sim)$jumpTries,
-                   jumpMeanDist = P(sim)$jumpMeanDist,
-                   yearAreaWeight = P(sim)$yearAreaWeight,
-                   areaDistWeight = P(sim)$areaDistWeight,
-                   penaliseRunaways = P(sim)$penaliseRunaways,
-                   runawayEdgeFrac = P(sim)$runawayEdgeFrac,
-                   runawayEdgeMin = P(sim)$runawayEdgeMin,
-                   runawayBufferMultiple = runawayMultiple,
-                   profileReps = if (diagnostics) P(sim)$profileReps else 0L,
-                   simulateMembers = if (diagnostics) P(sim)$simulateMembers else 0L))
+  deArgs <- spreadFitDEArgs(sim, covs, runName, diagnostics)
   lower <- P(sim)$lower
   n <- max(10L * length(lower), as.integer(P(sim)$nCoresNeeded))
   ## forced only when a start is drawn: a bad .ELFind is reported by the ledger's check, after the fit
@@ -93,7 +26,7 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
   emulated <- if (useEmulator(P(sim), length(lower)))
     Cache(emulatorStartPopulation, objArgs = emulatorObjectiveArgs(deArgs), lower = lower, upper = P(sim)$upper,
           NP = NP, control = P(sim)$emulatorControl, seed = seed,
-          cores = best$cluster, nCoresNeeded = NP, libPath = deArgs$libPath, logPath = deArgs$logPath, runName = runName,
+          cores = deArgs$cores, nCoresNeeded = NP, libPath = deArgs$libPath, logPath = deArgs$logPath, runName = runName,
           .functionName = paste0("emulatorStartPopulation_", runName),
           ## the emulator's own code and the objective's, which Cache() does not digest
           .cacheExtra = list(emulatorBodies(), objectiveBodies()),
@@ -155,6 +88,86 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
     stop("fireSense_spreadFit: fit '", runName, "' failed: every member of the final DEoptim ",
          "population has the fail value 1e6, i.e. the objective accepted no parameter set.")
   DE
+}
+
+#' The arguments `fitSpread()` gives `fireSenseUtils::runDEoptim()`
+#'
+#' Shared by the fit and the profile of a ledger fit ([profileLedgerFit()]), which evaluates the same objective
+#' (`emulatorObjectiveArgs()` of these) on a cluster built from the same `cores`.
+#'
+#' @inheritParams fitSpread
+#' @return a named list; `cores` is the cluster the fit asks for.
+spreadFitDEArgs <- function(sim, covs, runName, diagnostics = TRUE) {
+  if (!is.null(P(sim)$cores) && !any(is.na(P(sim)$cores)) &&
+      identical(sort(unique(P(sim)$cores)), sort(P(sim)$cores))) {
+    best <- list(cluster = P(sim)$cores)
+  } else {
+    best <- list(cluster = P(sim)$cores,
+                 bestCluster = as.data.table(table(P(sim)$cores)))
+  }
+  messageDF(best$bestCluster)
+  runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)
+  ## one progress file per fit (the main fit, each fold), in the run's own output folder
+  progressFile <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
+                            paste0("DEoptimProgress_", runName, ".csv"))
+  ## runDEoptim()'s arguments, once: the fit gets them, and the emulator (`initialPopMethod = "emulator"`)
+  ## evaluates the objective they define
+  deArgs <- c(crpsObjectiveArgs(P(sim)), list(landscape = sim$rasterToMatch,
+                   annualDTx1000 = covs$annualDTx1000,
+                   nonAnnualDTx1000 = covs$nonAnnualDTx1000,
+                   fireBufferedListDT = covs$fireBufferedListDT,
+                   historicalFires = covs$historicalFires,
+                   itermax = P(sim)$iterDEoptim,
+                   iterStep = 1L, ## hard-coded: iterStep > 1 crashed fits (clusters' c = 0 adaptation, see NEWS)
+                   ## the cluster's size is the population size; see the parameter's doc
+                   nCoresNeeded = P(sim)$nCoresNeeded,
+                   trace = P(sim)$trace,
+                   initialpop = P(sim)$initialpop,
+                   strategy = P(sim)$strategy,
+                   cores = best$cluster,
+                   doObjFunAssertions = P(sim)$doObjFunAssertions,
+                   paths = getPaths(),
+                   libPath = normPath(if (all(is.na(P(sim)$libPathDEoptim))) .libPaths() else P(sim)$libPathDEoptim),
+                   logPath = logPath(sim), ## TODO (#6): use tempdir()
+                   lower = P(sim)$lower,
+                   upper = P(sim)$upper,
+                   mutuallyExclusive = P(sim)$mutuallyExclusiveCols, ## TODO: test
+                   formulaToFit = sim$fireSense_spreadFormula,
+                   covMinMax = sim$covMinMax_spread,
+                   covCentre = sim$covCentre_spread,
+                   climateRef = sim$climateRef_spread,
+                   objFunCoresInternal = P(sim)$objFunCoresInternal,
+                   tests = P(sim)$DEoptimTests,
+                   maxFireSpread = P(sim)$maxFireSpread,
+                   Nreps = P(sim)$objfunFireReps,
+                   .c = P(sim)$.c,
+                   DEoptimControl = P(sim)$DEoptimControl,
+                   .verbose = P(sim)$verbose,
+                   visualizeDEoptim = P(sim)$visualizeDEoptim,
+                   .plotSize = P(sim)$.plotSize,
+                   .plots = P(sim)$.plots,
+                   plotEvery = P(sim)$.plotInterval,
+                   rep = P(sim)$.rep,
+                   runName = runName,
+                   progressFile = progressFile,
+                   convergence = NULL, # set below: it depends on the start
+                   sizeLik = P(sim)$sizeLik,
+                   sizeLikDf = P(sim)$sizeLikDf,
+                   weighted = P(sim)$weighted,
+                   adWeight = P(sim)$adWeight),
+                   spreadLinkArgs(sim), list(
+                   escapeSizeHa = escapeSizeHaOrNULL(P(sim)$escapeSizeHa),
+                   jumpTries = P(sim)$jumpTries,
+                   jumpMeanDist = P(sim)$jumpMeanDist,
+                   yearAreaWeight = P(sim)$yearAreaWeight,
+                   areaDistWeight = P(sim)$areaDistWeight,
+                   penaliseRunaways = P(sim)$penaliseRunaways,
+                   runawayEdgeFrac = P(sim)$runawayEdgeFrac,
+                   runawayEdgeMin = P(sim)$runawayEdgeMin,
+                   runawayBufferMultiple = runawayMultiple,
+                   profileReps = if (diagnostics) P(sim)$profileReps else 0L,
+                   simulateMembers = if (diagnostics) P(sim)$simulateMembers else 0L))
+  deArgs
 }
 
 ## The spread objective's bodies, for the Cache key of the fit: the objective and
