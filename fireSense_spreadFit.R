@@ -227,14 +227,17 @@ defineModule(sim, list(
     defineParameter("powerLawPGrid", "numeric", default = fireSenseUtils::spreadPowerLawPGrid,
                     desc = paste("The spread probabilities the calibration simulates; the default brackets p_c50 of 0.22-0.32.")),
     defineParameter("mode", "character", default = "fit",
-                    desc = paste("Options: debug, fit, visualize, validate. Can use multiples. 'debug' runs the",
+                    desc = paste("Options: debug, fit, visualize, validate, profile. Can use multiples. 'debug' runs the",
                                  "objective function with visuals instead of DEoptim; 'fit' runs DEoptim; 'visualize'",
                                  "adds the `debug` and `plot` events after the fit; 'validate' adds `crossValidate`,",
                                  "two more fits, each on half the years, predicting the other half",
                                  "(`sim$spreadFitHeldOut`). Validation never writes the ledger, but does write",
                                  "`sim$spreadFitHeldOut` to `outputPath(sim)`, since a batch run typically stops",
                                  "after `crossValidate` and the simList is discarded. See `heldOutFold` to run a",
-                                 "single fold as its own job instead of both folds together.")),
+                                 "single fold as its own job instead of both folds together. 'profile' replaces",
+                                 "everything else: no fit, only `spreadFitPrepare` and `profileFromLedger`, which",
+                                 "profiles this ELF's ledger fit at `profileAt` (`profileLedgerFit()`, `sim$spreadFitProfile`,",
+                                 "also written to `outputPath(sim)`); `doFit` is not consulted and the ledger is not written.")),
     defineParameter("heldOutFold", "integer", default = NA,
                     desc = paste("NA (default): unchanged behaviour, governed by `mode`. `1` or `2`: run ONLY",
                                  "that cross-validation fold, as its own job. `init` then schedules",
@@ -254,6 +257,13 @@ defineModule(sim, list(
                                  "`6 * nCoefficients * profileReps` evaluations, on the fit's workers. It decides",
                                  "which coefficients are identified in isolation (`sim$spreadFitIdentifiability`).",
                                  "0 skips it.")),
+    defineParameter("profileAt", "numeric", default = NA,
+                    desc = paste("Mode 'profile': the values each coefficient of `profileCoefs` is set to in turn, the",
+                                 "others held at the ledger fit's best set, e.g. `c(-20, -10, -5, -2, -1, 0, 1, 2, 5, 10, 20)`.",
+                                 "They may lie outside the fit's bounds. Each is evaluated `profileReps` times.")),
+    defineParameter("profileCoefs", "character", default = NA,
+                    desc = paste("Mode 'profile': the covariate coefficients to profile. `NA`: all of them;",
+                                 "\"fuel\": the fuel biomass coefficients.")),
     defineParameter("mutuallyExclusiveCols", "list", list("youngAge" = c("class", "nonForest")), NA, NA,
                     desc = "a named list of mutually exclusive covariates - see `fireSenseUtils::makeMutuallyExclusive`"),
     defineParameter("nCoresNeeded", "integer", default = NULL,
@@ -559,7 +569,8 @@ defineModule(sim, list(
                                "dropping it worsens the fit; `identified` = identified in isolation",
                                "(`fireSenseUtils::identifiedInIsolation()`).")),
     createsOutput("spreadFitProfile", "data.table",
-                  desc = "The one-at-a-time profile around the best member (`fireSenseUtils::profileCoefficients()`)."),
+                  desc = paste("The one-at-a-time profile around the best member (`fireSenseUtils::profileCoefficients()`):",
+                               "after a fit, or in mode 'profile' of the ledger fit at `profileAt` (`profileLedgerFit()`).")),
     createsOutput("spreadFitSizes", "data.table",
                   desc = paste("Observed against simulated fire sizes of the fitted years",
                                "(`fireSenseUtils::scoreFireSizes()`): bias, error, quantiles.")),
@@ -591,7 +602,8 @@ defineModule(sim, list(
 #' @param sim a `simList`.
 #' @param eventTime numeric; current simulation time.
 #' @param eventType character; one of `init`, `spreadFitPrepare`, `run`,
-#'   `debug`, `plot`, `postFitDiagnostics` (after every fit), `crossValidate` (mode "validate").
+#'   `debug`, `plot`, `postFitDiagnostics` (after every fit), `crossValidate` (mode "validate"),
+#'   `profileFromLedger` (mode "profile").
 #' @param debug not used.
 #' @return the `simList`, invisibly.
 doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE) {
@@ -618,6 +630,13 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         # `doFit`: those decide whether to run the full fit, which this job never does.
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "crossValidate")
+        return(invisible(sim))
+      }
+
+      ## mode "profile": profile the ledger's fit of this ELF, nothing else (no fit, no ledger write; see profileLedgerFit())
+      if ("profile" %in% P(sim)$mode) {
+        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
+        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "profileFromLedger")
         return(invisible(sim))
       }
 
@@ -726,6 +745,9 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         ## observed against simulated burning, and the response curves, for the best parameter set
         spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], mod$covsX1000, P(sim)$.runName)
       }
+    },
+    profileFromLedger = {
+      sim$spreadFitProfile <- profileLedgerFit(sim, mod$covsX1000, P(sim)$.runName)
     },
     postFitDiagnostics = {
       sim <- makeFitDiagnostics(sim, mod$fitDE)
