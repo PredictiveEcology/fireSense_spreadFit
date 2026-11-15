@@ -162,3 +162,13 @@ moduleCodeParsed <- function() {
              list.files(testthat::test_path("..", "..", "R"), "\\.R$", full.names = TRUE))
   do.call(c, lapply(files, parse, keep.source = FALSE))
 }
+
+## A ledger row for the toy polygon with the toy formula's parameters, best set first
+profileLedger <- function(parNames, best) {
+  l <- toyLedger("9.9")
+  sets <- data.table::as.data.table(rbind(best, best + 1))
+  data.table::setnames(sets, parNames)
+  l$params <- list(sets)
+  l$objFunVal <- list(c(101, 102))
+  l
+}

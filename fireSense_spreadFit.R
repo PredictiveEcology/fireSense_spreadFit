@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.87)", # .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9165)", # 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9167)", # 9167: scorePopulationTerms(), returnTerms raw terms + weights, phaseEvents(terms =) (#233); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.2.0.9004)"),
   parameters = rbind(
@@ -227,14 +227,20 @@ defineModule(sim, list(
     defineParameter("powerLawPGrid", "numeric", default = fireSenseUtils::spreadPowerLawPGrid,
                     desc = paste("The spread probabilities the calibration simulates; the default brackets p_c50 of 0.22-0.32.")),
     defineParameter("mode", "character", default = "fit",
-                    desc = paste("Options: debug, fit, visualize, validate. Can use multiples. 'debug' runs the",
+                    desc = paste("Options: debug, fit, visualize, validate, profile, terms. Can use multiples. 'debug' runs the",
                                  "objective function with visuals instead of DEoptim; 'fit' runs DEoptim; 'visualize'",
                                  "adds the `debug` and `plot` events after the fit; 'validate' adds `crossValidate`,",
                                  "two more fits, each on half the years, predicting the other half",
                                  "(`sim$spreadFitHeldOut`). Validation never writes the ledger, but does write",
                                  "`sim$spreadFitHeldOut` to `outputPath(sim)`, since a batch run typically stops",
                                  "after `crossValidate` and the simList is discarded. See `heldOutFold` to run a",
-                                 "single fold as its own job instead of both folds together.")),
+                                 "single fold as its own job instead of both folds together. 'profile' replaces",
+                                 "everything else: no fit, only `spreadFitPrepare` and `profileFromLedger`, which",
+                                 "profiles this ELF's ledger fit at `profileAt` (`profileLedgerFit()`, `sim$spreadFitProfile`,",
+                                 "also written to `outputPath(sim)`); `doFit` is not consulted and the ledger is not written.",
+                                 "'terms' likewise replaces everything else: no fit, only `spreadFitPrepare` and `termsFromPool`,",
+                                 "which evaluates the parameter vectors of `termsPool` and writes the objective's terms of each",
+                                 "(`scoreTermsPool()`, `sim$spreadFitTerms`, `spreadFitTerms_<.runName><fitFileSuffix>.csv`).")),
     defineParameter("heldOutFold", "integer", default = NA,
                     desc = paste("NA (default): unchanged behaviour, governed by `mode`. `1` or `2`: run ONLY",
                                  "that cross-validation fold, as its own job. `init` then schedules",
@@ -254,6 +260,23 @@ defineModule(sim, list(
                                  "`6 * nCoefficients * profileReps` evaluations, on the fit's workers. It decides",
                                  "which coefficients are identified in isolation (`sim$spreadFitIdentifiability`).",
                                  "0 skips it.")),
+    defineParameter("profileAt", "numeric", default = NA,
+                    desc = paste("Mode 'profile': the values each coefficient of `profileCoefs` is set to in turn, the",
+                                 "others held at the ledger fit's best set, e.g. `c(-20, -10, -5, -2, -1, 0, 1, 2, 5, 10, 20)`.",
+                                 "They may lie outside the fit's bounds. Each is evaluated `profileReps` times.")),
+    defineParameter("profileCoefs", "character", default = NA,
+                    desc = paste("Mode 'profile': the covariate coefficients to profile. `NA`: all of them;",
+                                 "\"fuel\": the fuel biomass coefficients.")),
+    defineParameter("termsPool", "character", default = NA,
+                    desc = paste("Mode 'terms': the parameter vectors to score, a csv with a column for each fitted parameter,",
+                                 "e.g. `DEoptimPopulation_<.runName><fitFileSuffix>.csv`, which every fit writes to `outputPath(sim)`. `NA`:",
+                                 "the sets of this ELF's ledger row.")),
+    defineParameter("termsReps", "integer", default = 1L,
+                    desc = paste("Mode 'terms': how many times each vector is evaluated; the file has a row for each",
+                                 "vector and replicate.")),
+    defineParameter("termsSeed", "integer", default = 1L,
+                    desc = paste("Mode 'terms': replicate r of every vector is evaluated with seed `termsSeed + r`, so the",
+                                 "vectors are compared on the same random numbers.")),
     defineParameter("mutuallyExclusiveCols", "list", list("youngAge" = c("class", "nonForest")), NA, NA,
                     desc = "a named list of mutually exclusive covariates - see `fireSenseUtils::makeMutuallyExclusive`"),
     defineParameter("nCoresNeeded", "integer", default = NULL,
@@ -559,7 +582,11 @@ defineModule(sim, list(
                                "dropping it worsens the fit; `identified` = identified in isolation",
                                "(`fireSenseUtils::identifiedInIsolation()`).")),
     createsOutput("spreadFitProfile", "data.table",
-                  desc = "The one-at-a-time profile around the best member (`fireSenseUtils::profileCoefficients()`)."),
+                  desc = paste("The one-at-a-time profile around the best member (`fireSenseUtils::profileCoefficients()`):",
+                               "after a fit, or in mode 'profile' of the ledger fit at `profileAt` (`profileLedgerFit()`).")),
+    createsOutput("spreadFitTerms", "data.table",
+                  desc = paste("Mode 'terms': one row per parameter vector and replicate of `termsPool`: the parameters and the",
+                               "objective's separate terms (`fireSenseUtils::scorePopulationTerms()`).")),
     createsOutput("spreadFitSizes", "data.table",
                   desc = paste("Observed against simulated fire sizes of the fitted years",
                                "(`fireSenseUtils::scoreFireSizes()`): bias, error, quantiles.")),
@@ -591,7 +618,8 @@ defineModule(sim, list(
 #' @param sim a `simList`.
 #' @param eventTime numeric; current simulation time.
 #' @param eventType character; one of `init`, `spreadFitPrepare`, `run`,
-#'   `debug`, `plot`, `postFitDiagnostics` (after every fit), `crossValidate` (mode "validate").
+#'   `debug`, `plot`, `postFitDiagnostics` (after every fit), `crossValidate` (mode "validate"),
+#'   `profileFromLedger` (mode "profile"), `termsFromPool` (mode "terms").
 #' @param debug not used.
 #' @return the `simList`, invisibly.
 doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE) {
@@ -618,6 +646,20 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         # `doFit`: those decide whether to run the full fit, which this job never does.
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "crossValidate")
+        return(invisible(sim))
+      }
+
+      ## mode "profile": profile the ledger's fit of this ELF, nothing else (no fit, no ledger write; see profileLedgerFit())
+      if ("profile" %in% P(sim)$mode) {
+        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
+        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "profileFromLedger")
+        return(invisible(sim))
+      }
+
+      ## mode "terms": the objective's terms for a pool of parameter vectors, nothing else (see scoreTermsPool())
+      if ("terms" %in% P(sim)$mode) {
+        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
+        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "termsFromPool")
         return(invisible(sim))
       }
 
@@ -681,6 +723,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         }
         DE <- fitSpread(sim, mod$covsX1000, runName = P(sim)$.runName)
         mod$fitDE <- DE # sim$DE is reordered below, which drops the attributes postFitDiagnostics reads
+        writeFinalPopulation(sim, DE, names(P(sim)$lower), P(sim)$.runName)
         sim$DE <- DE
         objFunVal <- vapply(sim$DE, function(D) D$member$bestvalit, FUN.VALUE = numeric(1))
         ord <- order(objFunVal, decreasing = FALSE)
@@ -726,6 +769,12 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         ## observed against simulated burning, and the response curves, for the best parameter set
         spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], mod$covsX1000, P(sim)$.runName)
       }
+    },
+    profileFromLedger = {
+      sim$spreadFitProfile <- profileLedgerFit(sim, mod$covsX1000, P(sim)$.runName)
+    },
+    termsFromPool = {
+      sim$spreadFitTerms <- scoreTermsPool(sim, mod$covsX1000, P(sim)$.runName)
     },
     postFitDiagnostics = {
       sim <- makeFitDiagnostics(sim, mod$fitDE)

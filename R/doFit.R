@@ -21,7 +21,7 @@ mustFitThisPolygon <- function(sim, message = FALSE) {
 
 #' Does this job use the `"powerLaw"` calibration?
 #'
-#' Only a job that fits (`mustFitThisPolygon()`), validates (`mode` has "validate") or runs a held-out fold
+#' Only a job that fits (`mustFitThisPolygon()`), validates (`mode` has "validate"), profiles (`mode` has "profile") or runs a held-out fold
 #' (`heldOutFold`) sets bounds or simulates fires with the calibrated `p_c50` and `gamma`. A job that uses the
 #' ledger's fit reads them from the ledger row, so it skips the calibration.
 #'
@@ -29,5 +29,5 @@ mustFitThisPolygon <- function(sim, message = FALSE) {
 #' @return Logical, length one.
 needsPowerLawCalibration <- function(sim) {
   heldOut <- !isTRUE(is.na(P(sim)$heldOutFold))
-  heldOut || "validate" %in% P(sim)$mode || mustFitThisPolygon(sim)
+  heldOut || any(c("validate", "profile") %in% P(sim)$mode) || mustFitThisPolygon(sim)
 }
