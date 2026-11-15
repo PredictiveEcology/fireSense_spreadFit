@@ -33,13 +33,14 @@ test_that("parameter classes", {
   )
 })
 
-test_that("`cores`, `libPathDEoptim` and `objFunCoresInternal` are not part of the module's cache keys", {
+test_that("`cores`, `libPathDEoptim`, `objFunCoresInternal` and `skipUnusedFitPrep` are not part of the module's cache keys", {
   ## adding a host to `cores` (2026-10-20: "mega") re-ran every cached spreadFit event, although the
   ## fit's own Cache() calls already leave `cores` out; needs SpaDES.core >= 3.2.1.9045.
   ## `libPathDEoptim` (default `.libPaths()[1]`, a machine's path) made a cached event of one
   ## machine miss on another (2026-10-28, 1 of 979 digests differed); it and `objFunCoresInternal` only say
   ## where and how wide the objective runs, and the fit's own Cache() calls already leave them out.
-  notKeyed <- c("cores", "libPathDEoptim", "objFunCoresInternal")
+  ## `skipUnusedFitPrep` (2026-11-15) only says whether a job makes covariates it does not read
+  notKeyed <- c("cores", "libPathDEoptim", "objFunCoresInternal", "skipUnusedFitPrep")
   expect_identical(p$cacheKey[match(notKeyed, p$paramName)], rep(FALSE, length(notKeyed)))
   expect_true(all(p$cacheKey[!p$paramName %in% notKeyed]))
 })

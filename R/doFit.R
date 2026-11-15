@@ -28,7 +28,18 @@ mustFitThisPolygon <- function(sim, message = FALSE) {
 #'
 #' @param sim a `simList`.
 #' @return Logical, length one.
-needsPowerLawCalibration <- function(sim) {
-  heldOut <- !isTRUE(is.na(P(sim)$heldOutFold))
-  heldOut || "validate" %in% P(sim)$mode || mustFitThisPolygon(sim)
+needsPowerLawCalibration <- function(sim) jobNeedsFitData(sim, setdiff(P(sim)$mode, "profile"))
+
+#' Does this job read the data `spreadFitPrepare` makes?
+#'
+#' `fireSenseUtils::fitDataNeeded()`, the rule `fireSense_dataPrepFit` shares for `skipUnusedFitPrep`, on this
+#' job's `doFit`, `heldOutFold`, `mode` and the ledger.
+#'
+#' @param sim a `simList`.
+#' @param mode character; the modes that count, default this module's `mode`.
+#' @return Logical, length one.
+jobNeedsFitData <- function(sim, mode = P(sim)$mode) {
+  doFit <- fireSenseUtils::resolveDoFit(P(sim)$doFit, P(sim)$refitExisting, P(sim)$stopIfNoPreRunFit,
+                                        module = "fireSense_spreadFit", message = FALSE)
+  fireSenseUtils::fitDataNeeded(doFit, P(sim)$heldOutFold, mode, hasPreRunFitForThisPolygon(sim))
 }
