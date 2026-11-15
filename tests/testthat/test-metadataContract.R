@@ -19,7 +19,7 @@ test_that("parameter classes", {
       maxFireSpread = "numeric", mode = "character", mutuallyExclusiveCols = "list",
       nCoresNeeded = "integer", objFunCoresInternal = "integer",
       objfunFireReps = "integer", refitExisting = "logical",
-      .rep = "integer", rescaleAll = "logical",
+      .rep = "integer", rescaleAll = "logical", skipUnusedFitPrep = "logical",
       fitFileSuffix = "character", spreadFitFilename = "character", sppEquivCol = "character", fuelClassCol = "character", spreadFitGoogleDriveFolder = "character",
       stopIfNoPreRunFit = "logical", strategy = "integer", trace = "numeric", upper = "numeric",
       upperAndLowerVal = "numeric", upperAndLowerValFuel = "numeric", useCache_DE = "logical",

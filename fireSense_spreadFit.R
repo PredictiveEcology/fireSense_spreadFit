@@ -87,6 +87,14 @@ defineModule(sim, list(
                                  "always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only",
                                  "with at least 40 cores; use it when the fit's INPUTS changed -- new land cover,",
                                  "vegetation parameters, objective).")),
+    defineParameter("skipUnusedFitPrep", "logical", default = FALSE,
+                    desc = paste("FALSE (default): unchanged. TRUE: a job that uses the ledger's fit and does not validate or hold",
+                                 "out a fold (`needsPowerLawCalibration()`: not fitting, `mode` without \"validate\", no `heldOutFold`)",
+                                 "does not schedule `spreadFitPrepare`, whose covariates only a fit, `crossValidate` and a profile read.",
+                                 "A prediction reads the ledger row's `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`; only a",
+                                 "ledger row without ranges (written before `covMinMax_spread`) falls back on `sim$covMinMax_spread`.",
+                                 "The same parameter of `fireSense_dataPrepFit`: set it for both with",
+                                 "`.globals = list(skipUnusedFitPrep = TRUE)`.")),
     defineParameter("doObjFunAssertions", "logical", default = getOption("fireSenseUtils.assertions", FALSE),
                     desc = paste("Passed to `fireSenseUtils::.objfunSpreadFit()`; TRUE runs",
                                  "diagnostics but is slower; FALSE for operational runs. The default follows",
@@ -621,7 +629,8 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         return(invisible(sim))
       }
 
-      sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
+      if (!isTRUE(P(sim)$skipUnusedFitPrep) || needsPowerLawCalibration(sim))
+        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
 
       # Fit unless the ledger already holds parameters for THIS polygon. The object
       # may exist and be a data.frame while holding only neighbours' rows, or none.

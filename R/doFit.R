@@ -23,7 +23,8 @@ mustFitThisPolygon <- function(sim, message = FALSE) {
 #'
 #' Only a job that fits (`mustFitThisPolygon()`), validates (`mode` has "validate") or runs a held-out fold
 #' (`heldOutFold`) sets bounds or simulates fires with the calibrated `p_c50` and `gamma`. A job that uses the
-#' ledger's fit reads them from the ledger row, so it skips the calibration.
+#' ledger's fit reads them from the ledger row, so it skips the calibration. The same jobs are the ones that read
+#' the covariates `spreadFitPrepare` makes (`skipUnusedFitPrep`).
 #'
 #' @param sim a `simList`.
 #' @return Logical, length one.
