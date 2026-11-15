@@ -1,16 +1,6 @@
 ## mode "profile": profile this ELF's ledger fit at given values (fireSenseUtils::profileCoefficients(at = )), no fit.
 ## See R/profileLedgerFit.R.
 
-## A ledger row for the toy polygon with the toy formula's parameters, best set first
-profileLedger <- function(parNames, best) {
-  l <- toyLedger("9.9")
-  sets <- data.table::as.data.table(rbind(best, best + 1))
-  data.table::setnames(sets, parNames)
-  l$params <- list(sets)
-  l$objFunVal <- list(c(101, 102))
-  l
-}
-
 profileRun <- function(params = list(), ledgerFn = NULL) {
   rec <- new.env()
   pars <- list(mode = "profile", profileAt = c(2, -5, 0), profileCoefs = "fuel", profileReps = 3L, cores = NA, doFit = TRUE)

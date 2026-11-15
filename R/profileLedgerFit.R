@@ -1,29 +1,18 @@
-#' Profile the ledger's fit of this ELF, without fitting
+#' This ELF's ledger row, checked to be the fit this run would make
 #'
-#' Mode `"profile"`: the objective is evaluated at the best parameter set of this ELF's ledger row (its first
-#' set, the best by replicated mean), and at that set with each coefficient of `profileCoefs` in turn set to each
-#' value of `profileAt`, `profileReps` times each on paired seeds (`fireSenseUtils::profileCoefficients()`). The
-#' values may lie outside the fit's bounds, e.g. below the fuel coefficients' lower bound of 0. The objective and
-#' its data are the fit's (`spreadFitDEArgs()`, `emulatorObjectiveArgs()`), on a cluster built as the fit's
-#' (`withObjectiveCluster()`). Nothing is fitted and the ledger is not written.
-#'
-#' Stops when the ledger has no row for this ELF, or when the row was fitted on other parameters or other data
-#' than this run would fit: other parameter names, another covariate centre, or another power-law `gamma`. A
-#' profile is only about the fit when the objective is the fit's.
+#' Shared by modes "profile" ([profileLedgerFit()]) and "terms" ([scoreTermsPool()]): both evaluate this run's
+#' objective at the ledger's parameter sets, which is only about the fit when the row was fitted on the same
+#' parameters and data. Stops when the ledger has no row for this ELF, or when the row has other parameter names,
+#' another covariate centre or another power-law `gamma`.
 #'
 #' @param sim a `simList`, after `spreadFitPrepare`.
-#' @param covs `mod$covsX1000`.
-#' @param runName character; labels the cluster and the output file.
-#' @return the `profileCoefficients()` table, with `ledgerObjFunVal` (the ledger's replicated mean of the best set,
-#'   to compare with the reference row's `mean`). It is also written to
-#'   `file.path(outputPath(sim), currentModule(sim), "spreadFitProfile_<runName><fitFileSuffix>.csv")`.
-profileLedgerFit <- function(sim, covs, runName) {
+#' @param mode character; the mode that asks, for the messages.
+#' @return a list: `row` (the ledger row), `parNames` (this run's fitted parameters) and `sets` (the row's
+#'   parameter sets, best first).
+ledgerFitRow <- function(sim, mode) {
   if (!hasPreRunFitForThisPolygon(sim))
-    stop("fireSense_spreadFit: mode 'profile' profiles this ELF's ledger fit, but the ledger has no row for ",
+    stop("fireSense_spreadFit: mode '", mode, "' uses this ELF's ledger fit, but the ledger has no row for ",
          paste(sim$.ELFind, collapse = ", "), call. = FALSE)
-  if (all(is.na(P(sim)$profileAt)))
-    stop("fireSense_spreadFit: mode 'profile' needs `profileAt`, the values to profile each coefficient at",
-         call. = FALSE)
   sa <- sim$studyAreaWithSpreadParams
   row <- sa[as.character(sa$polygonID) %in% as.character(sim$.ELFind), ][1, ]
   parNames <- names(P(sim)$lower)
@@ -32,8 +21,7 @@ profileLedgerFit <- function(sim, covs, runName) {
     stop("fireSense_spreadFit: the ledger row's parameters (", paste(names(ledgerPars), collapse = ", "),
          ") are not this run's (", paste(parNames, collapse = ", "), "); it was fitted with another formula",
          call. = FALSE)
-  best <- unlist(ledgerPars[1L, parNames])
-  ## the same data and link as the fit, or the profile is not about the fit
+  ## the same data and link as the fit, or the result is not about the fit
   same <- function(a, b) isTRUE(all.equal(as.numeric(a), as.numeric(b), tolerance = 1e-6))
   centre <- sim$covCentre_spread
   rowCentre <- row[[fireSenseUtils::spreadFitCovCentreTxt]][[1]]
@@ -45,6 +33,35 @@ profileLedgerFit <- function(sim, covs, runName) {
       !same(row[[fireSenseUtils::spreadFitPowerLawGammaTxt]], powerLawGammaOf(sim)))
     stop("fireSense_spreadFit: this run's power-law gamma (", powerLawGammaOf(sim), ") differs from the ledger fit's (",
          row[[fireSenseUtils::spreadFitPowerLawGammaTxt]], ")", call. = FALSE)
+  list(row = row, parNames = parNames, sets = data.table::as.data.table(ledgerPars))
+}
+
+#' Profile the ledger's fit of this ELF, without fitting
+#'
+#' Mode `"profile"`: the objective is evaluated at the best parameter set of this ELF's ledger row (its first
+#' set, the best by replicated mean), and at that set with each coefficient of `profileCoefs` in turn set to each
+#' value of `profileAt`, `profileReps` times each on paired seeds (`fireSenseUtils::profileCoefficients()`). The
+#' values may lie outside the fit's bounds, e.g. below the fuel coefficients' lower bound of 0. The objective and
+#' its data are the fit's (`spreadFitDEArgs()`, `emulatorObjectiveArgs()`), on a cluster built as the fit's
+#' (`withObjectiveCluster()`). Nothing is fitted and the ledger is not written.
+#'
+#' Stops when the ledger row is not this run's fit (`ledgerFitRow()`): a profile is only about the fit when the
+#' objective is the fit's.
+#'
+#' @param sim a `simList`, after `spreadFitPrepare`.
+#' @param covs `mod$covsX1000`.
+#' @param runName character; labels the cluster and the output file.
+#' @return the `profileCoefficients()` table, with `ledgerObjFunVal` (the ledger's replicated mean of the best set,
+#'   to compare with the reference row's `mean`). It is also written to
+#'   `file.path(outputPath(sim), currentModule(sim), "spreadFitProfile_<runName><fitFileSuffix>.csv")`.
+profileLedgerFit <- function(sim, covs, runName) {
+  if (all(is.na(P(sim)$profileAt)))
+    stop("fireSense_spreadFit: mode 'profile' needs `profileAt`, the values to profile each coefficient at",
+         call. = FALSE)
+  fit <- ledgerFitRow(sim, "profile")
+  row <- fit$row
+  parNames <- fit$parNames
+  best <- unlist(fit$sets[1L, parNames, with = FALSE])
 
   covCoefs <- fireSenseUtils::spreadDesignCols(sim$fireSense_spreadFormula) # the intercept, if any, and the terms
   coefs <- if (all(is.na(P(sim)$profileCoefs))) covCoefs else

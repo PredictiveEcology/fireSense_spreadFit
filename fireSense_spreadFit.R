@@ -227,7 +227,7 @@ defineModule(sim, list(
     defineParameter("powerLawPGrid", "numeric", default = fireSenseUtils::spreadPowerLawPGrid,
                     desc = paste("The spread probabilities the calibration simulates; the default brackets p_c50 of 0.22-0.32.")),
     defineParameter("mode", "character", default = "fit",
-                    desc = paste("Options: debug, fit, visualize, validate, profile. Can use multiples. 'debug' runs the",
+                    desc = paste("Options: debug, fit, visualize, validate, profile, terms. Can use multiples. 'debug' runs the",
                                  "objective function with visuals instead of DEoptim; 'fit' runs DEoptim; 'visualize'",
                                  "adds the `debug` and `plot` events after the fit; 'validate' adds `crossValidate`,",
                                  "two more fits, each on half the years, predicting the other half",
@@ -237,7 +237,10 @@ defineModule(sim, list(
                                  "single fold as its own job instead of both folds together. 'profile' replaces",
                                  "everything else: no fit, only `spreadFitPrepare` and `profileFromLedger`, which",
                                  "profiles this ELF's ledger fit at `profileAt` (`profileLedgerFit()`, `sim$spreadFitProfile`,",
-                                 "also written to `outputPath(sim)`); `doFit` is not consulted and the ledger is not written.")),
+                                 "also written to `outputPath(sim)`); `doFit` is not consulted and the ledger is not written.",
+                                 "'terms' likewise replaces everything else: no fit, only `spreadFitPrepare` and `termsFromPool`,",
+                                 "which evaluates the parameter vectors of `termsPool` and writes the objective's terms of each",
+                                 "(`scoreTermsPool()`, `sim$spreadFitTerms`, `spreadFitTerms_<.runName>.csv`).")),
     defineParameter("heldOutFold", "integer", default = NA,
                     desc = paste("NA (default): unchanged behaviour, governed by `mode`. `1` or `2`: run ONLY",
                                  "that cross-validation fold, as its own job. `init` then schedules",
@@ -264,6 +267,16 @@ defineModule(sim, list(
     defineParameter("profileCoefs", "character", default = NA,
                     desc = paste("Mode 'profile': the covariate coefficients to profile. `NA`: all of them;",
                                  "\"fuel\": the fuel biomass coefficients.")),
+    defineParameter("termsPool", "character", default = NA,
+                    desc = paste("Mode 'terms': the parameter vectors to score, a csv with a column for each fitted parameter,",
+                                 "e.g. `DEoptimPopulation_<.runName>.csv`, which every fit writes to `outputPath(sim)`. `NA`:",
+                                 "the sets of this ELF's ledger row.")),
+    defineParameter("termsReps", "integer", default = 1L,
+                    desc = paste("Mode 'terms': how many times each vector is evaluated; the file has a row for each",
+                                 "vector and replicate.")),
+    defineParameter("termsSeed", "integer", default = 1L,
+                    desc = paste("Mode 'terms': replicate r of every vector is evaluated with seed `termsSeed + r`, so the",
+                                 "vectors are compared on the same random numbers.")),
     defineParameter("mutuallyExclusiveCols", "list", list("youngAge" = c("class", "nonForest")), NA, NA,
                     desc = "a named list of mutually exclusive covariates - see `fireSenseUtils::makeMutuallyExclusive`"),
     defineParameter("nCoresNeeded", "integer", default = NULL,
@@ -571,6 +584,9 @@ defineModule(sim, list(
     createsOutput("spreadFitProfile", "data.table",
                   desc = paste("The one-at-a-time profile around the best member (`fireSenseUtils::profileCoefficients()`):",
                                "after a fit, or in mode 'profile' of the ledger fit at `profileAt` (`profileLedgerFit()`).")),
+    createsOutput("spreadFitTerms", "data.table",
+                  desc = paste("Mode 'terms': one row per parameter vector and replicate of `termsPool`: the parameters and the",
+                               "objective's separate terms (`fireSenseUtils::scorePopulationTerms()`).")),
     createsOutput("spreadFitSizes", "data.table",
                   desc = paste("Observed against simulated fire sizes of the fitted years",
                                "(`fireSenseUtils::scoreFireSizes()`): bias, error, quantiles.")),
@@ -603,7 +619,7 @@ defineModule(sim, list(
 #' @param eventTime numeric; current simulation time.
 #' @param eventType character; one of `init`, `spreadFitPrepare`, `run`,
 #'   `debug`, `plot`, `postFitDiagnostics` (after every fit), `crossValidate` (mode "validate"),
-#'   `profileFromLedger` (mode "profile").
+#'   `profileFromLedger` (mode "profile"), `termsFromPool` (mode "terms").
 #' @param debug not used.
 #' @return the `simList`, invisibly.
 doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE) {
@@ -637,6 +653,13 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
       if ("profile" %in% P(sim)$mode) {
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
         sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "profileFromLedger")
+        return(invisible(sim))
+      }
+
+      ## mode "terms": the objective's terms for a pool of parameter vectors, nothing else (see scoreTermsPool())
+      if ("terms" %in% P(sim)$mode) {
+        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
+        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "termsFromPool")
         return(invisible(sim))
       }
 
@@ -700,6 +723,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         }
         DE <- fitSpread(sim, mod$covsX1000, runName = P(sim)$.runName)
         mod$fitDE <- DE # sim$DE is reordered below, which drops the attributes postFitDiagnostics reads
+        writeFinalPopulation(sim, DE, names(P(sim)$lower), P(sim)$.runName)
         sim$DE <- DE
         objFunVal <- vapply(sim$DE, function(D) D$member$bestvalit, FUN.VALUE = numeric(1))
         ord <- order(objFunVal, decreasing = FALSE)
@@ -748,6 +772,9 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
     },
     profileFromLedger = {
       sim$spreadFitProfile <- profileLedgerFit(sim, mod$covsX1000, P(sim)$.runName)
+    },
+    termsFromPool = {
+      sim$spreadFitTerms <- scoreTermsPool(sim, mod$covsX1000, P(sim)$.runName)
     },
     postFitDiagnostics = {
       sim <- makeFitDiagnostics(sim, mod$fitDE)

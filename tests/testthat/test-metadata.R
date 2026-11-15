@@ -64,6 +64,7 @@ test_that("outputs are the expected names and classes", {
       spreadFitProfile          = "data.table",
       spreadFitRescore          = "data.table",
       spreadFitSizes            = "data.table",
+      spreadFitTerms            = "data.table",
       studyAreaWithSpreadParams = "sf")
   )
 })
@@ -76,7 +77,7 @@ test_that("parameters are the expected names", {
            ".useCache", "cores", "covFixedRange", "DEoptimControl", "DEoptimTests", "doFit", "doObjFunAssertions",
            "heldOutFold", "initialpop", "initialPopMethod", "emulatorControl", "emulatorMaxParams", "iterDEoptim", "libPathDEoptim",
            "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded", "spreadLink", "powerLawGamma", "powerLawShape", "lowerAsymptote", "richardsNu", "powerLawPcMargin", "powerLawFires", "powerLawPGrid",
-           "objFunCoresInternal", "objfunFireReps", ".rep", "adWeight", "profileReps", "profileAt", "profileCoefs",
+           "objFunCoresInternal", "objfunFireReps", ".rep", "adWeight", "profileReps", "profileAt", "profileCoefs", "termsPool", "termsReps", "termsSeed",
            "simulateMembers", "sizeLik", "sizeLikDf", "escapeSizeHa", "yearAreaWeight", "areaDistWeight", "crpsWeights", "gateRefusal", "penaliseRunaways", "wholeLandscapeSpread", "runawayEdgeFrac", "runawayEdgeMin", "runawayBufferMultiple",
            "jumpTries", "jumpMeanDist", "upperTailBounds", "weighted", "fireSpreadSDBounds", "yearSpreadSDBounds", "fireCauses",
            "refitExisting", "rescaleAll", "fitFileSuffix", "spreadFitFilename",
