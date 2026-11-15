@@ -31,15 +31,16 @@
 #'   - `lcbSD` (2): the exploration picks minimise the GP mean minus this many standard deviations;
 #'   - `logSpanMin` (20): the search space (`emulatorSpace()`) puts a parameter on a signed log1p scale when one of
 #'     its bounds is 0 and the other is at least this far from 0; the others are linear;
-#'   - the local phase, trust-region rounds of `trustRoundBatches` (2) batches each: the region is the box around
-#'     the best `localTopFrac` (0.1) of all distinct evaluated points by GP mean, widened by `localWiden` (0.5) of
-#'     its width each side, times the round's scale (`emulatorTrustBox()`). After each round (`emulatorTrustStep()`),
-#'     an improvement of the GP's best mean by more than `trustTolSD` (1) times the objective's noise SD
-#'     (`emulatorNoiseSD()`), and by more than `relTol` times the best mean (the floor while there are few or no
-#'     replicates near it), is a success, else
-#'     a failure; `trustSuccessTol` (1) successes in a row multiply the scale by `trustShrink` (0.5), unless the
-#'     GP's best point after the round lies in the box's widened margin (`emulatorAtBoxEdge()`): the region then
-#'     held the search back, so it keeps its scale. A failure multiplies it by `trustExpand` (1.25, at most 1), and
+#'   - the local phase, trust-region rounds of `trustRoundBatches` (2) batches each: the region is a box centred on
+#'     the GP's best evaluated point, its width the round's scale times the first width, that of the box around the
+#'     best `localTopFrac` (0.1) of the distinct evaluated points by GP mean when the phase starts, widened by
+#'     `localWiden` (0.5) of its width each side (`emulatorTrustWidth()`, `emulatorTrustBox()`). The region keeps
+#'     its own scale; the spread of the best points does not set it again. After each round (`emulatorTrustStep()`),
+#'     an improvement of the GP's best mean by more than `trustTolSD` (1) times the GP's predictive SD of the mean
+#'     at its best point, and by more than `relTol` times the best mean, is a success, else a failure.
+#'     `trustSuccessTol` (1) successes in a row multiply the scale by `trustShrink` (0.5), unless the GP's best
+#'     point after the round lies in the box's widened margin (`emulatorAtBoxEdge()`): the region then held the
+#'     search back, so it grows by `trustExpand` (2). A failure grows it by `trustExpand` too, and
 #'     `trustFailureTol` (2) failures in a row stop
 #'     the search. It also stops when the region's widest side is narrower than `trustMinWidth` (0.01 of the unit
 #'     cube; not relative to the GP's lengthscales, which reach their upper bound when the local cap flattens the
@@ -63,7 +64,7 @@ emulatorDefaults <- function() {
        nCandidates = 4000L, nPerturb = 3000L, perturbSD = c(0.005, 0.015, 0.04, 0.1), nTop = 20L,
        exclusion = 0.25, lcbSD = 2, logSpanMin = 20,
        trustRoundBatches = 2L, localTopFrac = 0.1, localWiden = 0.5, trustTolSD = 1,
-       trustShrink = 0.5, trustExpand = 1.25, trustSuccessTol = 1L, trustFailureTol = 2L, trustMinWidth = 0.01,
+       trustShrink = 0.5, trustExpand = 2, trustSuccessTol = 1L, trustFailureTol = 2L, trustMinWidth = 0.01,
        popPoolFrac = 0.2, popMinDist = 1,
        thetaBounds = c(0.01, 5), gpMaxit = 200L, gpThreads = 6L,
        gpMaxPoints = 400, gpBestFrac = 0.5)
@@ -110,26 +111,34 @@ emulatorSpace <- function(lower, upper, logSpanMin = 20) {
 
 #' The local phase's trust region
 #'
-#' The box around the best `topFrac` of the points `X` by `score` (at least 2), widened by `widen` times its width
-#' each side, then scaled by `scale` about its centre, and clipped to the unit cube.
+#' `emulatorTrustWidth()`: the region's first width, that of the box around the best `topFrac` of the points `X` by
+#' `score` (at least 2), widened by `widen` times its width each side. `emulatorTrustBox()`: the box `width` wide
+#' (at most the cube's width) centred on `centre`, clipped to the unit cube.
 #'
 #' @param X matrix; distinct points, unit cube.
 #' @param score numeric; one per row of `X`, lower is better (the GP mean).
-#' @param topFrac,widen,scale numeric.
-#' @return a 2-row matrix (`lower`, `upper`), with attribute `margin`: what `widen` added on each side (per
-#'   parameter, before clipping).
-emulatorTrustBox <- function(X, score, topFrac, widen, scale = 1) {
+#' @param topFrac,widen numeric.
+#' @param centre,width numeric, one per dimension; unit cube.
+#' @return `emulatorTrustWidth()`: numeric, one per column of `X`; `emulatorTrustBox()`: a 2-row matrix (`lower`,
+#'   `upper`), with attribute `margin`: the part of the width on each side that `widen` adds (per parameter,
+#'   before clipping).
+emulatorTrustWidth <- function(X, score, topFrac, widen) {
   top <- X[order(score)[seq_len(min(nrow(X), max(2L, ceiling(topFrac * nrow(X)))))], , drop = FALSE]
-  lo <- apply(top, 2L, min); hi <- apply(top, 2L, max)
-  mid <- (lo + hi) / 2; half <- (hi - lo) * (0.5 + widen) * scale
-  structure(rbind(lower = pmax(mid - half, 0), upper = pmin(mid + half, 1)), margin = (hi - lo) * widen * scale)
+  (apply(top, 2L, max) - apply(top, 2L, min)) * (1 + 2 * widen)
+}
+
+#' @rdname emulatorTrustWidth
+emulatorTrustBox <- function(centre, width, widen) {
+  width <- pmin(width, 1)
+  structure(rbind(lower = pmax(centre - width / 2, 0), upper = pmin(centre + width / 2, 1)),
+            margin = width * widen / (1 + 2 * widen))
 }
 
 #' Whether a point lies in the trust region's widened margin
 #'
-#' The margin is what `emulatorTrustBox()` added on each side (its `margin` attribute), on the sides that are not a
-#' face of the unit cube; a point outside the box is in it too. A best point there means the minimum may lie
-#' beyond the box, so the box should not shrink.
+#' The margin is what `emulatorTrustBox()` gives on each side (its `margin` attribute), on the sides that are not
+#' a face of the unit cube; a point outside the box is in it too. A best point there means the minimum may lie
+#' beyond the box, so the box grows.
 #'
 #' @param x numeric; a point, unit cube.
 #' @param box the 2-row matrix of `emulatorTrustBox()`, with its `margin` attribute.
@@ -146,13 +155,14 @@ emulatorAtBoxEdge <- function(x, box) {
 #' @param tol numeric; an improvement above it is a success.
 #' @param ctl `emulatorControlOf()`.
 #' @param atEdge logical; the GP's best point after the round is in the round's box margin
-#'   (`emulatorAtBoxEdge()`): a success then does not shrink the box.
+#'   (`emulatorAtBoxEdge()`): a success then grows the box by `trustExpand` instead of shrinking it.
 #' @return `state` updated, with `stop` (logical) and `reason`.
 emulatorTrustStep <- function(state, improvement, tol, ctl, atEdge = FALSE) {
   state$stop <- FALSE; state$reason <- NA_character_
   if (isTRUE(improvement > tol)) {
     state$failures <- 0L
     state$successes <- if (atEdge) 0L else state$successes + 1L
+    if (atEdge) state$scale <- state$scale * ctl$trustExpand
     if (state$successes >= ctl$trustSuccessTol) {
       state$scale <- state$scale * ctl$trustShrink
       state$successes <- 0L
@@ -162,28 +172,9 @@ emulatorTrustStep <- function(state, improvement, tol, ctl, atEdge = FALSE) {
     state$failures <- state$failures + 1L
     if (state$failures >= ctl$trustFailureTol) {
       state$stop <- TRUE; state$reason <- "improvement below noise"
-    } else state$scale <- min(1, state$scale * ctl$trustExpand)
+    } else state$scale <- state$scale * ctl$trustExpand
   }
   state
-}
-
-#' The objective's noise near the best points
-#'
-#' The pooled within-point SD of the replicated evaluations among the best `topFrac` of the distinct points
-#' (by their mean value), or `NA` without replicates there.
-#'
-#' @param U matrix; every evaluated point (unit cube), one row per evaluation.
-#' @param y numeric; the evaluations.
-#' @param topFrac numeric.
-#' @return numeric.
-emulatorNoiseSD <- function(U, y, topFrac) {
-  ok <- !is.na(y)
-  keys <- emulatorPointKeys(U)[ok]; y <- y[ok]
-  m <- tapply(y, keys, mean); v <- tapply(y, keys, stats::var); n <- tapply(y, keys, length)
-  top <- order(m)[seq_len(min(length(m), max(2L, ceiling(topFrac * length(m)))))]
-  top <- top[n[top] > 1L]
-  if (!length(top)) return(NA_real_)
-  sqrt(sum((n[top] - 1) * v[top]) / sum(n[top] - 1))
 }
 
 ## One string per row of `U`, the same for the replicates of a point
@@ -196,8 +187,9 @@ emulatorPointKeys <- function(U) apply(U, 1L, function(r) paste(sprintf("%a", r)
 #' scale (see `emulatorDefaults()`): expected improvement over the GP's best mean (greedy, with an exclusion
 #' distance), a lower confidence bound for exploration, and replicates of the best points. A global phase, until
 #' the GP's best mean stops improving, then trust-region rounds (`emulatorTrustBox()`, `emulatorTrustStep()`),
-#' each re-centred on the best of all the points so far, shrinking while they improve by more than the
-#' objective's noise, until they stop improving or the budget is spent.
+#' each centred on the best of all the points so far, shrinking while they improve by more than the GP's
+#' uncertainty at its best point and growing while that point moves to the region's edge, until they stop
+#' improving or the budget is spent.
 #'
 #' @param evaluate a function of a matrix of parameter sets (one per row, columns `names(lower)`) and an integer
 #'   `seed`, returning one objective value per row (`emulatorEvaluator()`).
@@ -254,24 +246,27 @@ emulateObjective <- function(evaluate, lower, upper, NP, control = list(), seed 
       evaluateBatch(selectEmulatorBatch(g$m, U, B, NULL, ctl), g$sc)
     }
     ## trust-region rounds. A round is judged by the GP fitted after its evaluations: its best mean against the
-    ## one at the round's start (both local-phase GPs, on the same capped scale)
+    ## one at the round's start (both local-phase GPs, on the same capped scale), with that GP's predictive SD of
+    ## the mean at its best point as the tolerance
     trust <- list(scale = 1, successes = 0L, failures = 0L, stop = FALSE, reason = "maxEvals")
-    round <- 1L; inRound <- 0L; before <- NULL
+    round <- 1L; inRound <- 0L; before <- NULL; width <- NULL
     while (nrow(U) < ctl$maxEvals) {
       g <- fitGP(local = TRUE)
-      sel <- selectEmulatorBatch(g$m, U, B, trust$scale, ctl)
+      sel <- selectEmulatorBatch(g$m, U, B, trust$scale, ctl, width)
+      width <- sel$width
       now <- g$sc$untr(sel$bestZ)
       if (is.null(before)) before <- now
       if (inRound >= ctl$trustRoundBatches) {
-        tol <- max(ctl$trustTolSD * emulatorNoiseSD(U, y, ctl$localTopFrac), ctl$relTol * now, na.rm = TRUE)
+        improvement <- before - now
+        tol <- max(ctl$trustTolSD * (g$sc$untr(sel$bestZ + sel$bestSD) - now), ctl$relTol * now)
         atEdge <- emulatorAtBoxEdge(sel$best, roundBox)
-        trust <- emulatorTrustStep(trust, before - now, tol, ctl, atEdge)
-        message("emulator trust round ", round, ": the GP's best mean improved by ", signif(before - now, 3),
+        trust <- emulatorTrustStep(trust, improvement, tol, ctl, atEdge)
+        message("emulator trust round ", round, ": the GP's best mean improved by ", signif(improvement, 3),
                 " (tolerance ", signif(tol, 3), ")", if (atEdge) "; its best point is at the box's edge",
                 if (!trust$stop) paste0("; next scale ", signif(trust$scale, 3)))
         if (trust$stop) break
         round <- round + 1L; inRound <- 0L; before <- now
-        sel <- selectEmulatorBatch(g$m, U, B, trust$scale, ctl)
+        sel <- selectEmulatorBatch(g$m, U, B, trust$scale, ctl, width)
         if (max(sel$box[2L, ] - sel$box[1L, ]) < ctl$trustMinWidth) {
           trust$reason <- "trust region narrower than trustMinWidth"
           break
@@ -357,30 +352,34 @@ emulatorConverged <- function(status, nEval, ctl) {
 #' Expected improvement over the GP's best mean at an evaluated point (greedy, each pick at least
 #' `exclusion` lengthscales from the others), then a lower confidence bound (exploration), then replicates of the
 #' best evaluated points (fewest replicates first). In the local phase the Latin-hypercube candidates are drawn in
-#' the trust region (`emulatorTrustBox()`) and more replicates are taken.
+#' the trust region (`emulatorTrustBox()`, centred on the best evaluated point) and more replicates are taken.
 #'
 #' @param m the GP (`fitEmulatorGP()`).
 #' @param U every evaluated point so far, unit cube.
 #' @param B integer; batch size.
 #' @param trustScale numeric; the trust region's scale in the local phase, `NULL` in the global phase.
 #' @param ctl `emulatorControlOf()`.
+#' @param trustWidth numeric; the trust region's width at scale 1 (`emulatorTrustWidth()`), `NULL` for the
+#'   first local batch, which computes it.
 #' @return list: `U` (the batch, unit cube), `kind` ("ei", "lcb", "rep"), `bestZ` (the GP's best mean at an
-#'   evaluated point, response scale), `best` (that point), `box` (the trust region, or `NULL`), `theta` (the GP's
-#'   lengthscales).
-selectEmulatorBatch <- function(m, U, B, trustScale, ctl) {
+#'   evaluated point, response scale), `bestSD` (the GP's predictive SD of the mean there, response scale), `best`
+#'   (that point), `box` (the trust region, or `NULL`), `width` (`trustWidth`), `theta` (the GP's lengthscales).
+selectEmulatorBatch <- function(m, U, B, trustScale, ctl, trustWidth = NULL) {
   local <- !is.null(trustScale)
   nRep <- round(B / if (local) 4 else 6); nLCB <- round(B / 8); nEI <- B - nRep - nLCB
   d <- ncol(U)
   keys <- emulatorPointKeys(U)
   X0 <- U[!duplicated(keys), , drop = FALSE]
   mult <- tabulate(match(keys, keys[!duplicated(keys)]), nrow(X0))
-  pm <- predict(m, X0)$mean
+  p0 <- predict(m, X0)
+  pm <- p0$mean
   ord <- order(pm)
   top <- X0[ord[seq_len(min(ctl$nTop, nrow(X0)))], , drop = FALSE]
   cand <- lhs::randomLHS(ctl$nCandidates, d)
   box <- NULL
   if (local) {
-    box <- emulatorTrustBox(X0, pm, ctl$localTopFrac, ctl$localWiden, trustScale)
+    if (is.null(trustWidth)) trustWidth <- emulatorTrustWidth(X0, pm, ctl$localTopFrac, ctl$localWiden)
+    box <- emulatorTrustBox(X0[ord[1L], ], trustScale * trustWidth, ctl$localWiden)
     cand <- sweep(sweep(cand, 2L, box[2L, ] - box[1L, ], "*"), 2L, box[1L, ], "+")
   }
   cand <- rbind(cand, do.call(rbind, lapply(ctl$perturbSD, function(s) {
@@ -413,7 +412,8 @@ selectEmulatorBatch <- function(m, U, B, trustScale, ctl) {
   topi <- topi[order(mult[topi])][seq_len(min(nRep, length(topi)))]
   list(U = rbind(cand[pEI, , drop = FALSE], cand[pLCB, , drop = FALSE], X0[topi, , drop = FALSE]),
        kind = c(rep("ei", length(pEI)), rep("lcb", length(pLCB)), rep("rep", length(topi))),
-       bestZ = fstar, best = X0[ord[1L], ], box = box, theta = theta)
+       bestZ = fstar, bestSD = sqrt(max(p0$sd2[ord[1L]], 0)), best = X0[ord[1L], ], box = box, width = trustWidth,
+       theta = theta)
 }
 
 #' The starting population: good evaluated points, spread out
@@ -522,8 +522,8 @@ emulatorEvaluator <- function(objArgs, cl = NULL) {
 
 ## The emulator's code, for the Cache key of its result: Cache() digests the arguments, not the functions they reach
 emulatorBodies <- function() {
-  fns <- c("emulatorDefaults", "emulatorControlOf", "emulatorSpace", "emulatorTrustBox", "emulatorAtBoxEdge",
-           "emulatorTrustStep", "emulatorNoiseSD", "emulatorPointKeys", "emulateObjective", "emulatorScale", "fitEmulatorGP",
+  fns <- c("emulatorDefaults", "emulatorControlOf", "emulatorSpace", "emulatorTrustWidth", "emulatorTrustBox",
+           "emulatorAtBoxEdge", "emulatorTrustStep", "emulatorPointKeys", "emulateObjective", "emulatorScale", "fitEmulatorGP",
            "emulatorConverged", "selectEmulatorBatch", "emulatorSpreadPopulation", "emulatorEvaluator")
   stats::setNames(lapply(fns, function(f) deparse(get(f, mode = "function"))), fns)
 }

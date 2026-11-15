@@ -91,19 +91,22 @@ test_that("the search space is the full bounds, signed log1p for wide one-sided 
   expect_identical(emulatorSpace(lo, up, logSpanMin = Inf)$logPars, character(0))
 })
 
-test_that("the trust region is the box around the best fraction of the points, widened, scaled, inside the cube", {
+test_that("the trust region's first width is the best points' box, widened; the box is centred on the best point", {
   X <- rbind(c(0.40, 0.10), c(0.50, 0.30), c(0.90, 0.90), c(0.10, 0.95), c(0.45, 0.20),
              c(0.20, 0.80), c(0.70, 0.60), c(0.30, 0.50), c(0.60, 0.40), c(0.80, 0.70))
   score <- c(1, 2, 9, 8, 3, 7, 6, 5, 4, 10)
   noMargin <- function(b) { attr(b, "margin") <- NULL; b }
-  box <- emulatorTrustBox(X, score, topFrac = 0.3, widen = 0.5)           # the 3 best: rows 1, 2, 5
-  expect_equal(noMargin(box), rbind(lower = c(0.35, 0), upper = c(0.55, 0.4)))     # x 0.4-0.5 +-0.05; y 0.1-0.3 +-0.1
-  half <- emulatorTrustBox(X, score, topFrac = 0.3, widen = 0.5, scale = 0.5)
-  expect_equal(noMargin(half), rbind(lower = c(0.4, 0.1), upper = c(0.5, 0.3)))   # half the width about the same centre
-  expect_equal(emulatorTrustBox(X, score, topFrac = 0.3, widen = 0)[, 1], c(lower = 0.4, upper = 0.5))
+  w <- emulatorTrustWidth(X, score, topFrac = 0.3, widen = 0.5)          # the 3 best: rows 1, 2, 5
+  expect_equal(w, c(0.2, 0.4))                                           # x 0.4-0.5, y 0.1-0.3, each doubled
+  expect_equal(emulatorTrustWidth(X, score, topFrac = 0.3, widen = 0), c(0.1, 0.2))
+  box <- emulatorTrustBox(X[1, ], w, widen = 0.5)
+  expect_equal(noMargin(box), rbind(lower = c(0.3, 0), upper = c(0.5, 0.3)))   # y clipped at 0
+  expect_equal(attr(box, "margin"), c(0.05, 0.1))                        # what widen added, before clipping
+  expect_equal(noMargin(emulatorTrustBox(X[1, ], w / 2, widen = 0.5)), rbind(lower = c(0.35, 0), upper = c(0.45, 0.2)))
+  expect_equal(noMargin(emulatorTrustBox(c(0.5, 0.5), c(4, 0.2), widen = 0.5)), rbind(lower = c(0, 0.4), upper = c(1, 0.6)))
 })
 
-test_that("a trust round that improves by more than the noise shrinks the box; repeated failures stop the search", {
+test_that("a trust round that improves by more than the GP's uncertainty shrinks the box; repeated failures stop the search", {
   ctl <- emulatorControlOf(list(trustShrink = 0.5, trustExpand = 1.5, trustSuccessTol = 1L, trustFailureTol = 2L))
   st <- emulatorTrustStep(list(scale = 1, successes = 0L, failures = 0L), improvement = 30, tol = 9, ctl)
   expect_equal(st$scale, 0.5); expect_false(st$stop)
@@ -116,9 +119,9 @@ test_that("a trust round that improves by more than the noise shrinks the box; r
   st <- emulatorTrustStep(st, improvement = 1, tol = 9, ctl)
   st <- emulatorTrustStep(st, improvement = 1, tol = 9, ctl)              # two failures in a row: stop
   expect_true(st$stop); expect_identical(st$reason, "improvement below noise")
-  ## the box never grows past the full trust box
+  ## the box keeps its own scale, which can grow past its first width (emulatorTrustBox() keeps it in the cube)
   st <- emulatorTrustStep(list(scale = 0.9, successes = 0L, failures = 0L), improvement = 0, tol = 9, ctl)
-  expect_equal(st$scale, 1)
+  expect_equal(st$scale, 1.35)
   ## two successes needed before it shrinks
   ctl2 <- emulatorControlOf(list(trustSuccessTol = 2L))
   st <- emulatorTrustStep(list(scale = 1, successes = 0L, failures = 0L), improvement = 30, tol = 9, ctl2)
@@ -126,7 +129,7 @@ test_that("a trust round that improves by more than the noise shrinks the box; r
   expect_equal(emulatorTrustStep(st, improvement = 30, tol = 9, ctl2)$scale, ctl2$trustShrink)
 })
 
-test_that("a trust round whose best point is at the box's edge does not shrink the box", {
+test_that("a trust round whose best point is at the box's edge grows the box", {
   ## before, every success halved the box, so a search still moving toward a minimum outside the box shrank
   ## it below trustMinWidth, or to steps smaller than the noise, and stopped 7-15 noise SDs above the minimum
   box <- structure(rbind(lower = c(0.2, 0), upper = c(0.6, 0.4)), margin = c(0.1, 0.1))
@@ -139,38 +142,39 @@ test_that("a trust round whose best point is at the box's edge does not shrink t
   boxUp <- structure(rbind(lower = c(0.2, 0.5), upper = c(0.6, 1)), margin = c(0.1, 0.1))
   expect_false(emulatorAtBoxEdge(c(0.4, 0.95), boxUp))
   expect_true(emulatorAtBoxEdge(c(0.4, 0.55), boxUp))
-  ## a box clipped on one side keeps the margin it was given (not width * widen / (1 + 2 * widen))
-  X <- rbind(c(0.40, 0.05), c(0.50, 0.10), c(0.90, 0.90), c(0.10, 0.95), c(0.45, 0.20), c(0.20, 0.80))
-  clipped <- emulatorTrustBox(X, score = c(1, 2, 9, 8, 3, 7), topFrac = 0.5, widen = 0.5)   # y: 0.05-0.2, lower side clipped
+  ## a box clipped on one side keeps the margin it was given (not its clipped width * widen / (1 + 2 * widen))
+  clipped <- emulatorTrustBox(c(0.45, 0.1), c(0.2, 0.3), widen = 0.5)    # y: -0.05-0.25, lower side clipped
   expect_equal(attr(clipped, "margin"), c(0.05, 0.075))
-  expect_equal(clipped[, 2L], c(lower = 0, upper = 0.275))
-  expect_true(emulatorAtBoxEdge(c(0.45, 0.205), clipped))                # in the 0.075 margin of the open side (0.069 by the inverse)
-  expect_false(emulatorAtBoxEdge(c(0.45, 0.19), clipped))
-  expect_equal(attr(emulatorTrustBox(X, c(1, 2, 9, 8, 3, 7), 0.5, 0.5, scale = 0.5), "margin"), c(0.025, 0.0375))
-  ctl <- emulatorControlOf(list(trustShrink = 0.5, trustSuccessTol = 1L))
+  expect_equal(clipped[, 2L], c(lower = 0, upper = 0.25))
+  expect_true(emulatorAtBoxEdge(c(0.45, 0.18), clipped))                 # in the 0.075 margin of the open side
+  expect_false(emulatorAtBoxEdge(c(0.45, 0.17), clipped))
+  ctl <- emulatorControlOf(list(trustShrink = 0.5, trustExpand = 1.25, trustSuccessTol = 1L))
   st <- emulatorTrustStep(list(scale = 0.5, successes = 0L, failures = 1L), improvement = 30, tol = 9, ctl,
                           atEdge = TRUE)
-  expect_equal(st$scale, 0.5); expect_identical(st$failures, 0L); expect_false(st$stop)
-  expect_equal(emulatorTrustStep(st, improvement = 30, tol = 9, ctl, atEdge = FALSE)$scale, 0.25)
+  expect_equal(st$scale, 0.625); expect_identical(st$failures, 0L); expect_false(st$stop)
+  expect_equal(emulatorTrustStep(st, improvement = 30, tol = 9, ctl, atEdge = FALSE)$scale, 0.3125)
 })
 
-test_that("a search moving toward a minimum outside its first box keeps the box's scale while it is at the edge", {
-  ## no GP and no noise: each round's best point is the true minimum clipped to the round's box
+test_that("a search moving toward a minimum outside its first box grows the box while it is at the edge", {
+  ## no GP and no noise: each round's best point is the true minimum clipped to the round's box, centred on the
+  ## best point so far
   f <- function(P) rowSums(sweep(P, 2L, c(0.9, 0.85))^2)
-  ctl <- emulatorControlOf(list(trustShrink = 0.5, trustSuccessTol = 1L))
+  ctl <- emulatorControlOf(list(trustShrink = 0.5, trustExpand = 2, trustSuccessTol = 1L))
   X <- rbind(c(0.10, 0.10), c(0.15, 0.20), c(0.20, 0.15), c(0.25, 0.25), c(0.30, 0.10), c(0.10, 0.30))
+  width <- emulatorTrustWidth(X, f(X), ctl$localTopFrac, ctl$localWiden)
   st <- list(scale = 1, successes = 0L, failures = 0L)
-  scales <- numeric(0)
+  scales <- numeric(0); edges <- logical(0)
   for (i in 1:4) {
-    box <- emulatorTrustBox(X, f(X), ctl$localTopFrac, ctl$localWiden, st$scale)
-    best <- pmin(pmax(c(0.9, 0.85), box[1L, ]), box[2L, ])               # the minimum is beyond every box
-    atEdge <- emulatorAtBoxEdge(best, box)
-    expect_true(atEdge)
+    box <- emulatorTrustBox(X[which.min(f(X)), ], st$scale * width, ctl$localWiden)
+    best <- pmin(pmax(c(0.9, 0.85), box[1L, ]), box[2L, ])
+    edges <- c(edges, emulatorAtBoxEdge(best, box))
     before <- min(f(X)); X <- rbind(X, best)
-    st <- emulatorTrustStep(st, before - min(f(X)), tol = 0.01, ctl, atEdge)
+    st <- emulatorTrustStep(st, before - min(f(X)), tol = 1e-6, ctl, utils::tail(edges, 1L))
     scales <- c(scales, st$scale)
   }
-  expect_equal(scales, rep(1, 4))
+  expect_true(all(edges))
+  expect_equal(scales, c(2, 4, 8, 16))                                   # the first width is 0.1 by 0.3
+  expect_equal(min(f(X)), 0)                                             # the fourth box reaches the minimum
 })
 
 test_that("the starting population is good evaluated points, picked best first at least a minimum distance apart", {
@@ -189,15 +193,6 @@ test_that("the starting population is good evaluated points, picked best first a
   ## NP rows even when the pool is smaller than NP: the pool grows to NP, then the distance relaxes to 0
   expect_identical(sort(emulatorSpreadPopulation(X, value, 0.1, NP = 10L, poolFrac = 0.1, minDist = 1)), 1:10)
   expect_length(emulatorSpreadPopulation(X[1:3, ], value[1:3], 0.1, NP = 8L, poolFrac = 0.2, minDist = 1), 3L)
-})
-
-test_that("the noise SD is pooled from the replicated points among the best", {
-  U <- rbind(c(0.1, 0.1), c(0.1, 0.1), c(0.1, 0.1), c(0.2, 0.2), c(0.2, 0.2), c(0.9, 0.9), c(0.9, 0.9), c(0.5, 0.5),
-             c(0.6, 0.6), c(0.7, 0.7))
-  y <- c(100, 104, 102, 110, 106, 5000, 9000, 200, 300, 400)
-  ## the 3 best distinct points (of 6) are (0.1, 0.1) (sd 2, 2 df) and (0.2, 0.2) (sd 2.83, 1 df), and (0.5, 0.5), not replicated; (0.9, 0.9) is not
-  expect_equal(emulatorNoiseSD(U, y, topFrac = 0.34), sqrt((2 * 4 + 1 * 8) / 3))
-  expect_true(is.na(emulatorNoiseSD(U[8:10, ], y[8:10], topFrac = 0.5)))  # no replicates
 })
 
 test_that("emulatorControl names are checked", {
@@ -295,20 +290,20 @@ test_that("the emulator finds a minimum near the sign constraints of wide one-si
   expect_lt(min(value(res$pop)) - 100, 10)
 })
 
-test_that("the local phase is trust rounds that shrink around the minimum and stop when they improve less than the noise", {
-  ## one global batch: the mechanics. The rounds shrink the region and stop by the rule, not the budget. Where
-  ## they end depends on the noise draw (the gap to the minimum is 1.9 at the median over 64 seeds, >= 5 for 16), so it is not asserted
+test_that("the local phase is trust rounds that shrink around the minimum and stop when they improve less than the GP's uncertainty", {
+  ## one global batch: the rounds find the minimum (over seeds 1..64 the gap is 0.38 at the median, >= 5 for 3,
+  ## one of them a local GP flat at its cap; before the trust region kept its own scale, >= 5 for 19)
   res <- quadEmulate(utils::modifyList(quadCtl, list(globalMaxEvals = 76L, maxEvals = 2000L)))
-  st <- res$status[res$status$phase == "local"]
+  st <- res$status[which(res$status$phase == "local"), ]
   expect_gte(max(st$round), 3L)
   expect_identical(res$stopReason, "improvement below noise")
-  expect_lt(res$nEvaluated, 400L)                                      # 340 at most over seeds 1..64
-  expect_lt(utils::tail(st$boxWidth, 1L), st$boxWidth[1L] / 4)
+  expect_lt(res$nEvaluated, 700L)                                      # 628 at most over seeds 1..64
   expect_lt(min(st$scale), 0.5)
-  ## two global batches find the minimum (62 of seeds 1..64 end within 5 of it, 15 of 64 do not with one batch): the search stops, near it
+  expect_lt(min(quadValue(res$pop)) - 100, 5)
+  ## two global batches find the minimum (63 of seeds 1..64 end within 5 of it): the search stops, near it
   res <- quadEmulate(utils::modifyList(quadCtl, list(globalMaxEvals = 88L, maxEvals = 2000L)))
   expect_identical(res$stopReason, "improvement below noise")
-  expect_lt(res$nEvaluated, 400L)                                      # 340 at most over seeds 1..64
+  expect_lt(res$nEvaluated, 500L)                                      # 472 at most over seeds 1..64
   expect_lt(min(quadValue(res$pop)) - 100, 5)
 })
 
