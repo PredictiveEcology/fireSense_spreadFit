@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9046"
-date: "Last updated: 2026-11-14"
+subtitle: "v.1.2.0.9047"
+date: "Last updated: 2026-11-15"
 output:
   bookdown::html_document2:
     toc: true
@@ -273,6 +273,15 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Whether to fit this polygon. FALSE (default): never fit -- use the ledger's fit, and stop with an error if it holds none for this polygon (`fitFileSuffix` picks the ledger), so a run that only predicts can never start a fit by accident. NA: do whatever is needed -- use the ledger's fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it when the fit's INPUTS changed -- new land cover, vegetation parameters, objective). </td>
    <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> skipUnusedFitPrep </td>
+   <td style="text-align:left;"> logical </td>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> FALSE (default): unchanged. TRUE: a job that uses the ledger's fit and does not validate or hold out a fold (`fireSenseUtils::fitDataNeeded()`: not fitting, `mode` without "validate" or "profile", no `heldOutFold`) does not schedule `spreadFitPrepare`, whose covariates only a fit, `crossValidate` and a profile read. A prediction reads the ledger row's `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`; only a ledger row without ranges (written before `covMinMax_spread`) falls back on `sim$covMinMax_spread`. The same parameter of `fireSense_dataPrepFit`: set it for both with `.globals = list(skipUnusedFitPrep = TRUE)`. Not part of the cache keys. The modules must agree on it and on `doFit`. </td>
+   <td style="text-align:left;"> FALSE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> doObjFunAssertions </td>

@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9046</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9047</span>
       </span>
     </div>
 
@@ -70,9 +70,9 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>fireSense_spreadFit Manual</h1>
-            <h3 data-toc-skip class="subtitle">v.1.2.0.9046</h3>
+            <h3 data-toc-skip class="subtitle">v.1.2.0.9047</h3>
             
-            <h4 data-toc-skip class="date">Last updated: 2026-11-14</h4>
+            <h4 data-toc-skip class="date">Last updated: 2026-11-15</h4>
       
 
       <div class="hidden name"><code>fireSense_spreadFit.Rmd</code></div>
@@ -618,6 +618,29 @@ TRUE
 </tr>
 <tr>
 <td style="text-align:left;">
+skipUnusedFitPrep
+</td>
+<td style="text-align:left;">
+logical
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+FALSE (default): unchanged. TRUE: a job that uses the ledger’s fit and does not validate or hold out a fold (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fitDataNeeded.html" class="external-link">fireSenseUtils::fitDataNeeded()</a></code>: not fitting, <code>mode</code> without “validate” or “profile”, no <code>heldOutFold</code>) does not schedule <code>spreadFitPrepare</code>, whose covariates only a fit, <code>crossValidate</code> and a profile read. A prediction reads the ledger row’s <code>covMinMax_spread</code>, <code>covCentre_spread</code> and <code>climateRef_spread</code>; only a ledger row without ranges (written before <code>covMinMax_spread</code>) falls back on <code>sim$covMinMax_spread</code>. The same parameter of <code>fireSense_dataPrepFit</code>: set it for both with <code>.globals = list(skipUnusedFitPrep = TRUE)</code>. Not part of the cache keys. The modules must agree on it and on <code>doFit</code>.
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 doObjFunAssertions
 </td>
 <td style="text-align:left;">
@@ -930,7 +953,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-The lower asymptote L of <code>spreadLink = 'powerLawSmooth'</code> or ‘richards’, from <code>fireSenseUtils::spreadLowerAsymptoteMin</code> (0.001) to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadProbBounds.html" class="external-link">fireSenseUtils::spreadProbFloor</a></code> (0.13, the default), checked by <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/checkLinkParams.html" class="external-link">fireSenseUtils::checkLinkParams()</a></code>. Never 0: a fire under its <code>minSize</code> keeps trying to spread until it has reached it, which with a probability near 0 takes an unbounded number of generations. Fixed, not fitted. Ignored with the other links. The spread-probability gates use it as their lower bound with these links.
+The lower asymptote L of <code>spreadLink = 'powerLawSmooth'</code> or ‘richards’, from <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadLowerAsymptoteMin</a></code> (0.001) to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadProbBounds.html" class="external-link">fireSenseUtils::spreadProbFloor</a></code> (0.13, the default), checked by <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/checkLinkParams.html" class="external-link">fireSenseUtils::checkLinkParams()</a></code>. Never 0: a fire under its <code>minSize</code> keeps trying to spread until it has reached it, which with a probability near 0 takes an unbounded number of generations. Fixed, not fitted. Ignored with the other links. The spread-probability gates use it as their lower bound with these links.
 </td>
 <td style="text-align:left;">
 TRUE
