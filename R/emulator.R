@@ -116,26 +116,26 @@ emulatorSpace <- function(lower, upper, logSpanMin = 20) {
 #' @param X matrix; distinct points, unit cube.
 #' @param score numeric; one per row of `X`, lower is better (the GP mean).
 #' @param topFrac,widen,scale numeric.
-#' @return a 2-row matrix (`lower`, `upper`).
+#' @return a 2-row matrix (`lower`, `upper`), with attribute `margin`: what `widen` added on each side (per
+#'   parameter, before clipping).
 emulatorTrustBox <- function(X, score, topFrac, widen, scale = 1) {
   top <- X[order(score)[seq_len(min(nrow(X), max(2L, ceiling(topFrac * nrow(X)))))], , drop = FALSE]
   lo <- apply(top, 2L, min); hi <- apply(top, 2L, max)
   mid <- (lo + hi) / 2; half <- (hi - lo) * (0.5 + widen) * scale
-  rbind(lower = pmax(mid - half, 0), upper = pmin(mid + half, 1))
+  structure(rbind(lower = pmax(mid - half, 0), upper = pmin(mid + half, 1)), margin = (hi - lo) * widen * scale)
 }
 
 #' Whether a point lies in the trust region's widened margin
 #'
-#' The margin is what `emulatorTrustBox()` adds on each side, `widen / (1 + 2 * widen)` of the box's width, on the
-#' sides that are not a face of the unit cube; a point outside the box is in it too. A best point there means the
-#' minimum may lie beyond the box, so the box should not shrink.
+#' The margin is what `emulatorTrustBox()` added on each side (its `margin` attribute), on the sides that are not a
+#' face of the unit cube; a point outside the box is in it too. A best point there means the minimum may lie
+#' beyond the box, so the box should not shrink.
 #'
 #' @param x numeric; a point, unit cube.
-#' @param box the 2-row matrix of `emulatorTrustBox()`.
-#' @param widen numeric; as given to `emulatorTrustBox()`.
+#' @param box the 2-row matrix of `emulatorTrustBox()`, with its `margin` attribute.
 #' @return logical.
-emulatorAtBoxEdge <- function(x, box, widen) {
-  margin <- (box[2L, ] - box[1L, ]) * widen / (1 + 2 * widen)
+emulatorAtBoxEdge <- function(x, box) {
+  margin <- attr(box, "margin")
   any((x < box[1L, ] + margin & box[1L, ] > 0) | (x > box[2L, ] - margin & box[2L, ] < 1))
 }
 
@@ -264,7 +264,7 @@ emulateObjective <- function(evaluate, lower, upper, NP, control = list(), seed 
       if (is.null(before)) before <- now
       if (inRound >= ctl$trustRoundBatches) {
         tol <- max(ctl$trustTolSD * emulatorNoiseSD(U, y, ctl$localTopFrac), ctl$relTol * now, na.rm = TRUE)
-        atEdge <- emulatorAtBoxEdge(sel$best, roundBox, ctl$localWiden)
+        atEdge <- emulatorAtBoxEdge(sel$best, roundBox)
         trust <- emulatorTrustStep(trust, before - now, tol, ctl, atEdge)
         message("emulator trust round ", round, ": the GP's best mean improved by ", signif(before - now, 3),
                 " (tolerance ", signif(tol, 3), ")", if (atEdge) "; its best point is at the box's edge",
