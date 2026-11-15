@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.87)", # .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9165)", # 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9169)", # 9169: fitDataNeeded() (#234); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.2.0.9004)"),
   parameters = rbind(
@@ -87,6 +87,16 @@ defineModule(sim, list(
                                  "always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only",
                                  "with at least 40 cores; use it when the fit's INPUTS changed -- new land cover,",
                                  "vegetation parameters, objective).")),
+    defineParameter("skipUnusedFitPrep", "logical", default = FALSE,
+                    desc = paste("FALSE (default): unchanged. TRUE: a job that uses the ledger's fit and does not validate or hold",
+                                 "out a fold (`fireSenseUtils::fitDataNeeded()`: not fitting, `mode` without \"validate\" or \"profile\", no `heldOutFold`)",
+                                 "does not schedule `spreadFitPrepare`, whose covariates only a fit, `crossValidate` and a profile read.",
+                                 "A prediction reads the ledger row's `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`; only a",
+                                 "ledger row without ranges (written before `covMinMax_spread`) falls back on `sim$covMinMax_spread`.",
+                                 "The same parameter of `fireSense_dataPrepFit`: set it for both with",
+                                 "`.globals = list(skipUnusedFitPrep = TRUE)`. Not part of the cache keys. The modules must agree on it",
+                                 "and on `doFit`."),
+                    cacheKey = FALSE),
     defineParameter("doObjFunAssertions", "logical", default = getOption("fireSenseUtils.assertions", FALSE),
                     desc = paste("Passed to `fireSenseUtils::.objfunSpreadFit()`; TRUE runs",
                                  "diagnostics but is slower; FALSE for operational runs. The default follows",
@@ -621,7 +631,13 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         return(invisible(sim))
       }
 
-      sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
+      if (isTRUE(P(sim)$skipUnusedFitPrep)) {
+        ## the modules must agree: dataPrepFit leaves out the same data when it too skips
+        for (nm in c("skipUnusedFitPrep", "doFit"))
+          SpaDES.core::paramCheckOtherMods(sim, nm, ifSetButDifferent = "error")
+      }
+      if (!isTRUE(P(sim)$skipUnusedFitPrep) || jobNeedsFitData(sim))
+        sim <- scheduleEvent(sim, P(sim)$.runInitialTime, moduleName, "spreadFitPrepare")
 
       # Fit unless the ledger already holds parameters for THIS polygon. The object
       # may exist and be a data.frame while holding only neighbours' rows, or none.
