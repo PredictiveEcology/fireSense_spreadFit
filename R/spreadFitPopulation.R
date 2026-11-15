@@ -16,7 +16,7 @@ finalPopulation <- function(DE, parNames) {
 
 #' Write the final population of a fit
 #'
-#' To `DEoptimPopulation_<runName>.csv` in the module's output folder, beside the fit's progress file. The
+#' To `DEoptimPopulation_<runName><fitFileSuffix>.csv` in the module's output folder, beside the fit's progress file. The
 #' population is the pool [scoreTermsPool()] (mode "terms") reads.
 #'
 #' @inheritParams finalPopulation
@@ -24,11 +24,8 @@ finalPopulation <- function(DE, parNames) {
 #' @param runName character; names the file.
 #' @return the file's path, invisibly.
 writeFinalPopulation <- function(sim, DE, parNames, runName) {
-  out <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
-                   paste0("DEoptimPopulation_", runName, ".csv"))
-  data.table::fwrite(finalPopulation(DE, parNames), out)
-  message("fireSense_spreadFit: wrote the final population to ", out)
-  invisible(out)
+  writeModuleCsv(sim, finalPopulation(DE, parNames),
+                 paste0("DEoptimPopulation_", runName, P(sim)$fitFileSuffix, ".csv"), "the final population")
 }
 
 #' The parameter vectors mode "terms" scores
@@ -65,21 +62,14 @@ termsPoolSets <- function(sim) {
 #' @param covs `mod$covsX1000`.
 #' @param runName character; labels the cluster and the output file.
 #' @return a `data.table`: `member` (row of the pool), `rep`, the parameters and the terms. Also written to
-#'   `file.path(outputPath(sim), currentModule(sim), "spreadFitTerms_<runName>.csv")`.
+#'   `file.path(outputPath(sim), currentModule(sim), "spreadFitTerms_<runName><fitFileSuffix>.csv")`.
 scoreTermsPool <- function(sim, covs, runName) {
   sets <- termsPoolSets(sim)
-  deArgs <- spreadFitDEArgs(sim, covs, runName, diagnostics = FALSE)
-  objArgs <- emulatorObjectiveArgs(deArgs)
   message("fireSense_spreadFit: scoring ", nrow(sets), " parameter vectors, ", P(sim)$termsReps, " reps each")
-  terms <- withObjectiveCluster(objArgs, cores = deArgs$cores, nCoresNeeded = spreadFitNP(sim), libPath = deArgs$libPath,
-                                logPath = deArgs$logPath, runName = paste0("terms_", runName), FUN = function(cl)
+  terms <- withFitObjective(sim, covs, runName, "terms", function(cl, fnArgs)
     fireSenseUtils::scorePopulationTerms(sets, fn = fireSenseUtils::.objfunSpreadFit, reps = as.integer(P(sim)$termsReps),
-                                         cl = cl, seed = as.integer(P(sim)$termsSeed),
-                                         fnArgs = objectiveFnArgs(objArgs, cl)))
+                                         cl = cl, seed = as.integer(P(sim)$termsSeed), fnArgs = fnArgs))
   out <- cbind(terms[, c("member", "rep")], sets[terms$member], terms[, -c("member", "rep")])
-  file <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
-                    paste0("spreadFitTerms_", runName, ".csv"))
-  data.table::fwrite(out, file)
-  message("fireSense_spreadFit: wrote the terms to ", file)
+  writeModuleCsv(sim, out, paste0("spreadFitTerms_", runName, P(sim)$fitFileSuffix, ".csv"), "the terms")
   out
 }

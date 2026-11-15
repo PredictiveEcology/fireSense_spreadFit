@@ -99,3 +99,12 @@ test_that("mode 'terms' scores the sets of a csv: the population file, extra col
   data.table::fwrite(pop[, -1], f)
   expect_error(termsRun(list(termsPool = f)), "does not hold")
 })
+
+test_that("a fitFileSuffix is in the population's and the terms' file names, so a refit does not overwrite", {
+  sim <- toySim(list(fitFileSuffix = "_v2"))
+  mockFitAndLedger(sim)
+  sim <- suppressMessages(SpaDES.core::spades(sim))
+  expect_true(file.exists(file.path(modOut(sim), "DEoptimPopulation_toyRun_v2.csv")))
+  out <- termsRun(list(fitFileSuffix = "_v2"))
+  expect_true(file.exists(file.path(modOut(out$sim), "spreadFitTerms_toyRun_v2.csv")))
+})

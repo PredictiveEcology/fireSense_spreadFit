@@ -107,8 +107,7 @@ spreadFitDEArgs <- function(sim, covs, runName, diagnostics = TRUE) {
   messageDF(best$bestCluster)
   runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)
   ## one progress file per fit (the main fit, each fold), in the run's own output folder
-  progressFile <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
-                            paste0("DEoptimProgress_", runName, ".csv"))
+  progressFile <- moduleOutputFile(sim, paste0("DEoptimProgress_", runName, ".csv"))
   ## runDEoptim()'s arguments, once: the fit gets them, and the emulator (`initialPopMethod = "emulator"`)
   ## evaluates the objective they define
   deArgs <- c(crpsObjectiveArgs(P(sim)), list(landscape = sim$rasterToMatch,
@@ -167,6 +166,30 @@ spreadFitDEArgs <- function(sim, covs, runName, diagnostics = TRUE) {
                    profileReps = if (diagnostics) P(sim)$profileReps else 0L,
                    simulateMembers = if (diagnostics) P(sim)$simulateMembers else 0L))
   deArgs
+}
+
+## A file in the module's output folder, which is made
+moduleOutputFile <- function(sim, name) {
+  file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE), name)
+}
+
+## Writes `x` to `name` in the module's output folder, as csv, and says so
+writeModuleCsv <- function(sim, x, name, what) {
+  out <- moduleOutputFile(sim, name)
+  data.table::fwrite(x, out)
+  message("fireSense_spreadFit: wrote ", what, " to ", out)
+  invisible(out)
+}
+
+## Runs `FUN(cl, fnArgs)` on a cluster built as the fit's, holding the fit's data and objective: `fnArgs` are the
+## arguments to give `.objfunSpreadFit()` with each evaluation. Shared by the modes that evaluate the objective
+## without fitting ("profile", "terms"). `label` names the cluster and its booking.
+withFitObjective <- function(sim, covs, runName, label, FUN) {
+  deArgs <- spreadFitDEArgs(sim, covs, runName, diagnostics = FALSE)
+  objArgs <- emulatorObjectiveArgs(deArgs)
+  withObjectiveCluster(objArgs, cores = deArgs$cores, nCoresNeeded = spreadFitNP(sim), libPath = deArgs$libPath,
+                       logPath = deArgs$logPath, runName = paste0(label, "_", runName),
+                       FUN = function(cl) FUN(cl, objectiveFnArgs(objArgs, cl)))
 }
 
 ## The population size runDEoptim() asks clusters for: `nCoresNeeded`, else fireSenseUtils::deoptimPopulationSize()

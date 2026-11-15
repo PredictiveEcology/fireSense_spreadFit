@@ -72,20 +72,13 @@ profileLedgerFit <- function(sim, covs, runName) {
          ") or be \"fuel\"; got ", paste(P(sim)$profileCoefs, collapse = ", "), call. = FALSE)
   at <- stats::setNames(rep(list(sort(unique(as.numeric(P(sim)$profileAt)))), length(coefs)), coefs)
 
-  deArgs <- spreadFitDEArgs(sim, covs, runName, diagnostics = FALSE)
-  objArgs <- emulatorObjectiveArgs(deArgs)
   message("fireSense_spreadFit: profiling the ledger fit of ", paste(sim$.ELFind, collapse = ", "), ": ",
           paste(coefs, collapse = ", "), " at ", paste(at[[1]], collapse = ", "), ", ", P(sim)$profileReps, " reps each")
-  prof <- withObjectiveCluster(objArgs, cores = deArgs$cores, nCoresNeeded = spreadFitNP(sim), libPath = deArgs$libPath,
-                               logPath = deArgs$logPath, runName = paste0("profile_", runName), FUN = function(cl)
+  prof <- withFitObjective(sim, covs, runName, "profile", function(cl, fnArgs)
     fireSenseUtils::profileCoefficients(best, pop = NULL, fn = fireSenseUtils::.objfunSpreadFit,
                                         reps = as.integer(P(sim)$profileReps), cl = cl,
-                                        fnArgs = objectiveFnArgs(objArgs, cl),
-                                        coefs = coefs, at = at))
+                                        fnArgs = fnArgs, coefs = coefs, at = at))
   prof[, ledgerObjFunVal := as.numeric(row$objFunVal[[1]][1])]
-  out <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
-                   paste0("spreadFitProfile_", runName, P(sim)$fitFileSuffix, ".csv"))
-  data.table::fwrite(prof, out)
-  message("fireSense_spreadFit: wrote the profile to ", out)
+  writeModuleCsv(sim, prof, paste0("spreadFitProfile_", runName, P(sim)$fitFileSuffix, ".csv"), "the profile")
   prof
 }
