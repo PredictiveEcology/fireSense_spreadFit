@@ -24,9 +24,9 @@ mockValidation <- function(sim, rec) {
     })
 }
 
-fitWithPlots <- function(params = list()) {
+fitWithPlots <- function(params = list(), objects = list()) {
   rec <- new.env()
-  sim <- toySim(c(list(profileReps = 0L, simulateMembers = 0L), params))
+  sim <- toySim(c(list(profileReps = 0L, simulateMembers = 0L), params), objects)
   mockFitAndLedger(sim, rec)
   mockValidation(sim, rec)
   list(sim = suppressMessages(SpaDES.core::spades(sim)), rec = rec)
@@ -98,4 +98,14 @@ test_that("the validation simulation of a whole-landscape fit is a whole-landsca
   expect_false(whole$penaliseRunaways)             # the objective refuses wholeLandscape with penaliseRunaways = TRUE
   buffered <- fitWithPlots(list(.plots = "png"))$rec$data[[1]]$args
   expect_false(any(c("wholeLandscape", "penaliseRunaways") %in% names(buffered)))
+})
+
+test_that("a null fit (formula '~ 1') has no covariate to show: nothing is simulated or drawn", {
+  ## the toy tables are named for the data year the real objective reads (see toyObjectsI())
+  out <- fitWithPlots(list(.plots = "png"),
+                      list(fireSense_spreadFormula = "~ 1",
+                           fireSense_nonAnnualSpreadFitCovariates =
+                             stats::setNames(toyObjects()$fireSense_nonAnnualSpreadFitCovariates, "2000")))
+  expect_length(out$rec$data, 0L)
+  expect_length(out$rec$plots, 0L)
 })

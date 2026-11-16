@@ -138,3 +138,27 @@ test_that("the held-out simulation and the fold's ledger row use the fit's centr
   expect_false("covCentre" %in% names(off$rec$fnArgs))
   expect_false(fireSenseUtils::spreadFitCovCentreTxt %in% names(off$sim$spreadFitHeldOut$fit))
 })
+
+## no covariate. The tables still hold the covariates; the formula does not use them.
+
+nullFormula <- "~ 1"
+icptNameN <- fireSenseUtils::spreadInterceptTxt
+
+test_that("estimateSpreadParams(): '~ 1' has the intercept's bounds and no covariate bounds", {
+  annual <- list(year2001 = data.table::data.table(pixelID = 1L, CMDsm = 1, youngAge = 0))
+  up <- estimateSpreadParams(nullFormula, annual, "upper", upperAndLower = 9)
+  lo <- estimateSpreadParams(nullFormula, annual, "lower", upperAndLower = 9)
+  expect_identical(up, c(maxAsymptote = 0.276, `(Intercept)` = 9))
+  expect_identical(lo, c(maxAsymptote = fireSenseUtils::spreadProbFloor, `(Intercept)` = -9))
+})
+
+test_that("a '~ 1' fit gets bounds for the intercept alone, a centre of no covariates, and a ledger row", {
+  out <- fittedI(nullFormula)
+  a <- out$rec$deArgs
+  expect_identical(names(a$lower)[1:2], c("maxAsymptote", icptNameN))
+  expect_identical(names(a$upper), names(a$lower))
+  expect_length(out$sim$covCentre_spread, 0L)
+  expect_identical(a$covCentre, out$sim$covCentre_spread)
+  row <- out$rec$geoArgs$studyAreaFireSense
+  expect_identical(names(row$params[[1]])[1:4], c("maxAsymptote", "hillSlope1", "inflectionPoint1", icptNameN))
+})
