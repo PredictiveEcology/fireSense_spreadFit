@@ -1141,7 +1141,8 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 #' ceiling and gave fuel biomass negative coefficients, so low-biomass (recently burned) stands were the
 #' most flammable. That positive feedback produced runaway fires 3-6 times the observed area in NRV runs
 #' (ELFs 5.4 and 14.3). With fuel >= 0, more fuel can only raise spread probability and the intercept must come down.
-#' Every other term, including any other annual covariate, is symmetric. The two remaining logistic
+#' Every other term, including any other annual covariate and any interaction (`a:b`, whatever its covariates'
+#' bounds are), is symmetric. The two remaining logistic
 #' parameters get fixed bounds. `hillSlope1`, the logistic slope, and `inflectionPoint1`, its Richards
 #' exponent, are not among them: both are fixed at 1, not fitted. `hillSlope1` is not identifiable
 #' together with the covariate coefficients -- with the linear predictor `x = covariates %*% beta`, it
@@ -1189,6 +1190,11 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
   whYA <- formulaTerms %in% youngAge
   newParams[whDrought] <- ifelse(whichBound == "upper", upperAndLower, 0)
   newParams[whYA] <- ifelse(whichBound == "upper", 0, -(upperAndLower))
+
+  ## an interaction (`CMD:fuel`) is a free term like any other: a wide symmetric box, whatever its covariates are
+  ## called (a drought climate's name would match droughtIndexPattern) and whatever sign they are bounded to
+  whInteraction <- formulaTerms %in% fireSenseUtils::spreadInteractionCols(formulaTerms)
+  newParams[whInteraction] <- if (whichBound == "upper") upperAndLower else -upperAndLower
 
   names(newParams) <- formulaTerms
   ## The intercept (a formula with `1 +`) is first among the covariate coefficients. It is the level of
