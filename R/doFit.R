@@ -23,11 +23,23 @@ mustFitThisPolygon <- function(sim, message = FALSE) {
 #'
 #' Only a job that fits (`mustFitThisPolygon()`), validates (`mode` has "validate"), profiles (`mode` has "profile") or runs a held-out fold
 #' (`heldOutFold`) sets bounds or simulates fires with the calibrated `p_c50` and `gamma`. A job that uses the
-#' ledger's fit reads them from the ledger row, so it skips the calibration.
+#' ledger's fit reads them from the ledger row, so it skips the calibration. The same jobs are the ones that read
+#' the covariates `spreadFitPrepare` makes (`skipUnusedFitPrep`).
 #'
 #' @param sim a `simList`.
 #' @return Logical, length one.
-needsPowerLawCalibration <- function(sim) {
-  heldOut <- !isTRUE(is.na(P(sim)$heldOutFold))
-  heldOut || any(c("validate", "profile") %in% P(sim)$mode) || mustFitThisPolygon(sim)
+needsPowerLawCalibration <- function(sim) jobNeedsFitData(sim)
+
+#' Does this job read the data `spreadFitPrepare` makes?
+#'
+#' `fireSenseUtils::fitDataNeeded()`, the rule `fireSense_dataPrepFit` shares for `skipUnusedFitPrep`, on this
+#' job's `doFit`, `heldOutFold`, `mode` and the ledger.
+#'
+#' @param sim a `simList`.
+#' @param mode character; the modes that count, default this module's `mode`.
+#' @return Logical, length one.
+jobNeedsFitData <- function(sim, mode = P(sim)$mode) {
+  doFit <- fireSenseUtils::resolveDoFit(P(sim)$doFit, P(sim)$refitExisting, P(sim)$stopIfNoPreRunFit,
+                                        module = "fireSense_spreadFit", message = FALSE)
+  fireSenseUtils::fitDataNeeded(doFit, P(sim)$heldOutFold, mode, hasPreRunFitForThisPolygon(sim))
 }
