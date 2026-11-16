@@ -10,7 +10,7 @@
 #' * `spreadFitResponseCurves_<label>`: the fitted response curves
 #'   (`fireSenseUtils::plotSpreadFitResponse()`), the model's response rather than a fit to data.
 #'
-#' Nothing is simulated unless `.plots` asks for a plot. The simulation costs about one objective
+#' Nothing is simulated unless `.plots` asks for a plot; a fit with no covariate (formula `~ 1`) makes no figures and simulates nothing. The simulation costs about one objective
 #' evaluation (no early stop): 18 s on ELF 5.3.2 (36 fire years, 1.0 million pixel-years, 50
 #' replicates).
 #'
@@ -21,6 +21,9 @@
 #' @return `NULL`, invisibly.
 spreadFitValidationFigures <- function(sim, par, covs, label) {
   if (!anyPlotting(P(sim)$.plots)) return(invisible(NULL))
+  ## a null fit (`~ 1`) has no covariate to bin or to draw a curve for
+  if (!fireSenseUtils::spreadHasCovariates(fireSenseUtils::spreadDesignCols(sim$fireSense_spreadFormula)))
+    return(invisible(NULL))
   d <- do.call(spreadFitValidationData,
                c(list(par = par, seed = .elfSeed(sim$.ELFind)), spreadObjFunArgs(sim, covs)))
   Plots(d, fn = plotSpreadFitValidation, types = P(sim)$.plots, path = figurePath(sim),
