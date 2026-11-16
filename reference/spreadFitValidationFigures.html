@@ -19,7 +19,7 @@ figures from that one table with Plots():"><!-- mathjax --><script src="https://
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9048</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9049</span>
       </span>
     </div>
 
@@ -96,7 +96,7 @@ pixel-years, binned by each covariate (<code><a href="https://rdrr.io/pkg/fireSe
 the figure that can show misfit.</p></li>
 <li><p><code>spreadFitResponseCurves_&lt;label&gt;</code>: the fitted response curves
 (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadFitValidation.html" class="external-link">fireSenseUtils::plotSpreadFitResponse()</a></code>), the model's response rather than a fit to data.</p></li>
-</ul><p>Nothing is simulated unless <code>.plots</code> asks for a plot. The simulation costs about one objective
+</ul><p>Nothing is simulated unless <code>.plots</code> asks for a plot; a fit with no covariate (formula <code>~ 1</code>) makes no figures and simulates nothing. The simulation costs about one objective
 evaluation (no early stop): 18 s on ELF 5.3.2 (36 fire years, 1.0 million pixel-years, 50
 replicates).</p>
     </div>
