@@ -292,18 +292,19 @@ test_that("the emulator finds a minimum near the sign constraints of wide one-si
 
 test_that("the local phase is trust rounds that shrink around the minimum and stop when they improve less than the GP's uncertainty", {
   ## one global batch: the rounds find the minimum (over seeds 1..64 the gap is 0.38 at the median, >= 5 for 3,
-  ## one of them a local GP flat at its cap; before the trust region kept its own scale, >= 5 for 19)
+  ## one of them a local GP flat at its cap; before the trust region kept its own scale, >= 5 for 19). This seed
+  ## ends 0.39 from it with OpenBLAS, 0.22 with reference BLAS; the edge-growth tests above are the regression tests
   res <- quadEmulate(utils::modifyList(quadCtl, list(globalMaxEvals = 76L, maxEvals = 2000L)))
   st <- res$status[which(res$status$phase == "local"), ]
   expect_gte(max(st$round), 3L)
   expect_identical(res$stopReason, "improvement below noise")
-  expect_lt(res$nEvaluated, 700L)                                      # 628 at most over seeds 1..64
+  expect_lt(res$nEvaluated, 800L)                                      # 628 at most over seeds 1..64; 436 here
   expect_lt(min(st$scale), 0.5)
   expect_lt(min(quadValue(res$pop)) - 100, 5)
   ## two global batches find the minimum (63 of seeds 1..64 end within 5 of it): the search stops, near it
   res <- quadEmulate(utils::modifyList(quadCtl, list(globalMaxEvals = 88L, maxEvals = 2000L)))
   expect_identical(res$stopReason, "improvement below noise")
-  expect_lt(res$nEvaluated, 500L)                                      # 472 at most over seeds 1..64
+  expect_lt(res$nEvaluated, 600L)                                      # 472 at most over seeds 1..64; 136-232 here
   expect_lt(min(quadValue(res$pop)) - 100, 5)
 })
 

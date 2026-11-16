@@ -36,11 +36,13 @@
 #'     best `localTopFrac` (0.1) of the distinct evaluated points by GP mean when the phase starts, widened by
 #'     `localWiden` (0.5) of its width each side (`emulatorTrustWidth()`, `emulatorTrustBox()`). The region keeps
 #'     its own scale; the spread of the best points does not set it again. After each round (`emulatorTrustStep()`),
-#'     an improvement of the GP's best mean by more than `trustTolSD` (1) times the GP's predictive SD of the mean
-#'     at its best point, and by more than `relTol` times the best mean, is a success, else a failure.
+#'     an improvement of the GP's best mean by more than the GP's one-sided upper band at its best point (its mean
+#'     plus `trustTolSD` (1) predictive SDs of the mean, on the GP's log scale, less its mean, in objective units),
+#'     and by more than `relTol` times the best mean, is a success, else a failure.
 #'     `trustSuccessTol` (1) successes in a row multiply the scale by `trustShrink` (0.5), unless the GP's best
 #'     point after the round lies in the box's widened margin (`emulatorAtBoxEdge()`): the region then held the
-#'     search back, so it grows by `trustExpand` (2). A failure grows it by `trustExpand` too, and
+#'     search back, so it grows by `trustExpand` (2). A failure grows it by `trustExpand` too (the scale stops
+#'     growing once every side of the box is 1 wide), and
 #'     `trustFailureTol` (2) failures in a row stop
 #'     the search. It also stops when the region's widest side is narrower than `trustMinWidth` (0.01 of the unit
 #'     cube; not relative to the GP's lengthscales, which reach their upper bound when the local cap flattens the
@@ -113,7 +115,8 @@ emulatorSpace <- function(lower, upper, logSpanMin = 20) {
 #'
 #' `emulatorTrustWidth()`: the region's first width, that of the box around the best `topFrac` of the points `X` by
 #' `score` (at least 2), widened by `widen` times its width each side. `emulatorTrustBox()`: the box `width` wide
-#' (at most the cube's width) centred on `centre`, clipped to the unit cube.
+#' (at most 1) centred on `centre`, clipped to the unit cube; at full width it is `centre` +- 0.5, clipped, so not
+#' always the whole cube.
 #'
 #' @param X matrix; distinct points, unit cube.
 #' @param score numeric; one per row of `X`, lower is better (the GP mean).
@@ -258,9 +261,10 @@ emulateObjective <- function(evaluate, lower, upper, NP, control = list(), seed 
       if (is.null(before)) before <- now
       if (inRound >= ctl$trustRoundBatches) {
         improvement <- before - now
-        tol <- max(ctl$trustTolSD * (g$sc$untr(sel$bestZ + sel$bestSD) - now), ctl$relTol * now)
+        tol <- max(g$sc$untr(sel$bestZ + ctl$trustTolSD * sel$bestSD) - now, ctl$relTol * now)
         atEdge <- emulatorAtBoxEdge(sel$best, roundBox)
         trust <- emulatorTrustStep(trust, improvement, tol, ctl, atEdge)
+        trust$scale <- min(trust$scale, 1 / min(width))                    # past it, every side is at its widest
         message("emulator trust round ", round, ": the GP's best mean improved by ", signif(improvement, 3),
                 " (tolerance ", signif(tol, 3), ")", if (atEdge) "; its best point is at the box's edge",
                 if (!trust$stop) paste0("; next scale ", signif(trust$scale, 3)))
