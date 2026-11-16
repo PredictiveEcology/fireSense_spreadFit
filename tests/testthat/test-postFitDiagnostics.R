@@ -73,6 +73,29 @@ test_that("postFitDiagnostics makes the re-score, identifiability, sizes, satura
   expect_equal(sim$spreadFitConvergence$bestval, c(30, 10, 20))
 })
 
+test_that("the ledger row of a fit with the diagnostics carries the in-sample sizes; one without carries none", {
+  with <- fittedWith()
+  row <- with$rec$geoArgs$studyAreaFireSense
+  col <- fireSenseUtils::spreadFitInSampleSizesTxt
+  expect_true(col %in% names(row))
+  x <- row[[col]][[1]]
+  expect_identical(names(x), c("sizes", "byYear"))
+  expect_equal(x$sizes, with$sim$spreadFitSizes)
+  expect_identical(names(x$byYear), c("yr", "obs", "simMedian", "simLo", "simHi"))
+  expect_equal(x$byYear$obs, 5)
+  expect_equal(x$byYear$simMedian, 7.5)
+  ## no simulations (simulateMembers = 0), no column: the row is what it was, and still reads
+  without <- fittedWith(DEfun = toyDE)
+  old <- without$rec$geoArgs$studyAreaFireSense
+  expect_false(col %in% names(old))
+  expect_identical(nrow(old), 1L)
+  ## an old ledger (no column) and a new one bind, the missing column NA
+  both <- dplyr::bind_rows(old, row)
+  expect_identical(nrow(both), 2L)
+  expect_true(is.null(both[[col]][[1]]) || all(is.na(both[[col]][[1]])))
+  expect_identical(both$params[[1]], old$params[[1]])
+})
+
 test_that("without the diagnostics' attributes, only what can be computed is made", {
   sim <- fittedWith(DEfun = toyDE)$sim
   expect_null(sim$spreadFitRescore)

@@ -272,6 +272,19 @@ escapeSizeHaOrNULL <- function(x) if (length(x) && !is.na(x)) x
 ## burned) for NULL or NA
 runawayBufferMultipleOrNULL <- escapeSizeHaOrNULL
 
+#' The in-sample fire-size validation of a fit
+#'
+#' @param DE the fit, with the `"fitSims"` attribute `fireSenseUtils::runDEoptim()` attaches when
+#'   `simulateMembers > 0`.
+#' @return `NULL` without `"fitSims"`; else a list: `sizes`, the one-row `fireSenseUtils::scoreFireSizes()`, and
+#'   `byYear`, `fireSenseUtils::scoreFireSizesByYear()`. It is what the ledger row's
+#'   `fireSenseUtils::spreadFitInSampleSizesTxt` column holds.
+inSampleSizes <- function(DE) {
+  sims <- attr(DE, "fitSims")
+  if (is.null(sims)) return(NULL)
+  list(sizes = fireSenseUtils::scoreFireSizes(sims), byYear = fireSenseUtils::scoreFireSizesByYear(sims))
+}
+
 #' Turn the fit's re-score, profile and simulations into `sim` objects
 #'
 #' @param sim a `simList`.
@@ -303,10 +316,10 @@ makeFitDiagnostics <- function(sim, DE) {
   }
   sim$spreadFitIdentifiability <- ident
 
-  sims <- attr(DE, "fitSims")
-  if (!is.null(sims)) {
-    sim$spreadFitSizes <- fireSenseUtils::scoreFireSizes(sims)
-    sim$spreadFitLinkSaturation <- fireSenseUtils::linkSaturation(sims)
+  inSample <- inSampleSizes(DE)
+  if (!is.null(inSample)) {
+    sim$spreadFitSizes <- inSample$sizes
+    sim$spreadFitLinkSaturation <- fireSenseUtils::linkSaturation(attr(DE, "fitSims"))
   }
   sim
 }
