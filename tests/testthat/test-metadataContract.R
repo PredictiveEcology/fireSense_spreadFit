@@ -24,7 +24,7 @@ test_that("parameter classes", {
       stopIfNoPreRunFit = "logical", strategy = "integer", trace = "numeric", upper = "numeric",
       upperAndLowerVal = "numeric", upperAndLowerValFuel = "numeric", useCache_DE = "logical",
       covFixedRange = "list",
-      link = "character", spreadLink = "character", spreadClimate = "character", activationInterceptBounds = "numeric", activationFuelInterceptBounds = "numeric", powerLawGamma = "numeric", powerLawShape = "numeric", lowerAsymptote = "numeric", richardsNu = "numeric", powerLawPcMargin = "numeric", powerLawPcAtP50 = "logical", powerLawFires = "integer", powerLawPGrid = "numeric", profileReps = "integer", profileAt = "numeric", profileCoefs = "character", simulateMembers = "integer",
+      link = "character", spreadLink = "character", spreadClimate = "character", activationInterceptBounds = "numeric", activationFuelInterceptBounds = "numeric", powerLawGamma = "numeric", powerLawShape = "numeric", lowerAsymptote = "numeric", richardsNu = "numeric", powerLawPcMargin = "numeric", powerLawPcAtP50 = "logical", powerLawFires = "integer", powerLawPGrid = "numeric", profileReps = "integer", profileAt = "numeric", profileCoefs = "character", simulateMembers = "integer", interactionTestDraws = "integer", interactionTestSeed = "integer",
       sizeLik = "character", sizeLikDf = "numeric", escapeSizeHa = "numeric", weighted = "logical|character",
       adWeight = "character|numeric", yearAreaWeight = "numeric|character",
       areaDistWeight = "numeric|character", crpsWeights = "list", gateRefusal = "character", penaliseRunaways = "logical", wholeLandscapeSpread = "logical", runawayEdgeFrac = "numeric", runawayEdgeMin = "integer", runawayBufferMultiple = "numeric", jumpTries = "numeric", jumpMeanDist = "numeric",
@@ -130,6 +130,8 @@ test_that("defaults of the objective and of the post-fit diagnostics", {
   expect_identical(def$profileReps, 10L)
   expect_identical(def$.plotInterval, 25)       # DEoptim generations between progress figures
   expect_identical(def$simulateMembers, 10L)
+  expect_identical(def$interactionTestDraws, 999L)   # the fuel x climate interaction test after a fit; 0 skips it
+  expect_identical(def$interactionTestSeed, 1L)
 })
 
 test_that("defaults that are 'not set'", {
