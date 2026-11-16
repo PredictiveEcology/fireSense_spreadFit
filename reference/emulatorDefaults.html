@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9047</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9048</span>
       </span>
     </div>
 
@@ -90,8 +90,10 @@ its width each side, times the round's scale (<code><a href="emulatorTrustBox.ht
 an improvement of the GP's best mean by more than <code>trustTolSD</code> (1) times the objective's noise SD
 (<code><a href="emulatorNoiseSD.html">emulatorNoiseSD()</a></code>), and by more than <code>relTol</code> times the best mean (the floor while there are few or no
 replicates near it), is a success, else
-a failure; <code>trustSuccessTol</code> (1) successes in a row multiply the scale by <code>trustShrink</code> (0.5),
-a failure multiplies it by <code>trustExpand</code> (1.25, at most 1), and <code>trustFailureTol</code> (2) failures in a row stop
+a failure; <code>trustSuccessTol</code> (1) successes in a row multiply the scale by <code>trustShrink</code> (0.5), unless the
+GP's best point after the round lies in the box's widened margin (<code><a href="emulatorAtBoxEdge.html">emulatorAtBoxEdge()</a></code>): the region then
+held the search back, so it keeps its scale. A failure multiplies it by <code>trustExpand</code> (1.25, at most 1), and
+<code>trustFailureTol</code> (2) failures in a row stop
 the search. It also stops when the region's widest side is narrower than <code>trustMinWidth</code> (0.01 of the unit
 cube; not relative to the GP's lengthscales, which reach their upper bound when the local cap flattens the
 response), or at <code>maxEvals</code>;</p></li>

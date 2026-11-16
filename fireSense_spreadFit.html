@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9047</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9048</span>
       </span>
     </div>
 
@@ -506,6 +506,27 @@ Whether to fit this polygon. FALSE (default): never fit – use the ledger’s f
 </td>
 <td style="text-align:left;">
 TRUE
+</td>
+</tr><tr><td style="text-align:left;">
+skipUnusedFitPrep
+</td>
+<td style="text-align:left;">
+logical
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+FALSE (default): unchanged. TRUE: a job that uses the ledger’s fit and does not validate or hold out a fold (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fitDataNeeded.html" class="external-link">fireSenseUtils::fitDataNeeded()</a></code>: not fitting, <code>mode</code> without “validate” or “profile”, no <code>heldOutFold</code>) does not schedule <code>spreadFitPrepare</code>, whose covariates only a fit, <code>crossValidate</code> and a profile read. A prediction reads the ledger row’s <code>covMinMax_spread</code>, <code>covCentre_spread</code> and <code>climateRef_spread</code>; only a ledger row without ranges (written before <code>covMinMax_spread</code>) falls back on <code>sim$covMinMax_spread</code>. The same parameter of <code>fireSense_dataPrepFit</code>: set it for both with <code>.globals = list(skipUnusedFitPrep = TRUE)</code>. Not part of the cache keys. The modules must agree on it and on <code>doFit</code>.
+</td>
+<td style="text-align:left;">
+FALSE
 </td>
 </tr><tr><td style="text-align:left;">
 doObjFunAssertions

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9047</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9048</span>
       </span>
     </div>
 
@@ -57,7 +57,7 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">emulatorTrustStep</span><span class="op">(</span><span class="va">state</span>, <span class="va">improvement</span>, <span class="va">tol</span>, <span class="va">ctl</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">emulatorTrustStep</span><span class="op">(</span><span class="va">state</span>, <span class="va">improvement</span>, <span class="va">tol</span>, <span class="va">ctl</span>, atEdge <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -78,6 +78,11 @@
 
 <dt id="arg-ctl">ctl<a class="anchor" aria-label="anchor" href="#arg-ctl"></a></dt>
 <dd><p><code>emulatorControlOf()</code>.</p></dd>
+
+
+<dt id="arg-atedge">atEdge<a class="anchor" aria-label="anchor" href="#arg-atedge"></a></dt>
+<dd><p>logical; the GP's best point after the round is in the round's box margin
+(<code><a href="emulatorAtBoxEdge.html">emulatorAtBoxEdge()</a></code>): a success then does not shrink the box.</p></dd>
 
 </dl></div>
     <div id="value">
