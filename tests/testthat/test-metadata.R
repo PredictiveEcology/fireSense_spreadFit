@@ -79,7 +79,7 @@ test_that("parameters are the expected names", {
            "objFunCoresInternal", "objfunFireReps", ".rep", "adWeight", "profileReps",
            "simulateMembers", "sizeLik", "sizeLikDf", "escapeSizeHa", "yearAreaWeight", "areaDistWeight", "crpsWeights", "gateRefusal", "penaliseRunaways", "wholeLandscapeSpread", "runawayEdgeFrac", "runawayEdgeMin", "runawayBufferMultiple",
            "jumpTries", "jumpMeanDist", "upperTailBounds", "weighted", "fireSpreadSDBounds", "yearSpreadSDBounds", "fireCauses",
-           "refitExisting", "rescaleAll", "fitFileSuffix", "spreadFitFilename",
+           "refitExisting", "rescaleAll", "skipUnusedFitPrep", "fitFileSuffix", "spreadFitFilename",
            "spreadFitGoogleDriveFolder", "sppEquivCol", "fuelClassCol", "stopIfNoPreRunFit", "strategy", "trace",
            "upper", "upperAndLowerVal", "upperAndLowerValFuel", "useCache_DE",
            "verbose", "visualizeDEoptim"))
