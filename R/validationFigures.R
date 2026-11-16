@@ -10,7 +10,7 @@
 #' * `spreadFitResponseCurves_<label>`: the fitted response curves
 #'   (`fireSenseUtils::plotSpreadFitResponse()`), the model's response rather than a fit to data.
 #'
-#' Nothing is simulated unless `.plots` asks for a plot, or for a fit with no covariate (formula `~ 1`). The simulation costs about one objective
+#' Nothing is simulated unless `.plots` asks for a plot; a fit with no covariate (formula `~ 1`) makes no figures and simulates nothing. The simulation costs about one objective
 #' evaluation (no early stop): 18 s on ELF 5.3.2 (36 fire years, 1.0 million pixel-years, 50
 #' replicates).
 #'
