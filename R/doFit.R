@@ -21,14 +21,14 @@ mustFitThisPolygon <- function(sim, message = FALSE) {
 
 #' Does this job use the `"powerLaw"` calibration?
 #'
-#' Only a job that fits (`mustFitThisPolygon()`), validates (`mode` has "validate") or runs a held-out fold
+#' Only a job that fits (`mustFitThisPolygon()`), validates (`mode` has "validate"), profiles (`mode` has "profile") or runs a held-out fold
 #' (`heldOutFold`) sets bounds or simulates fires with the calibrated `p_c50` and `gamma`. A job that uses the
 #' ledger's fit reads them from the ledger row, so it skips the calibration. The same jobs are the ones that read
 #' the covariates `spreadFitPrepare` makes (`skipUnusedFitPrep`).
 #'
 #' @param sim a `simList`.
 #' @return Logical, length one.
-needsPowerLawCalibration <- function(sim) jobNeedsFitData(sim, setdiff(P(sim)$mode, "profile"))
+needsPowerLawCalibration <- function(sim) jobNeedsFitData(sim)
 
 #' Does this job read the data `spreadFitPrepare` makes?
 #'
