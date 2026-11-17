@@ -8,7 +8,8 @@ because, with the intercept and centred covariates, fits put the intercept near 
 ceiling and gave fuel biomass negative coefficients, so low-biomass (recently burned) stands were the
 most flammable. That positive feedback produced runaway fires 3-6 times the observed area in NRV runs
 (ELFs 5.4 and 14.3). With fuel &amp;gt;= 0, more fuel can only raise spread probability and the intercept must come down.
-Every other term, including any other annual covariate, is symmetric. The two remaining logistic
+Every other term, including any other annual covariate and any interaction (a:b, whatever its covariates'
+bounds are), is symmetric. The two remaining logistic
 parameters get fixed bounds. hillSlope1, the logistic slope, and inflectionPoint1, its Richards
 exponent, are not among them: both are fixed at 1, not fitted. hillSlope1 is not identifiable
 together with the covariate coefficients – with the linear predictor x = covariates %*% beta, it
@@ -34,7 +35,7 @@ reinserts both before the objective evaluates par)."><!-- mathjax --><script src
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9051</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9052</span>
       </span>
     </div>
 
@@ -79,7 +80,8 @@ because, with the intercept and centred covariates, fits put the intercept near 
 ceiling and gave fuel biomass negative coefficients, so low-biomass (recently burned) stands were the
 most flammable. That positive feedback produced runaway fires 3-6 times the observed area in NRV runs
 (ELFs 5.4 and 14.3). With fuel &gt;= 0, more fuel can only raise spread probability and the intercept must come down.
-Every other term, including any other annual covariate, is symmetric. The two remaining logistic
+Every other term, including any other annual covariate and any interaction (<code>a:b</code>, whatever its covariates'
+bounds are), is symmetric. The two remaining logistic
 parameters get fixed bounds. <code>hillSlope1</code>, the logistic slope, and <code>inflectionPoint1</code>, its Richards
 exponent, are not among them: both are fixed at 1, not fitted. <code>hillSlope1</code> is not identifiable
 together with the covariate coefficients – with the linear predictor <code>x = covariates %*% beta</code>, it

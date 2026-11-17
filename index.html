@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9051</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9052</span>
       </span>
     </div>
 
@@ -1043,7 +1043,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Options: debug, fit, visualize, validate. Can use multiples. ‘debug’ runs the objective function with visuals instead of DEoptim; ‘fit’ runs DEoptim; ‘visualize’ adds the <code>debug</code> and <code>plot</code> events after the fit; ‘validate’ adds <code>crossValidate</code>, two more fits, each on half the years, predicting the other half (<code>sim$spreadFitHeldOut</code>). Validation never writes the ledger, but does write <code>sim$spreadFitHeldOut</code> to <code>outputPath(sim)</code>, since a batch run typically stops after <code>crossValidate</code> and the simList is discarded. See <code>heldOutFold</code> to run a single fold as its own job instead of both folds together.
+Options: debug, fit, visualize, validate, profile. Can use multiples. ‘debug’ runs the objective function with visuals instead of DEoptim; ‘fit’ runs DEoptim; ‘visualize’ adds the <code>debug</code> and <code>plot</code> events after the fit; ‘validate’ adds <code>crossValidate</code>, two more fits, each on half the years, predicting the other half (<code>sim$spreadFitHeldOut</code>). Validation never writes the ledger, but does write <code>sim$spreadFitHeldOut</code> to <code>outputPath(sim)</code>, since a batch run typically stops after <code>crossValidate</code> and the simList is discarded. See <code>heldOutFold</code> to run a single fold as its own job instead of both folds together. ‘profile’ replaces everything else: no fit, only <code>spreadFitPrepare</code> and <code>profileFromLedger</code>, which profiles this ELF’s ledger fit at <code>profileAt</code> (<code><a href="reference/profileLedgerFit.html">profileLedgerFit()</a></code>, <code>sim$spreadFitProfile</code>, also written to <code>outputPath(sim)</code>); <code>doFit</code> is not consulted and the ledger is not written.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -1090,6 +1090,52 @@ NA
 </td>
 <td style="text-align:left;">
 After the fit, each covariate coefficient in turn is set to 0 and to 5 values across the final population, the others held at the best member, and each point is evaluated this many times (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fitDiagnostics.html" class="external-link">fireSenseUtils::profileCoefficients()</a></code>). About <code>6 nCoefficients profileReps</code> evaluations, on the fit’s workers. It decides which coefficients are identified in isolation (<code>sim$spreadFitIdentifiability</code>). 0 skips it.
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+profileAt
+</td>
+<td style="text-align:left;">
+numeric
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Mode ‘profile’: the values each coefficient of <code>profileCoefs</code> is set to in turn, the others held at the ledger fit’s best set, e.g. <code>c(-20, -10, -5, -2, -1, 0, 1, 2, 5, 10, 20)</code>. They may lie outside the fit’s bounds. Each is evaluated <code>profileReps</code> times.
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+profileCoefs
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Mode ‘profile’: the covariate coefficients to profile. <code>NA</code>: all of them; “fuel”: the fuel biomass coefficients.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -2338,7 +2384,7 @@ spreadFitProfile
 data.table
 </td>
 <td style="text-align:left;">
-The one-at-a-time profile around the best member (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fitDiagnostics.html" class="external-link">fireSenseUtils::profileCoefficients()</a></code>).
+The one-at-a-time profile around the best member (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fitDiagnostics.html" class="external-link">fireSenseUtils::profileCoefficients()</a></code>): after a fit, or in mode ‘profile’ of the ledger fit at <code>profileAt</code> (<code><a href="reference/profileLedgerFit.html">profileLedgerFit()</a></code>).
 </td>
 </tr>
 <tr>
