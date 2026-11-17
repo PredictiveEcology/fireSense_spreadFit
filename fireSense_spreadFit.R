@@ -1154,7 +1154,7 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 #'
 #' Bounds should be wide enough that they do not influence the fitted value, except to constrain
 #' sign. Covariate coefficients get +/- `upperAndLower`, except drought-index terms (name matches
-#' `droughtIndexPattern`, e.g. `CMD`, `CMD_sm`, `cumMDC` -- lower bound 0, since drought should not
+#' `fireSenseUtils::droughtIndexPattern`, e.g. `CMD`, `CMD_sm`, `cumMDC` -- lower bound 0, since drought should not
 #' increase spread probability), fuel biomass terms (`fuelTerms`: lower bound 0, upper `upperAndLowerFuel`)
 #' and `youngAge` (upper bound 0, to prevent self-propagating fires). Fuel is bounded below by 0
 #' because, with the intercept and centred covariates, fits put the intercept near the spread-probability
@@ -1206,13 +1206,13 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
   ## fuel biomass is biomass / 1e4, not [0, 1], so its coefficients need a wider box
   ## and a lower bound of 0: more fuel can only raise spread probability
   newParams[formulaTerms %in% fuelTerms] <- if (whichBound == "upper") upperAndLowerFuel else 0
-  whDrought <- grepl(droughtIndexPattern, formulaTerms)
+  whDrought <- grepl(fireSenseUtils::droughtIndexPattern, formulaTerms)
   whYA <- formulaTerms %in% youngAge
   newParams[whDrought] <- ifelse(whichBound == "upper", upperAndLower, 0)
   newParams[whYA] <- ifelse(whichBound == "upper", 0, -(upperAndLower))
 
   ## an interaction (`CMD:fuel`) is a free term like any other: a wide symmetric box, whatever its covariates are
-  ## called (a drought climate's name would match droughtIndexPattern) and whatever sign they are bounded to
+  ## called (a drought climate's name would match fireSenseUtils::droughtIndexPattern) and whatever sign they are bounded to
   whInteraction <- formulaTerms %in% fireSenseUtils::spreadInteractionCols(formulaTerms)
   newParams[whInteraction] <- if (whichBound == "upper") upperAndLower else -upperAndLower
 
@@ -1293,6 +1293,3 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
 ## name of the young-age covariate
 youngAge <- fireSenseUtils::youngAgeTxt
 
-## drought-index terms (CMD or MDC anywhere in the name, e.g. CMD, CMD_sm, CMD_sp, CMDsm, cumMDC,
-## MDC): wetter conditions should not increase spread probability, so these get a lower bound of 0
-droughtIndexPattern <- "CMD|MDC"
