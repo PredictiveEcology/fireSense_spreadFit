@@ -331,14 +331,15 @@ defineModule(sim, list(
                     desc = paste("After the fit, this many best members simulate the observed fires,",
                                  "for `sim$spreadFitSizes` and `sim$spreadFitLinkSaturation`; also the",
                                  "members each `crossValidate` fold predicts with. 0 skips it after the fit.")),
-    defineParameter("interactionTestDraws", "integer", default = 999L,
-                    desc = paste("Bootstrap draws (over years) of the fuel x climate interaction test that follows a fit that",
-                                 "simulated its members (`simulateMembers > 0`): `fireSenseUtils::fuelClimateInteractionTest()`,",
-                                 "stored in the ledger row's `interactionTest_spread` and written to",
+    defineParameter("interactionScreenDraws", "integer", default = 999L,
+                    desc = paste("Bootstrap draws (over years) of the fuel x climate interaction screen that follows a fit that",
+                                 "simulated its members (`simulateMembers > 0`): `fireSenseUtils::fuelClimateInteractionScreen()`,",
+                                 "stored in the ledger row's `interactionScreen_spread` and written to",
                                  "`fuelClimateInteraction_<.runName>.csv` in the module's output folder. It uses data in memory and",
-                                 "runs no simulation (about 10 s for a 35-year fit of 500 fires). 0 skips it.")),
-    defineParameter("interactionTestSeed", "integer", default = 1L,
-                    desc = "Seed of the interaction test's bootstrap draws, so a fit's test is reproducible."),
+                                 "runs no simulation (about 10 s for a 35-year fit of 500 fires). It screens the observed fires; it does not fit",
+                                 "a spread model with interaction terms (the `spreadInteractions` option does). 0 skips it.")),
+    defineParameter("interactionScreenSeed", "integer", default = 1L,
+                    desc = "Seed of the interaction screen's bootstrap draws, so a fit's screen is reproducible."),
     defineParameter("sizeLik", "character", default = "t",
                     desc = paste("Likelihood of fire size in the objective, 'kde' or 't' (or 'kernel', the kernel log score on the",
                                  "log scale, `fireSenseUtils::kernelLogScore()`), passed to",
@@ -784,11 +785,11 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
           sim$spreadFitAdditionalColNames <- fireSenseUtils::spreadFitAdditionalColNamesTxt
         }
         
-        interaction <- interactionTest(sim, DE, mod$covsX1000)
-        writeInteractionTest(interaction, sim)
+        interaction <- interactionScreen(sim, DE, mod$covsX1000)
+        writeInteractionScreen(interaction, sim)
         sim$studyAreaWithSpreadParams <- spreadFitLedgerRow(sim, numIterations, objFunValBest, paramsBest,
                                                               inSample = inSampleSizes(DE),
-                                                              interactionTest = interaction)
+                                                              interactionScreen = interaction)
         saHere <- sim$studyAreaWithSpreadParams[, "geometry"]
         le <- function(x) {x}
         sim$studyAreaWithSpreadParams <- CacheGeo(cloudFolderID = Par$spreadFitGoogleDriveFolder,

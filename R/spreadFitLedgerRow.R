@@ -3,8 +3,8 @@
 #' One row of the shared fit ledger: the polygon's geometry, the columns in
 #' `fireSenseUtils::spreadFitAdditionalColNamesTxt`, `polygonID`, and, when the fit has an intercept, the
 #' covariate centres (`fireSenseUtils::spreadFitCovCentreTxt`) and, when the fit simulated its members, the in-sample
-#' fire sizes (`fireSenseUtils::spreadFitInSampleSizesTxt`) and their fuel x climate interaction test
-#' (`fireSenseUtils::spreadFitInteractionTestTxt`). The `run` event writes it to the
+#' fire sizes (`fireSenseUtils::spreadFitInSampleSizesTxt`) and their fuel x climate interaction screen
+#' (`fireSenseUtils::spreadFitInteractionScreenTxt`). The `run` event writes it to the
 #' ledger, and a held-out fold saves it beside its held-out result, so `fireSense_spreadPredict` reads
 #' either the same way.
 #'
@@ -15,10 +15,10 @@
 #' @param objFunVal numeric, the objective values of the members in `params`.
 #' @param params `data.table`, one row per member, with `hillSlope1` and `inflectionPoint1` (see `addFixedParsToLedger()`).
 #' @param inSample `NULL` (a fold, or a fit without `simulateMembers`: no column) or `inSampleSizes()` of the fit.
-#' @param interactionTest `NULL` (a fold, a fit without `simulateMembers`, or nothing to test: no column) or
-#'   `interactionTest()` of the fit.
+#' @param interactionScreen `NULL` (a fold, a fit without `simulateMembers`, or nothing to screen: no column) or
+#'   `interactionScreen()` of the fit.
 #' @return an `sf` object with one row.
-spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params, inSample = NULL, interactionTest = NULL) {
+spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params, inSample = NULL, interactionScreen = NULL) {
   ## covMinMax_spread: prediction rescales covariates with it, exactly as this fit did
   df <- data.frame(I(list(numIterations)),
                    I(list(objFunVal)),
@@ -35,8 +35,8 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params, inSample =
   ## inSample: the fit's own fires, simulated and observed (not a held-out fold's), for a report to read later
   if (!is.null(inSample))
     df[[fireSenseUtils::spreadFitInSampleSizesTxt]] <- I(list(inSample))
-  if (!is.null(interactionTest))
-    df[[fireSenseUtils::spreadFitInteractionTestTxt]] <- I(list(interactionTest))
+  if (!is.null(interactionScreen))
+    df[[fireSenseUtils::spreadFitInteractionScreenTxt]] <- I(list(interactionScreen))
   ## spreadLink: a fit with another link than the default records it, with what the link needs (climateRef_spread
   ## for climate outside the ceiling, powerLawGamma for the power laws, lowerAsymptote and richardsNu for the links that
   ## have them -- never powerLawGamma for "richards", which does not use it), and prediction applies the same link.

@@ -1,8 +1,8 @@
-## After a fit that simulated its members, the fuel x climate interaction test of the fit's own fires
-## (fireSenseUtils::fuelClimateInteractionTest()) goes in the ledger row, beside the in-sample sizes, and
+## After a fit that simulated its members, the fuel x climate interaction screen of the fit's own fires
+## (fireSenseUtils::fuelClimateInteractionScreen()) goes in the ledger row, beside the in-sample sizes, and
 ## to a csv in the module's output folder. A fold, or a fit without simulations, has neither.
 
-skip_if_not("fuelClimateInteractionTest" %in% getNamespaceExports("fireSenseUtils"))
+skip_if_not("fuelClimateInteractionScreen" %in% getNamespaceExports("fireSenseUtils"))
 
 ## 8 fire years of 2 fires; the planted size depends on climate x fuel when `interaction` is not 0
 toyInteractionCovs <- function(interaction) {
@@ -24,34 +24,34 @@ toyInteractionCovs <- function(interaction) {
                                   initialLocus = pix, size = obs, sim = obs))
 }
 
-test_that("interactionTest() tests the fit's own fires with the spread formula and the parameters' draws and seed", {
+test_that("interactionScreen() screens the fit's own fires with the spread formula and the parameters' draws and seed", {
   x <- toyInteractionCovs(0.6)
-  sim <- toySim(list(interactionTestDraws = 49L, interactionTestSeed = 7L),
+  sim <- toySim(list(interactionScreenDraws = 49L, interactionScreenSeed = 7L),
                 list(fireSense_spreadFormula = "~ 0 + CMDsm + class1"))
   DE <- toyDE(8L); attr(DE, "fitSims") <- x$sims
-  r <- interactionTest(sim, DE, x$covs)
+  r <- interactionScreen(sim, DE, x$covs)
   expect_identical(r$nBoot, 49L)
   expect_identical(r$seed, 7L)
   expect_identical(r$climate, "CMDsm")
   t <- r$terms[r$terms$fuel == "class1" & r$terms$at == "burn" & r$terms$response == "logSize", ]
   expect_gt(t$bIntMedian, 0)
-  expect_identical(r, interactionTest(sim, DE, x$covs))        # deterministic
-  expect_null(interactionTest(sim, toyDE(8L), x$covs))         # no simulations
-  ## a failure of the test is a warning, not the end of a fit
+  expect_identical(r, interactionScreen(sim, DE, x$covs))        # deterministic
+  expect_null(interactionScreen(sim, toyDE(8L), x$covs))         # no simulations
+  ## a failure of the screen is a warning, not the end of a fit
   bad <- x$covs; bad$fireBufferedListDT <- NULL
-  expect_warning(expect_null(interactionTest(sim, DE, bad)), "interaction test was skipped")
-  expect_null(interactionTest(toySim(list(interactionTestDraws = 0L)), DE, x$covs))
+  expect_warning(expect_null(interactionScreen(sim, DE, bad)), "interaction screen was skipped")
+  expect_null(interactionScreen(toySim(list(interactionScreenDraws = 0L)), DE, x$covs))
 })
 
-test_that("the run event writes the ledger column and the csv; a fit without the test has no column", {
-  col <- fireSenseUtils::spreadFitInteractionTestTxt
+test_that("the run event writes the ledger column and the csv; a fit without the screen has no column", {
+  col <- fireSenseUtils::spreadFitInteractionScreenTxt
   res <- list(terms = data.table::data.table(fuel = "class1", at = "burn", response = "logSize", bIntMedian = 0.5),
               climate = "CMDsm", nFires = 8L, nYears = 8L, nBoot = 999L, seed = 1L)
-  fitWith <- function(test) {
+  fitWith <- function(screen) {
     rec <- new.env()
     sim <- toySim()
     mockFitAndLedger(sim, rec)
-    mockInModule(sim, interactionTest = function(sim, DE, covs) test)
+    mockInModule(sim, interactionScreen = function(sim, DE, covs) screen)
     list(sim = suppressMessages(SpaDES.core::spades(sim)), row = rec$geoArgs$studyAreaFireSense)
   }
   unlink(list.files(file.path(toyPaths()$outputPath, toyModule), "^fuelClimateInteraction", full.names = TRUE))
@@ -61,7 +61,7 @@ test_that("the run event writes the ledger column and the csv; a fit without the
   csv <- data.table::fread(file.path(SpaDES.core::outputPath(sim), toyModule, "fuelClimateInteraction_toyRun.csv"))
   expect_identical(names(csv), c("run", "climate", "fuel", "at", "response", "bIntMedian"))
   expect_identical(csv$run, "toyRun")
-  ## the row of a fit with no test (NULL) is what it was, and the old and the new bind
+  ## the row of a fit with no screen (NULL) is what it was, and the old and the new bind
   without <- fitWith(NULL)$row
   expect_false(col %in% names(without))
   both <- dplyr::bind_rows(without, row)
@@ -69,12 +69,12 @@ test_that("the run event writes the ledger column and the csv; a fit without the
   expect_true(is.null(both[[col]][[1]]) || all(is.na(both[[col]][[1]])))
 })
 
-test_that("with no simulations (simulateMembers = 0) the run event writes no test", {
+test_that("with no simulations (simulateMembers = 0) the run event writes no screen", {
   unlink(list.files(file.path(toyPaths()$outputPath, toyModule), "^fuelClimateInteraction", full.names = TRUE))
   rec <- new.env()
   sim <- toySim()
   mockFitAndLedger(sim, rec)
   sim <- suppressMessages(SpaDES.core::spades(sim))
-  expect_false(fireSenseUtils::spreadFitInteractionTestTxt %in% names(rec$geoArgs$studyAreaFireSense))
+  expect_false(fireSenseUtils::spreadFitInteractionScreenTxt %in% names(rec$geoArgs$studyAreaFireSense))
   expect_length(list.files(file.path(SpaDES.core::outputPath(sim), toyModule), pattern = "^fuelClimateInteraction"), 0L)
 })

@@ -68,7 +68,7 @@ test_that("the held-out object carries the fold's fit in the ledger row's struct
   run <- suppressMessages(SpaDES.core::spades(runSim))$studyAreaWithSpreadParams
   fit <- fold$fit
   expect_identical(names(fit), names(run))                # same columns, same order
-  expect_false(fireSenseUtils::spreadFitInteractionTestTxt %in% names(fit))   # a fold has no in-sample test
+  expect_false(fireSenseUtils::spreadFitInteractionScreenTxt %in% names(fit))   # a fold has no in-sample test
   expect_identical(vapply(fit, function(x) class(x)[1], ""), vapply(run, function(x) class(x)[1], ""))
   expect_identical(lapply(fit$params, class), lapply(run$params, class))
   expect_identical(class(fit), class(run))
