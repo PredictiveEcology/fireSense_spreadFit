@@ -20,5 +20,5 @@ test_that("skipUnusedFitPrep: a job that fits, validates or holds out a fold sti
                    c("spreadFitPrepare", "run", "postFitDiagnostics"))          # no row for this polygon: fit
   expect_identical(skipInit(list(doFit = FALSE, mode = c("fit", "validate"))), c("spreadFitPrepare", "crossValidate"))
   expect_identical(skipInit(list(doFit = FALSE, heldOutFold = 1L)), c("spreadFitPrepare", "crossValidate"))
-  expect_identical(skipInit(list(doFit = FALSE, mode = "profile")), "spreadFitPrepare")   # a profile reads the covariates
+  expect_identical(skipInit(list(doFit = FALSE, mode = "profile")), c("spreadFitPrepare", "profileFromLedger"))   # a profile reads the covariates
 })
