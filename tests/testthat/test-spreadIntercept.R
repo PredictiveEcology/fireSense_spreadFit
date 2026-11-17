@@ -8,24 +8,6 @@ formI <- "~ 0 + CMDsm + youngAge + class1 + class2 + nf"
 formIcpt <- sub("0 \\+", "1 +", formI, fixed = FALSE)
 icptName <- fireSenseUtils::spreadInterceptTxt
 
-## The toy non-annual table is named "year2001_year2002", which the real objective could not match to a year
-## (the tables are named by their data year, and a fire year reads the latest one strictly before it, so
-## the toy fire years 2001-2002 read "2000"). Finding the centre runs the objective's covariate code for
-## real, so the intercept tests name it as the module does.
-toyObjectsI <- function(formula) {
-  nonAnn <- toyObjects()$fireSense_nonAnnualSpreadFitCovariates
-  list(fireSense_spreadFormula = formula,
-       fireSense_nonAnnualSpreadFitCovariates = stats::setNames(nonAnn, "2000"))
-}
-
-## a fit on toy inputs, with the formula as given; `rec` records what leaves the machine
-fittedI <- function(formula, params = list(), rec = new.env()) {
-  sim <- toySim(c(list(), params), toyObjectsI(formula))
-  mockFitAndLedger(sim, rec)
-  sim <- suppressMessages(SpaDES.core::spades(sim))
-  list(sim = sim, rec = rec)
-}
-
 test_that("estimateSpreadParams(): an intercept is bounded +/- upperAndLower, first among the coefficients", {
   annual <- list(year2001 = data.table::data.table(pixelID = 1L, CMDsm = 1, youngAge = 0))
   up <- estimateSpreadParams("~ 1 + CMDsm + youngAge + nf", annual, "upper", upperAndLower = 9)
@@ -161,4 +143,30 @@ test_that("a '~ 1' fit gets bounds for the intercept alone, a centre of no covar
   expect_identical(a$covCentre, out$sim$covCentre_spread)
   row <- out$rec$geoArgs$studyAreaFireSense
   expect_identical(names(row$params[[1]])[1:4], c("maxAsymptote", "hillSlope1", "inflectionPoint1", icptNameN))
+})
+
+## Fuel x climate interactions (formula term "CMDsm:class1"): a design column with its own coefficient, the
+## product of its centred covariates: the centres are those of the covariates, found with the others and stored in the ledger row.
+formX <- "~ 1 + CMDsm + class1 + CMDsm:class1"
+
+test_that("spreadFitPrepare: an interaction's default bounds are symmetric, in the order of the design columns", {
+  p <- SpaDES.core::params(runEvents(runEvents(
+    toySim(list(), toyObjectsI(formX)), "init"),
+    "spreadFitPrepare"))[[moduleName]]
+  expect_identical(names(p$upper)[1:5], c("maxAsymptote", icptName, "CMDsm", "class1", "CMDsm:class1"))
+  expect_identical(unname(c(p$lower[["CMDsm:class1"]], p$upper[["CMDsm:class1"]])), c(-50, 50))
+  expect_identical(names(p$upper)[2:5], fireSenseUtils::spreadDesignCols(formX))
+})
+
+test_that("a fit with an interaction centres its covariates, not the product, and the ledger row has its coefficient", {
+  out <- fittedI(formX)
+  centre <- out$sim$covCentre_spread
+  expect_named(centre, c("CMDsm", "class1"))
+  a <- out$rec$deArgs
+  expect_equal(centre, fireSenseUtils::spreadCovCentre(a$annualDTx1000, a$nonAnnualDTx1000, a$formulaToFit,
+                                                       a$covMinMax, a$mutuallyExclusive))
+  expect_identical(names(out$rec$geoArgs$studyAreaFireSense$params[[1]])[4:7],
+                   c(icptName, "CMDsm", "class1", "CMDsm:class1"))
+  ## no column of covMinMax for the interaction: it is rescaled from its covariates
+  expect_false("CMDsm:class1" %in% names(out$sim$covMinMax_spread))
 })

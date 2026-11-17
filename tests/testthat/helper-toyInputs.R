@@ -162,3 +162,21 @@ moduleCodeParsed <- function() {
              list.files(testthat::test_path("..", "..", "R"), "\\.R$", full.names = TRUE))
   do.call(c, lapply(files, parse, keep.source = FALSE))
 }
+
+## The toy non-annual table is named "year2001_year2002", which the real objective could not match to a year
+## (the tables are named by their data year, and a fire year reads the latest one strictly before it, so
+## the toy fire years 2001-2002 read "2000"). Finding the centre runs the objective's covariate code for
+## real, so the intercept tests name it as the module does.
+toyObjectsI <- function(formula) {
+  nonAnn <- toyObjects()$fireSense_nonAnnualSpreadFitCovariates
+  list(fireSense_spreadFormula = formula,
+       fireSense_nonAnnualSpreadFitCovariates = stats::setNames(nonAnn, "2000"))
+}
+
+## a fit on toy inputs, with the formula as given; `rec` records what leaves the machine
+fittedI <- function(formula, params = list(), rec = new.env()) {
+  sim <- toySim(c(list(), params), toyObjectsI(formula))
+  mockFitAndLedger(sim, rec)
+  sim <- suppressMessages(SpaDES.core::spades(sim))
+  list(sim = sim, rec = rec)
+}

@@ -88,3 +88,19 @@ test_that("the per-year random effect's sd is bounded last, after an upper-tail 
   ## off: no yearSpreadSD at all
   expect_false("yearSpreadSD" %in% names(estimateSpreadParams(form, annual, "upper", 9)))
 })
+
+test_that("an interaction term is bounded +/- upperAndLower with no sign constraint, even with a drought climate or a fuel term in its name", {
+  ## the drought pattern (CMD|MDC) must not match the interaction `CMDsm:class1`, and `fuelTerms` is exact names
+  formX <- "~ 1 + CMDsm + youngAge + class1 + CMDsm:class1 + nf"
+  up <- estimateSpreadParams(formX, annual, "upper", upperAndLower = 9, fuelTerms = "class1", upperAndLowerFuel = 20)
+  lo <- estimateSpreadParams(formX, annual, "lower", upperAndLower = 9, fuelTerms = "class1", upperAndLowerFuel = 20)
+  expect_identical(names(up), c("maxAsymptote", fireSenseUtils::spreadInterceptTxt, "CMDsm", "youngAge", "class1", "nf",
+                                "CMDsm:class1"))
+  expect_identical(up[["CMDsm:class1"]], 9)
+  expect_identical(lo[["CMDsm:class1"]], -9)
+  ## its main effects keep their bounds: drought and fuel from 0, fuel up to the wider box
+  expect_identical(unname(c(lo[["CMDsm"]], lo[["class1"]], up[["class1"]])), c(0, 0, 20))
+  expect_identical(names(up), names(lo))
+  ## the names are the design columns, in order, as the objective takes them
+  expect_identical(names(up)[-1], fireSenseUtils::spreadDesignCols(formX))
+})
