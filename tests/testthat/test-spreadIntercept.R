@@ -145,8 +145,8 @@ test_that("a '~ 1' fit gets bounds for the intercept alone, a centre of no covar
   expect_identical(names(row$params[[1]])[1:4], c("maxAsymptote", "hillSlope1", "inflectionPoint1", icptNameN))
 })
 
-## Fuel x climate interactions (formula term "CMDsm:class1"): a design column with its own coefficient; its
-## centre is the mean of its product, found with the others and stored in the ledger row.
+## Fuel x climate interactions (formula term "CMDsm:class1"): a design column with its own coefficient, the
+## product of its centred covariates: the centres are those of the covariates, found with the others and stored in the ledger row.
 formX <- "~ 1 + CMDsm + class1 + CMDsm:class1"
 
 test_that("spreadFitPrepare: an interaction's default bounds are symmetric, in the order of the design columns", {
@@ -158,15 +158,13 @@ test_that("spreadFitPrepare: an interaction's default bounds are symmetric, in t
   expect_identical(names(p$upper)[2:5], fireSenseUtils::spreadDesignCols(formX))
 })
 
-test_that("a fit with an interaction centres it on the mean of its product, and the ledger row has its coefficient", {
+test_that("a fit with an interaction centres its covariates, not the product, and the ledger row has its coefficient", {
   out <- fittedI(formX)
   centre <- out$sim$covCentre_spread
-  expect_named(centre, c("CMDsm", "class1", "CMDsm:class1"))
+  expect_named(centre, c("CMDsm", "class1"))
   a <- out$rec$deArgs
   expect_equal(centre, fireSenseUtils::spreadCovCentre(a$annualDTx1000, a$nonAnnualDTx1000, a$formulaToFit,
                                                        a$covMinMax, a$mutuallyExclusive))
-  ## by hand: the means of CMDsm and class1 are not the mean of their product
-  expect_false(isTRUE(all.equal(centre[["CMDsm:class1"]], centre$CMDsm * centre$class1)))
   expect_identical(names(out$rec$geoArgs$studyAreaFireSense$params[[1]])[4:7],
                    c(icptName, "CMDsm", "class1", "CMDsm:class1"))
   ## no column of covMinMax for the interaction: it is rescaled from its covariates
