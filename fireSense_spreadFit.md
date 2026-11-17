@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9050"
-date: "Last updated: 2026-11-16"
+subtitle: "v.1.2.0.9051"
+date: "Last updated: 2026-11-17"
 output:
   bookdown::html_document2:
     toc: true
@@ -449,7 +449,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> fit </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Options: debug, fit, visualize, validate. Can use multiples. 'debug' runs the objective function with visuals instead of DEoptim; 'fit' runs DEoptim; 'visualize' adds the `debug` and `plot` events after the fit; 'validate' adds `crossValidate`, two more fits, each on half the years, predicting the other half (`sim$spreadFitHeldOut`). Validation never writes the ledger, but does write `sim$spreadFitHeldOut` to `outputPath(sim)`, since a batch run typically stops after `crossValidate` and the simList is discarded. See `heldOutFold` to run a single fold as its own job instead of both folds together. </td>
+   <td style="text-align:left;"> Options: debug, fit, visualize, validate, profile. Can use multiples. 'debug' runs the objective function with visuals instead of DEoptim; 'fit' runs DEoptim; 'visualize' adds the `debug` and `plot` events after the fit; 'validate' adds `crossValidate`, two more fits, each on half the years, predicting the other half (`sim$spreadFitHeldOut`). Validation never writes the ledger, but does write `sim$spreadFitHeldOut` to `outputPath(sim)`, since a batch run typically stops after `crossValidate` and the simList is discarded. See `heldOutFold` to run a single fold as its own job instead of both folds together. 'profile' replaces everything else: no fit, only `spreadFitPrepare` and `profileFromLedger`, which profiles this ELF's ledger fit at `profileAt` (`profileLedgerFit()`, `sim$spreadFitProfile`, also written to `outputPath(sim)`); `doFit` is not consulted and the ledger is not written. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -468,6 +468,24 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> After the fit, each covariate coefficient in turn is set to 0 and to 5 values across the final population, the others held at the best member, and each point is evaluated this many times (`fireSenseUtils::profileCoefficients()`). About `6 nCoefficients profileReps` evaluations, on the fit's workers. It decides which coefficients are identified in isolation (`sim$spreadFitIdentifiability`). 0 skips it. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> profileAt </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Mode 'profile': the values each coefficient of `profileCoefs` is set to in turn, the others held at the ledger fit's best set, e.g. `c(-20, -10, -5, -2, -1, 0, 1, 2, 5, 10, 20)`. They may lie outside the fit's bounds. Each is evaluated `profileReps` times. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> profileCoefs </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Mode 'profile': the covariate coefficients to profile. `NA`: all of them; "fuel": the fuel biomass coefficients. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -983,7 +1001,7 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-sprea
   <tr>
    <td style="text-align:left;"> spreadFitProfile </td>
    <td style="text-align:left;"> data.table </td>
-   <td style="text-align:left;"> The one-at-a-time profile around the best member (`fireSenseUtils::profileCoefficients()`). </td>
+   <td style="text-align:left;"> The one-at-a-time profile around the best member (`fireSenseUtils::profileCoefficients()`): after a fit, or in mode 'profile' of the ledger fit at `profileAt` (`profileLedgerFit()`). </td>
   </tr>
   <tr>
    <td style="text-align:left;"> spreadFitSizes </td>
