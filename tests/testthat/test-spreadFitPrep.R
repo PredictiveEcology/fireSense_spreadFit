@@ -152,3 +152,18 @@ test_that("an NA in a covariate stops the fit, naming covMinMax_spread", {
   expect_error(prepared(objects = objs["fireSense_annualSpreadFitCovariates"]),
                "covMinMax_spread contains NA values")
 })
+
+test_that("a split climate formula (spreadClimateSplit) gets fixed ranges for both terms and the CMD sign rule on both", {
+  annual <- list(
+    year2001 = data.table::data.table(pixelID = c(2L, 3L, 4L, 55L, 56L, 57L), CMDsm_yr = 30,
+                                      CMDsm_dev = c(-20, -10, 0, 10, -5, 15), youngAge = c(0, 1, 0, 0, 0, 1)),
+    year2002 = data.table::data.table(pixelID = c(88L, 89L, 90L), CMDsm_yr = 35,
+                                      CMDsm_dev = c(-23, -13, -3), youngAge = c(0, 0, 1)))
+  sim <- prepared(objects = list(fireSense_annualSpreadFitCovariates = annual,
+                                 fireSense_spreadFormula = "~ 0 + CMDsm_yr + CMDsm_dev + youngAge + class1 + class2 + nf"))
+  p <- P1(sim)
+  expect_identical(unname(p$lower[c("CMDsm_yr", "CMDsm_dev")]), c(0, 0))     # drought terms are >= 0 by name
+  expect_identical(unname(p$upper[c("CMDsm_yr", "CMDsm_dev")]), c(50, 50))
+  expect_identical(sim$covMinMax_spread$CMDsm_yr, c(0, 100))
+  expect_identical(sim$covMinMax_spread$CMDsm_dev, c(-50, 50))
+})

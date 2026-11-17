@@ -1027,11 +1027,15 @@ fuelColumns <- function(nonAnnualList) {
 #' @param nonAnnualList list of `data.table`s of non-annual covariates, fuel biomass on the LINEAR scale.
 #' @param fuelCols names of the fuel biomass columns, from [fuelColumns()].
 #' @param fixedRange named list of `c(min, max)` that replace the data's range for those covariates;
-#'   default `fireSenseUtils::climateCovRanges`. Every annual covariate that is not a 0/1 indicator is
+#'   default `fireSenseUtils::climateCovRanges`, with the ranges of the split terms of each variable added
+#'   (`fireSenseUtils::climateSplitRanges()`). Every annual covariate that is not a 0/1 indicator is
 #'   climate and must be in it, or this stops. Indicators are always `c(0, 1)`.
 #' @return `data.table` with 2 rows (min, max) and one column per covariate. Stops if a covariate that
 #'   is not given a fixed range has max <= min.
 deriveCovMinMax <- function(annualList, nonAnnualList, fuelCols, fixedRange = fireSenseUtils::climateCovRanges) {
+
+  ## the split climate terms (`<var>_yr`, `<var>_dev`) of fireSense_dataPrepFit's spreadClimateSplit have ranges derived from the variable's
+  fixedRange <- fireSenseUtils::climateSplitRanges(fixedRange)
 
   nonAnnRescales <- rbindlist(nonAnnualList)
   vals1 <- setdiff(colnames(nonAnnRescales), "pixelID")
@@ -1354,5 +1358,7 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
 youngAge <- fireSenseUtils::youngAgeTxt
 
 ## drought-index terms (CMD or MDC anywhere in the name, e.g. CMD, CMD_sm, CMD_sp, CMDsm, cumMDC,
-## MDC): wetter conditions should not increase spread probability, so these get a lower bound of 0
+## MDC): wetter conditions should not increase spread probability, so these get a lower bound of 0.
+## The split terms of such a variable (`CMD_yr`, `CMD_dev`; fireSense_dataPrepFit's `spreadClimateSplit`) have it
+## in their names and so the same bound; `Tmaxsm_yr` and `Tmaxsm_dev` are not constrained, as `Tmaxsm` is not.
 droughtIndexPattern <- "CMD|MDC"
