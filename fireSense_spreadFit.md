@@ -503,7 +503,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;">  </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> How many workers to request for the DEoptim cluster. This IS the population size: `clusters::clusterSetup()` sets NP to the workers it builds. `NULL` takes `fireSenseUtils::deoptimPopulationSize()` of the number of parameters: 30 for 4-7, 40 for 8-12, 50 for 13-15 (40 was a good middle in tests of 10 per parameter against other sizes, with little gain above it; current ledgers have 10-12 parameters). A generation costs the slowest of NP evaluations and that barely falls as NP falls, so a smaller NP buys throughput by allowing more fits at once rather than by shortening generations (measured 2026-09-16). </td>
+   <td style="text-align:left;"> How many workers to request for the DEoptim cluster. This IS the population size: `clusters::clusterSetup()` sets NP to the workers it builds. A `cores` that is a number above 1, or a host named more than once, is that many workers, and so NP; this is not used then (`clusters::requestedWorkers()`). `NULL` takes `fireSenseUtils::deoptimPopulationSize()` of the number of parameters: 30 for 4-7, 40 for 8-12, 50 for 13-15 (40 was a good middle in tests of 10 per parameter against other sizes, with little gain above it; current ledgers have 10-12 parameters). A generation costs the slowest of NP evaluations and that barely falls as NP falls, so a smaller NP buys throughput by allowing more fits at once rather than by shortening generations (measured 2026-09-16). </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
