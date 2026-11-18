@@ -271,7 +271,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Whether to fit this polygon. FALSE (default): never fit -- use the ledger's fit, and stop with an error if it holds none for this polygon (`fitFileSuffix` picks the ledger), so a run that only predicts can never start a fit by accident. NA: do whatever is needed -- use the ledger's fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it when the fit's INPUTS changed -- new land cover, vegetation parameters, objective). </td>
+   <td style="text-align:left;"> Whether to fit this polygon. FALSE (default): never fit -- use the ledger's fit, and stop with an error if it holds none for this polygon (`spreadFitFilename` picks the ledger), so a run that only predicts can never start a fit by accident. NA: do whatever is needed -- use the ledger's fit if it holds one for this polygon, otherwise fit. TRUE: always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only with at least 40 cores; use it when the fit's INPUTS changed -- new land cover, vegetation parameters, objective). </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -604,7 +604,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> FALSE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> TRUE spreads every fire of the fit on all pixels of the covariate tables, with no buffer edge, so no fire is cut and every fire is scored at the size it burns. For tables of the whole ELF (`fireSense_dataPrepFit`, parameter `wholeLandscapeSpreadCovariates`); the spread probability is computed only on the cells a fire reaches, so an evaluation costs about what a buffered one does. Needs `spreadLink` "powerLaw", "powerLawSmooth" or "richards" and `penaliseRunaways = FALSE`. Passed to `fireSenseUtils::runDEoptim()` and `.objfunSpreadFit()` as `wholeLandscape`. FALSE changes nothing, including the fit's cache key. Refits need a new `fitFileSuffix`. </td>
+   <td style="text-align:left;"> TRUE spreads every fire of the fit on all pixels of the covariate tables, with no buffer edge, so no fire is cut and every fire is scored at the size it burns. For tables of the whole ELF (`fireSense_dataPrepFit`, parameter `wholeLandscapeSpreadCovariates`); the spread probability is computed only on the cells a fire reaches, so an evaluation costs about what a buffered one does. Needs `spreadLink` "powerLaw", "powerLawSmooth" or "richards" and `penaliseRunaways = FALSE`. Passed to `fireSenseUtils::runDEoptim()` and `.objfunSpreadFit()` as `wholeLandscape`. FALSE changes nothing, including the fit's cache key. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -725,21 +725,12 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> fitFileSuffix </td>
-   <td style="text-align:left;"> character </td>
-   <td style="text-align:left;">  </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Text put after the model tag in the ledger file names, e.g. `"_boundfix_rep81"`, so a test run writes (and `"latest"` readers read) only its own files and never the production ones. `""` (the default) writes the unsuffixed file and reads (`"latest"`) every file of the model tag, newest by the date in its suffix (`fireSenseUtils::ledgerFileOrder()`); experiment fits belong in `spreadFitLedgerFolder(testing = TRUE)`. The same parameter of `fireSense_ignitionFit`, `fireSense_dataPrepFit` and `fireSense_ELFs`; set it for all with `.globals = list(fitFileSuffix = ...)`. Ignored when `spreadFitFilename` names a file. </td>
-   <td style="text-align:left;"> TRUE </td>
-  </tr>
-  <tr>
    <td style="text-align:left;"> spreadFitFilename </td>
    <td style="text-align:left;"> character </td>
    <td style="text-align:left;"> latest </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> File name of the shared fit ledger: an `sf` object with one row of fitted parameters per polygon. `"latest"` (the default) writes to the file named for this fit's fire years and model, `fireSenseUtils::spreadFitFilenameFor()`, e.g. `fireSenseParams_1985-2024_linearFuel.rds`; readers then find it with `fireSenseUtils::latestSpreadFits()`. </td>
+   <td style="text-align:left;"> File name of the shared fit ledger: an `sf` object with one row of fitted parameters per polygon. A name (e.g. an experiment's, starting `fireSenseParams_`) is read and written as it is. `"latest"` (the default) reads each polygon's newest fit this run can use from any ledger file (`fireSenseUtils::latestSpreadFits()`), and a fit writes to the file named for its fire years, `fireSenseUtils::spreadFitFilenameFor()`, e.g. `fireSenseParams_1986-2024_linearFuel_esc50_20260925.rds`. The same parameter of `fireSense_dataPrepFit`, `fireSense_ELFs` and `fireSense_dataPrepPredict`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
