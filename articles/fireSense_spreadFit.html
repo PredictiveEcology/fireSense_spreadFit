@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9053</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9054</span>
       </span>
     </div>
 
@@ -70,9 +70,9 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>fireSense_spreadFit Manual</h1>
-            <h3 data-toc-skip class="subtitle">v.1.2.0.9053</h3>
+            <h3 data-toc-skip class="subtitle">v.1.2.0.9054</h3>
             
-            <h4 data-toc-skip class="date">Last updated: 2026-11-17</h4>
+            <h4 data-toc-skip class="date">Last updated: 2026-11-18</h4>
       
 
       <div class="hidden name"><code>fireSense_spreadFit.Rmd</code></div>
@@ -624,7 +624,7 @@ skipUnusedFitPrep
 logical
 </td>
 <td style="text-align:left;">
-FALSE
+TRUE
 </td>
 <td style="text-align:left;">
 NA
@@ -633,7 +633,7 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-FALSE (default): unchanged. TRUE: a job that uses the ledger’s fit and does not validate or hold out a fold (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fitDataNeeded.html" class="external-link">fireSenseUtils::fitDataNeeded()</a></code>: not fitting, <code>mode</code> without “validate” or “profile”, no <code>heldOutFold</code>) does not schedule <code>spreadFitPrepare</code>, whose covariates only a fit, <code>crossValidate</code> and a profile read. A prediction reads the ledger row’s <code>covMinMax_spread</code>, <code>covCentre_spread</code> and <code>climateRef_spread</code>; only a ledger row without ranges (written before <code>covMinMax_spread</code>) falls back on <code>sim$covMinMax_spread</code>. The same parameter of <code>fireSense_dataPrepFit</code>: set it for both with <code>.globals = list(skipUnusedFitPrep = TRUE)</code>. Not part of the cache keys. The modules must agree on it and on <code>doFit</code>.
+TRUE (default): a job that uses the ledger’s fit and does not validate or hold out a fold (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fitDataNeeded.html" class="external-link">fireSenseUtils::fitDataNeeded()</a></code>: not fitting, <code>mode</code> without “validate” or “profile”, no <code>heldOutFold</code>) does not schedule <code>spreadFitPrepare</code>, whose covariates only a fit, <code>crossValidate</code> and a profile read. A prediction reads the ledger row’s <code>covMinMax_spread</code>, <code>covCentre_spread</code> and <code>climateRef_spread</code>; only a ledger row without ranges (written before <code>covMinMax_spread</code>) falls back on <code>sim$covMinMax_spread</code>. FALSE: always schedule <code>spreadFitPrepare</code>, as before this parameter existed. The same parameter of <code>fireSense_dataPrepFit</code>: set it for both with <code>.globals = list(skipUnusedFitPrep = FALSE)</code>. Not part of the cache keys. The modules must agree on it and on <code>doFit</code>.
 </td>
 <td style="text-align:left;">
 FALSE
