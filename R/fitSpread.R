@@ -171,14 +171,14 @@ spreadFitDEArgs <- function(sim, covs, runName, diagnostics = TRUE) {
   deArgs
 }
 
-## The population size, which is the number of workers clusters::clusterSetup() builds. `cores` a number above 1 is
-## that many workers (clusterSetup() repeats "localhost" that many times, and a repeated host is placed as listed);
-## otherwise, host names or `cores = 1L` (one host), it is `nCoresNeeded`, else fireSenseUtils::deoptimPopulationSize()
+## The population size, which is the number of workers clusters::clusterSetup() builds: clusters::requestedWorkers() of
+## `cores` and `nCoresNeeded` (else fireSenseUtils::deoptimPopulationSize()). NULL or NA `cores` builds no cluster.
 spreadFitNP <- function(sim) {
   cores <- P(sim)$cores
-  if (is.numeric(cores) && length(cores) == 1L && !is.na(cores) && cores > 1L) return(as.integer(cores))
-  if (is.null(P(sim)$nCoresNeeded)) fireSenseUtils::deoptimPopulationSize(length(P(sim)$lower)) else
-    as.integer(P(sim)$nCoresNeeded)
+  nCoresNeeded <- if (is.null(P(sim)$nCoresNeeded)) fireSenseUtils::deoptimPopulationSize(length(P(sim)$lower)) else
+    P(sim)$nCoresNeeded
+  if (is.null(cores) || anyNA(cores)) return(as.integer(nCoresNeeded))
+  clusters::requestedWorkers(cores, nCoresNeeded)
 }
 
 ## The spread objective's bodies, for the Cache key of the fit: the objective and

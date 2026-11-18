@@ -47,4 +47,19 @@ test_that("the population size is nCoresNeeded (else the default) unless cores i
   ## a number of workers is the cluster's size, whatever nCoresNeeded says
   expect_identical(np(cores = 40L, nCoresNeeded = 25L), 40L)
   expect_identical(np(cores = 12L), 12L)
+  ## a host named more than once is that many workers (clusters::requestedWorkers())
+  expect_identical(np(cores = rep("hostA", 40), nCoresNeeded = 25L), 40L)
+  expect_identical(np(cores = c(rep("hostA", 3), "hostB")), 4L)
+  ## no cluster: nCoresNeeded or the default
+  expect_identical(np(cores = NULL, nCoresNeeded = 25L), 25L)
+  expect_identical(np(cores = NA, nCoresNeeded = 25L), 25L)
+})
+
+## 2026-11-18: cores = rep("hostA", 40) with 3 parameters: clusterSetup() asks for 40 workers (a repeated host is that
+## many), but spreadFitNP() gave deoptimPopulationSize(3) = 30 rows
+test_that("a repeated host name is the population size: the emulator and the start population have that many rows", {
+  rec <- seededRun(params = list(cores = rep("hostA", 40), initialPopMethod = "emulator"), mocks = emulatorMock)
+  expect_identical(rec$emu$NP, 40L)
+  expect_identical(nrow(rec$emuPop), 40L)
+  expect_gte(nrow(rec$calls[[1]]$DEoptimControl$initialpop), 40L)
 })
