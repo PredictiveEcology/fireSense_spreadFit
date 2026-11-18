@@ -1,6 +1,6 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9054"
+subtitle: "v.1.2.0.9055"
 date: "Last updated: 2026-11-18"
 output:
   bookdown::html_document2:
@@ -167,10 +167,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> .plots </td>
    <td style="text-align:left;"> characte.... </td>
-   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> screen </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Plot types passed to `Plots()`, e.g. 'png' or 'screen'; NULL or NA for none. </td>
+   <td style="text-align:left;"> Plot types passed to `Plots()`, e.g. 'screen' (default) or 'png'; NULL or NA for none. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
