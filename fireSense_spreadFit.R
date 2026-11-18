@@ -33,8 +33,8 @@ defineModule(sim, list(
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.2.0.9004)"),
   parameters = rbind(
-    defineParameter(".plots", "character|logical", default = NULL, ## TODO: use .plotInitialTime etc.
-                    desc = "Plot types passed to `Plots()`, e.g. 'png' or 'screen'; NULL or NA for none."),
+    defineParameter(".plots", "character|logical", default = "screen", ## TODO: use .plotInitialTime etc.
+                    desc = "Plot types passed to `Plots()`, e.g. 'screen' (default) or 'png'; NULL or NA for none."),
     defineParameter(".plotInterval", "numeric", default = 25, NA, NA,
                     desc = paste("DEoptim generations between DEoptim progress figures; the final figures",
                                  "are always drawn. Passed to `fireSenseUtils::runDEoptim()` as `plotEvery`.")),

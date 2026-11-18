@@ -61,9 +61,13 @@ test_that("after a fit, .plots = 'png' makes both figures from one simulation of
                    c("spreadFitObservedVsSimulated_toyRun", "spreadFitResponseCurves_toyRun"))
 })
 
-test_that("with .plots NULL (the default) nothing is simulated or plotted", {
-  expect_null(SpaDES.core::params(toySim())[[moduleName]]$.plots)
-  rec <- fitWithPlots()$rec
+test_that("the default .plots is \"screen\", which makes the figures; NA makes nothing", {
+  ## toySim() sets .plots = NA; NULL removes it, so the module's default applies
+  expect_identical(SpaDES.core::params(toySim(list(.plots = NULL)))[[moduleName]]$.plots, "screen")
+  rec <- fitWithPlots(list(.plots = NULL))$rec
+  expect_length(rec$data, 1L)
+  expect_identical(unique(vapply(rec$plots, function(p) as.character(p$types), "")), "screen")
+  rec <- fitWithPlots(list(.plots = NA))$rec
   expect_length(rec$data, 0L)
   expect_length(rec$plots, 0L)
 })

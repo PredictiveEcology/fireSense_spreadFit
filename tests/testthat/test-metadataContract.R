@@ -133,7 +133,8 @@ test_that("defaults of the objective and of the post-fit diagnostics", {
 })
 
 test_that("defaults that are 'not set'", {
-  for (nm in c(".plots", "initialpop", "nCoresNeeded"))
+  expect_identical(def$.plots, "screen")  # a beginner sees the figures; NA or NULL for none
+  for (nm in c("initialpop", "nCoresNeeded"))
     expect_null(def[[nm]], label = nm)
   for (nm in c("lower", "upper"))
     expect_identical(def[[nm]], NA, label = nm)
