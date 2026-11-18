@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9053"
-date: "Last updated: 2026-11-17"
+subtitle: "v.1.2.0.9054"
+date: "Last updated: 2026-11-18"
 output:
   bookdown::html_document2:
     toc: true
@@ -275,10 +275,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> skipUnusedFitPrep </td>
    <td style="text-align:left;"> logical </td>
-   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:left;"> TRUE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> FALSE (default): unchanged. TRUE: a job that uses the ledger's fit and does not validate or hold out a fold (`fireSenseUtils::fitDataNeeded()`: not fitting, `mode` without "validate" or "profile", no `heldOutFold`) does not schedule `spreadFitPrepare`, whose covariates only a fit, `crossValidate` and a profile read. A prediction reads the ledger row's `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`; only a ledger row without ranges (written before `covMinMax_spread`) falls back on `sim$covMinMax_spread`. The same parameter of `fireSense_dataPrepFit`: set it for both with `.globals = list(skipUnusedFitPrep = TRUE)`. Not part of the cache keys. The modules must agree on it and on `doFit`. </td>
+   <td style="text-align:left;"> TRUE (default): a job that uses the ledger's fit and does not validate or hold out a fold (`fireSenseUtils::fitDataNeeded()`: not fitting, `mode` without "validate" or "profile", no `heldOutFold`) does not schedule `spreadFitPrepare`, whose covariates only a fit, `crossValidate` and a profile read. A prediction reads the ledger row's `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`; only a ledger row without ranges (written before `covMinMax_spread`) falls back on `sim$covMinMax_spread`. FALSE: always schedule `spreadFitPrepare`, as before this parameter existed. The same parameter of `fireSense_dataPrepFit`: set it for both with `.globals = list(skipUnusedFitPrep = FALSE)`. Not part of the cache keys. The modules must agree on it and on `doFit`. </td>
    <td style="text-align:left;"> FALSE </td>
   </tr>
   <tr>
