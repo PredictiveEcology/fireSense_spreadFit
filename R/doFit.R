@@ -10,8 +10,7 @@
 mustFitThisPolygon <- function(sim, message = FALSE) {
   doFit <- fireSenseUtils::resolveDoFit(P(sim)$doFit, P(sim)$refitExisting, P(sim)$stopIfNoPreRunFit,
                                         module = "fireSense_spreadFit", message = message)
-  must <- fireSenseUtils::mustFit(doFit, hasPreRunFitForThisPolygon(sim), paste(sim$.ELFind, collapse = ", "),
-                                  fitFileSuffix = P(sim)$fitFileSuffix)
+  must <- fireSenseUtils::mustFit(doFit, hasPreRunFitForThisPolygon(sim), paste(sim$.ELFind, collapse = ", "))
   if (must && length(sim$.ELFind) > 1L)
     stop("fireSense_spreadFit: a fit is of one ELF, but this run covers several (", paste(sim$.ELFind, collapse = ", "),
          "). Fit each on its own (`.ELFind`), or predict from their stored fits (`doFit = FALSE`, the default).",
