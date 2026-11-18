@@ -45,6 +45,11 @@ test_that("`cores`, `libPathDEoptim`, `objFunCoresInternal` and `skipUnusedFitPr
   expect_true(all(p$cacheKey[!p$paramName %in% notKeyed]))
 })
 
+test_that("skipUnusedFitPrep is TRUE by default: a run that does not fit prepares no fit data", {
+  ## 2026-11-17: on by default, as in fireSense_dataPrepFit (the modules must agree on it)
+  expect_identical(def[["skipUnusedFitPrep"]], TRUE)
+})
+
 test_that("the defunct DEoptim-retrieval parameters and output are gone", {
   for (nm in c("cacheId_DE", "cloudFolderID_DE", "useCloud_DE", "onlyLoadDEOptim", "NP",
                ".runInterval", ".saveInitialTime", ".saveInterval", "urlDEOptimObject"))

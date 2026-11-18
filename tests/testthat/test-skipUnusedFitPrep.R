@@ -5,8 +5,10 @@ ledgerObjs <- function() list(studyAreaWithSpreadParams = toyLedger(c("9.8", "9.
 skipInit <- function(params = list(), objects = ledgerObjs())
   queued(runEvents(toySim(c(list(skipUnusedFitPrep = TRUE), params), objects), "init"))
 
-test_that("by default, a predict-only job still prepares the covariates (unchanged)", {
-  expect_identical(queued(runEvents(toySim(list(doFit = FALSE), ledgerObjs()), "init")), "spreadFitPrepare")
+test_that("by default, a predict-only job prepares nothing; skipUnusedFitPrep = FALSE prepares the covariates", {
+  expect_identical(queued(runEvents(toySim(list(doFit = FALSE), ledgerObjs()), "init")), character())
+  expect_identical(queued(runEvents(toySim(list(doFit = FALSE, skipUnusedFitPrep = FALSE), ledgerObjs()), "init")),
+                   "spreadFitPrepare")
 })
 
 test_that("skipUnusedFitPrep: a predict-only job schedules nothing from this module", {

@@ -13,7 +13,10 @@ initMessages <- function(params = list(), objects = list()) {
   msgs
 }
 
-initOnly <- function(params = list(), objects = list()) runEvents(toySim(params, objects), "init")
+## These tests are about the fit decision, so they keep the covariates scheduled (`skipUnusedFitPrep = FALSE`);
+## test-skipUnusedFitPrep.R covers what the default leaves out.
+initOnly <- function(params = list(), objects = list())
+  runEvents(toySim(c(list(skipUnusedFitPrep = FALSE), params), objects), "init")   # c(): keeps `doFit = NULL`
 
 test_that("doFit x ledger, when the ledger LACKS this polygon", {
   expect_identical(queued(initOnly(list(doFit = NA))), fitEvents)    # whatever is needed: fit
