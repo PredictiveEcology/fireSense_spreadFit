@@ -17,11 +17,13 @@ fitSpread <- function(sim, covs, runName, diagnostics = TRUE) {
   runawayMultiple <- runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple)
   deArgs <- spreadFitDEArgs(sim, covs, runName, diagnostics)
   lower <- P(sim)$lower
-  n <- max(10L * length(lower), as.integer(P(sim)$nCoresNeeded))
-  ## forced only when a start is drawn: a bad .ELFind is reported by the ledger's check, after the fit
-  delayedAssign("seed", .elfSeed(sim$.ELFind))
   ## the population size runDEoptim() asks clusters for
   NP <- spreadFitNP(sim)
+  ## at least NP rows (clusters uses the first NP and stops on fewer). The 10 per parameter is DEoptim's own default
+  ## NP, from before NP was the cluster's size (f6e9b3d); it stays so a fit's initialpop, and so its cache key, does not change.
+  n <- max(10L * length(lower), NP)
+  ## forced only when a start is drawn: a bad .ELFind is reported by the ledger's check, after the fit
+  delayedAssign("seed", .elfSeed(sim$.ELFind))
   emulated <- if (useEmulator(P(sim), length(lower)))
     Cache(emulatorStartPopulation, objArgs = emulatorObjectiveArgs(deArgs), lower = lower, upper = P(sim)$upper,
           NP = NP, control = P(sim)$emulatorControl, seed = seed,
@@ -169,10 +171,14 @@ spreadFitDEArgs <- function(sim, covs, runName, diagnostics = TRUE) {
   deArgs
 }
 
-## The population size runDEoptim() asks clusters for: `nCoresNeeded`, else fireSenseUtils::deoptimPopulationSize()
+## The population size, which is the number of workers clusters::clusterSetup() builds: clusters::requestedWorkers() of
+## `cores` and `nCoresNeeded` (else fireSenseUtils::deoptimPopulationSize()). NULL or NA `cores` builds no cluster.
 spreadFitNP <- function(sim) {
-  if (is.null(P(sim)$nCoresNeeded)) fireSenseUtils::deoptimPopulationSize(length(P(sim)$lower)) else
-    as.integer(P(sim)$nCoresNeeded)
+  cores <- P(sim)$cores
+  nCoresNeeded <- if (is.null(P(sim)$nCoresNeeded)) fireSenseUtils::deoptimPopulationSize(length(P(sim)$lower)) else
+    P(sim)$nCoresNeeded
+  if (is.null(cores) || anyNA(cores)) return(as.integer(nCoresNeeded))
+  clusters::requestedWorkers(cores, nCoresNeeded)
 }
 
 ## The spread objective's bodies, for the Cache key of the fit: the objective and

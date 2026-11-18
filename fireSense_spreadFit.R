@@ -27,7 +27,7 @@ defineModule(sim, list(
                   "logging", "magrittr", "parallel", "parallelly", "raster", "RhpcBLASctl", "sf", "terra", "tidyr", "withr", ## TODO: remove magrittr
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
-                  "PredictiveEcology/clusters@development (>= 0.0.87)", # .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
+                  "PredictiveEcology/clusters@development (>= 0.0.95)", # requestedWorkers(); .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9177)", # 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
@@ -279,7 +279,8 @@ defineModule(sim, list(
                     desc = "a named list of mutually exclusive covariates - see `fireSenseUtils::makeMutuallyExclusive`"),
     defineParameter("nCoresNeeded", "integer", default = NULL,
                     desc = paste("How many workers to request for the DEoptim cluster. This IS the population",
-                                 "size: `clusters::clusterSetup()` sets NP to the workers it builds. `NULL`",
+                                 "size: `clusters::clusterSetup()` sets NP to the workers it builds. A `cores`",
+                                 "that is a number above 1, or a host named more than once, is that many workers, and so NP; this is not used then (`clusters::requestedWorkers()`). `NULL`",
                                  "takes `fireSenseUtils::deoptimPopulationSize()` of the number of parameters: 30 for 4-7,",
                                  "40 for 8-12, 50 for 13-15 (40 was a good middle in tests of 10 per parameter against",
                                  "other sizes, with little gain above it; current ledgers have 10-12 parameters).",
