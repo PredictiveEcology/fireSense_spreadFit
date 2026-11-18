@@ -25,3 +25,26 @@ test_that("the runDEoptim() call passes nCoresNeeded from the parameter", {
     expect_identical(rec$deArgs$nCoresNeeded, nc)
   }
 })
+
+## 2026-11-17 (GPSC, null arm, ELFs 14.3 and 11.3): `cores = 40L` with 3 parameters. clusterSetup() builds 40 workers
+## and sets NP to 40, but the module's population size was deoptimPopulationSize(3) = 30, so the emulator and the start
+## population had 30 rows: "initialpop has 30 rows but the population (the number of workers) is 40".
+test_that("a single number of cores is the population size: the emulator and the start population have that many rows", {
+  rec <- seededRun(params = list(cores = 40L, initialPopMethod = "emulator"), mocks = emulatorMock)
+  expect_identical(rec$emu$NP, 40L)
+  expect_identical(nrow(rec$emuPop), 40L)
+  expect_gte(nrow(rec$calls[[1]]$DEoptimControl$initialpop), 40L)
+})
+
+test_that("the population size is nCoresNeeded (else the default) unless cores is a number of workers", {
+  np <- function(...) spreadFitNP(toySim(list(...)))
+  ## the module default, cores = 1L, is one host: clusterSetup() sizes it by nCoresNeeded
+  lower <- c(a = 0, b = 0, c = 0, d = 0)
+  expect_identical(np(lower = lower), fireSenseUtils::deoptimPopulationSize(4L))
+  expect_identical(np(cores = 1L, nCoresNeeded = 25L), 25L)
+  ## host names: nCoresNeeded, as before
+  expect_identical(np(cores = c("hostA", "hostB"), nCoresNeeded = 25L), 25L)
+  ## a number of workers is the cluster's size, whatever nCoresNeeded says
+  expect_identical(np(cores = 40L, nCoresNeeded = 25L), 40L)
+  expect_identical(np(cores = 12L), 12L)
+})
