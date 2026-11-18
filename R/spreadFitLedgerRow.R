@@ -54,6 +54,9 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params, inSample =
   ## the escape definition the fit was made under: prediction and scoring check theirs against it
   ## (fireSenseUtils::checkEscapeDefinition())
   df <- data.frame(df, as.data.frame(fireSenseUtils::escapeDefinitionOf(sim)))
+  ## the fuel scale of the covariates (fireSenseUtils::fuelLogToLinear() in spreadFitPrep): with the escape definition, what
+  ## prediction must apply as this fit did, so fireSenseUtils::latestSpreadFits() keeps only rows that match the run
+  df[[fireSenseUtils::spreadFitFuelScaleTxt]] <- fireSenseUtils::spreadFuelScale
   # The ledger is keyed by polygon identity, NOT by run label -- see the
   # `.ELFind` input declaration. This row is shared cloud state that every
   # other project reads, so validate before writing.

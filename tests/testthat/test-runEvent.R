@@ -111,7 +111,8 @@ test_that("the ledger row: polygon id, 5 best members, their values, and the cov
   expect_identical(nrow(row), 1L)
   expect_identical(names(row), c("geometry", "numIterations", "objFunVal", "params", "sppEquiv",
                                  "nonForestedLCCGroups", "missingLCCgroup", "covMinMax_spread",
-                                 names(fireSenseUtils::escapeDefinition()), "polygonID"))
+                                 names(fireSenseUtils::escapeDefinition()), fireSenseUtils::spreadFitFuelScaleTxt,
+                                 "polygonID"))
   expect_identical(row$polygonID, "9.9")                 # .ELFind, not .runName
   expect_identical(row$numIterations[[1]], 3L)           # toyDE() has 3 blocks
   ## toyDE(): member k has first parameter k and value 8 - k, so the 5 best are members 7..3
@@ -149,22 +150,15 @@ test_that("by default (\"latest\") the ledger file is named for the fit's fire y
   expect_identical(ledgerWriteFile("mine.rds", 1985:2024, "year2001"), "mine.rds")
 })
 
-test_that("fitFileSuffix puts the test run's fit in its own ledger file, not the production one", {
-  g <- fitted(params = list(fitFileSuffix = "_boundfix_rep81"))$rec$geoArgs
-  expect_identical(g$targetFile, paste0("fireSenseParams_2001-2002", fireSenseUtils::spreadFitFileTag,
-                                        "_boundfix_rep81.rds"))
-  expect_identical(ledgerWriteFile("latest", 1985:2024, "year2001", "_rep1"),
-                   paste0("fireSenseParams_1985-2024", fireSenseUtils::spreadFitFileTag, "_rep1.rds"))
-  expect_identical(ledgerWriteFile("mine.rds", 1985:2024, "year2001", "_rep1"), "mine.rds")  # a named file is used as given
+test_that("a named spreadFitFilename (an experiment's) receives the fit as it is", {
+  ## fitFileSuffix is gone: an experiment names its ledger file in full
+  g <- fitted(params = list(spreadFitFilename = "fireSenseParams_myExperiment.rds"))$rec$geoArgs
+  expect_identical(g$targetFile, "fireSenseParams_myExperiment.rds")
 })
 
-test_that("modules that disagree on fitFileSuffix are caught", {
-  sim <- toySim(list(fitFileSuffix = "_a"))
-  sim@params$fireSense_ignitionFit <- list(fitFileSuffix = "_b")
-  sim@current <- data.table::data.table(moduleName = toyModule)
-  expect_error(SpaDES.core::paramCheckOtherMods(sim, "fitFileSuffix"), "multiple values for fitFileSuffix")
-  sim@params$fireSense_ignitionFit <- list(fitFileSuffix = "_a")
-  expect_identical(SpaDES.core::paramCheckOtherMods(sim, "fitFileSuffix"), "_a")
+test_that("the row records the fuel scale, so latestSpreadFits() keeps only fits made as this run would", {
+  row <- fitted()$sim$studyAreaWithSpreadParams
+  expect_identical(row[[fireSenseUtils::spreadFitFuelScaleTxt]], fireSenseUtils::spreadFuelScale)
 })
 
 test_that("sppEquiv and the land-cover groups in the simList are recorded in the row", {

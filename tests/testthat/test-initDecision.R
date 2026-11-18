@@ -31,7 +31,7 @@ test_that("the default doFit never fits: no ledger row stops the run before any 
   calls <- 0L
   mockInModule(sim, runDEoptim = function(...) { calls <<- calls + 1L; stop("runDEoptim was called") })
   expect_error(suppressMessages(SpaDES.core::spades(sim)),
-               "polygon 9\\.9 in the ledger with fitFileSuffix \"\".*the default.*doFit = NA")
+               "polygon 9\\.9 in the ledger.*the default.*doFit = NA")
   expect_identical(calls, 0L)
 })
 

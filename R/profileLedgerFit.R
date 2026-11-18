@@ -16,7 +16,7 @@
 #' @param runName character; labels the cluster and the output file.
 #' @return the `profileCoefficients()` table, with `ledgerObjFunVal` (the ledger's replicated mean of the best set,
 #'   to compare with the reference row's `mean`). It is also written to
-#'   `file.path(outputPath(sim), currentModule(sim), "spreadFitProfile_<runName><fitFileSuffix>.csv")`.
+#'   `file.path(outputPath(sim), currentModule(sim), "spreadFitProfile_<runName>.csv")`.
 profileLedgerFit <- function(sim, covs, runName) {
   if (!hasPreRunFitForThisPolygon(sim))
     stop("fireSense_spreadFit: mode 'profile' profiles this ELF's ledger fit, but the ledger has no row for ",
@@ -67,7 +67,7 @@ profileLedgerFit <- function(sim, covs, runName) {
                                         coefs = coefs, at = at))
   prof[, ledgerObjFunVal := as.numeric(row$objFunVal[[1]][1])]
   out <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
-                   paste0("spreadFitProfile_", runName, P(sim)$fitFileSuffix, ".csv"))
+                   paste0("spreadFitProfile_", runName, ".csv"))
   data.table::fwrite(prof, out)
   message("fireSense_spreadFit: wrote the profile to ", out)
   prof

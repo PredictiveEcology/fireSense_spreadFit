@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.95)", # requestedWorkers(); .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9177)", # 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9179)", # 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.2.0.9004)"),
   parameters = rbind(
@@ -81,7 +81,7 @@ defineModule(sim, list(
                                  "any other year. Passed to `fireSenseUtils::runDEoptim()`, for any `DEoptimTests`.")),
     defineParameter("doFit", "logical", default = FALSE,
                     desc = paste("Whether to fit this polygon. FALSE (default): never fit -- use the ledger's fit, and",
-                                 "stop with an error if it holds none for this polygon (`fitFileSuffix` picks the ledger),",
+                                 "stop with an error if it holds none for this polygon (`spreadFitFilename` picks the ledger),",
                                  "so a run that only predicts can never start a fit by accident. NA: do whatever is",
                                  "needed -- use the ledger's fit if it holds one for this polygon, otherwise fit. TRUE:",
                                  "always fit, replacing any ledger fit (a re-fit is a full DEoptim run, practical only",
@@ -341,7 +341,7 @@ defineModule(sim, list(
                                  "probability is computed only on the cells a fire reaches, so an evaluation costs about what",
                                  "a buffered one does. Needs `spreadLink` \"powerLaw\", \"powerLawSmooth\" or \"richards\" and `penaliseRunaways = FALSE`.",
                                  "Passed to `fireSenseUtils::runDEoptim()` and `.objfunSpreadFit()` as `wholeLandscape`.",
-                                 "FALSE changes nothing, including the fit's cache key. Refits need a new `fitFileSuffix`.")),
+                                 "FALSE changes nothing, including the fit's cache key.")),
     defineParameter("runawayBufferMultiple", "numeric", default = NA_real_,
                     desc = paste("Retired: a cut fire is scored at the size it reached. It set the size a runaway counted",
                                  "as in the Anderson-Darling, annual-area and area-distribution terms.",
@@ -393,20 +393,14 @@ defineModule(sim, list(
                     desc = "rescale covariates for `DEOptim`"),
     defineParameter("spreadFitGoogleDriveFolder", "character", fireSenseUtils::spreadFitLedgerFolder(),
                     NA, NA, "Google Drive folder url holding the shared fit ledger (`spreadFitFilename`)."),
-    defineParameter("fitFileSuffix", "character", "", NA, NA,
-                    paste("Text put after the model tag in the ledger file names, e.g. `\"_boundfix_rep81\"`, so a test run",
-                          "writes (and `\"latest\"` readers read) only its own files and never the production ones.",
-                          "`\"\"` (the default) writes the unsuffixed file and reads (`\"latest\"`) every file of the model tag, newest by",
-                          "the date in its suffix (`fireSenseUtils::ledgerFileOrder()`); experiment fits belong in",
-                          "`spreadFitLedgerFolder(testing = TRUE)`. The same parameter of `fireSense_ignitionFit`,",
-                          "`fireSense_dataPrepFit` and `fireSense_ELFs`; set it for all with `.globals = list(fitFileSuffix = ...)`.",
-                          "Ignored when `spreadFitFilename` names a file.")),
     defineParameter("spreadFitFilename", "character", "latest",
                     NA, NA, paste("File name of the shared fit ledger: an `sf` object with one row of fitted parameters",
-                                  "per polygon. `\"latest\"` (the default) writes to the file named for this fit's fire",
-                                  "years and model, `fireSenseUtils::spreadFitFilenameFor()`, e.g.",
-                                  "`fireSenseParams_1985-2024_linearFuel.rds`; readers then find it with",
-                                  "`fireSenseUtils::latestSpreadFits()`.")),
+                                  "per polygon. A name (e.g. an experiment's, starting `fireSenseParams_`) is read and",
+                                  "written as it is. `\"latest\"` (the default) reads each polygon's newest fit this run can",
+                                  "use from any ledger file (`fireSenseUtils::latestSpreadFits()`), and a fit writes to the file",
+                                  "named for its fire years, `fireSenseUtils::spreadFitFilenameFor()`, e.g.",
+                                  "`fireSenseParams_1986-2024_linearFuel_esc50_20260925.rds`. The same parameter of",
+                                  "`fireSense_dataPrepFit`, `fireSense_ELFs` and `fireSense_dataPrepPredict`.")),
     defineParameter("sppEquivCol", "character", "LandR", NA, NA,
                     paste("Column of each ledger row's `sppEquiv` naming the species; used to rebuild the per-ELF",
                           "lists after the fit writes its row. The same parameter of `fireSense_dataPrepFit`.")),
@@ -744,8 +738,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
                                                   targetFile = ledgerWriteFile(
                                                     Par$spreadFitFilename,
                                                     P(sim, module = "fireSense_dataPrepFit")$fireYears,
-                                                    names(sim$fireSense_annualSpreadFitCovariates),
-                                                    SpaDES.core::paramCheckOtherMods(sim, "fitFileSuffix")),
+                                                    names(sim$fireSense_annualSpreadFitCovariates)),
                                                   domain = saHere,
                                                   destinationPath = inputPath(sim),
                                                   FUN = le(studyAreaFireSense),
