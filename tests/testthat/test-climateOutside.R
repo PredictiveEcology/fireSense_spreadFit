@@ -5,13 +5,6 @@
 ## records it with the link. With the default "ceiling" nothing changes: no reference, no ledger columns, and the
 ## cache keys of the fit and the held-out simulation are what they were.
 
-## the mean of the rescaled CMDsm over the 9 toy pixel-years, with the range the fit stores
-cmdMean <- function(sim) {
-  cmd <- c(10, 20, 30, 40, 25, 15, 12, 22, 32)
-  rng <- sim$covMinMax_spread$CMDsm
-  mean((cmd - rng[1]) / (rng[2] - rng[1]))
-}
-
 test_that("the 'ceiling' link leaves the fit, the ledger row and the cache keys as they were", {
   md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
   expect_identical(md$parameters$default[[which(md$parameters$paramName == "spreadLink")]], "powerLaw") # the module's default

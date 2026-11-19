@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.95)", # requestedWorkers(); .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9179)", # 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9181)", # 9181: spreadLinkInputs(), powerLawPc50 (climate in the power-law ceiling, fireSenseUtils#250); 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.2.0.9004)"),
   parameters = rbind(
@@ -206,6 +206,17 @@ defineModule(sim, list(
                                  "`fireSenseUtils::spreadPowerLawPcBounds`. Both are fitted like 'powerLaw': `maxAsymptote` is p_c and `yearSpreadSD`",
                                  "is added to x; the ledger row records the link, `lowerAsymptote` and (with 'richards') `richardsNu`",
                                  "(`fireSenseUtils::spreadFitLowerAsymptoteTxt`, `spreadFitRichardsNuTxt`).")),
+    defineParameter("spreadClimate", "character", default = "predictor",
+                    desc = paste("Where climate enters a power-law `spreadLink` ('powerLaw', 'powerLawSmooth'). 'predictor' (default): in the",
+                                 "linear predictor with the fuels, under the fixed ceiling p_c, so p never passes `maxAsymptote` and",
+                                 "simulated burned area grows with drought about half as fast as observed. 'ceiling': climate moves the",
+                                 "ceiling toward the landscape's runaway threshold p50 and never past it:",
+                                 "p_c = max(p50 - (p50 - p_c0) * exp(-sum(beta_clim * (climate - climateRef))), `lowerSpreadProb`),",
+                                 "with p_c0 = `maxAsymptote` (fitted, bounded above by p50 exactly, not p50 + `powerLawPcMargin`) and",
+                                 "x the fuel terms only (`fireSenseUtils::spreadLinkInputs()`). Needs a power-law `spreadLink` and a",
+                                 "climate covariate (`fireSenseUtils::spreadClimateCols()`). `climateRef` is found as with",
+                                 "'climateOutside' (`sim$climateRef_spread`); with the p50 in the ledger row",
+                                 "(`fireSenseUtils::spreadFitPowerLawPc50Txt`) it makes `fireSense_spreadPredict` apply the same ceiling.")),
     defineParameter("powerLawGamma", "numeric", default = NA_real_,
                     desc = paste("The exponent `gamma` of `spreadLink = 'powerLaw'`. `NA` (default): the calibrated value for",
                                  "the ELF's flammable map. A number overrides `gamma` only (the bounds of p_c still come from",
@@ -529,7 +540,8 @@ defineModule(sim, list(
                                "formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit's",
                                "pixel-years (`fireSenseUtils::spreadClimateRef()`), the climate at which the spread probability",
                                "is the fuel ceiling's p0. Given to the fit, the validation and the ledger row.",
-                               "`NULL` with `spreadLink = 'ceiling'`.")),
+                               "With `spreadClimate = 'ceiling'` it is the reference of the shift that moves p_c.",
+                               "`NULL` with `spreadLink = 'ceiling'` and `spreadClimate = 'predictor'`.")),
     createsOutput("powerLawCalibration", "list",
                   desc = paste("With `spreadLink = 'powerLaw'`, the result of `fireSenseUtils::calibratePowerLaw()` on",
                                "`flammableRTM`: `p50`, `gamma`, `R2` and the per-p `table`. `p50` bounds p_c, `gamma` is the",
@@ -686,7 +698,7 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         nonAnnualDTx1000 = mod$covsX1000$nonAnnualDTx1000,
         fireBufferedListDT = mod$covsX1000$fireBufferedListDT,
         historicalFires = mod$covsX1000$historicalFires,
-        covMinMax = sim$covMinMax_spread, covCentre = sim$covCentre_spread, climateRef = sim$climateRef_spread,
+        covMinMax = sim$covMinMax_spread, covCentre = sim$covCentre_spread, climateRef = sim$climateRef_spread, powerLawPc50 = spreadPowerLawPc50(sim),
         formulaToFit = sim$fireSense_spreadFormula,
         objfunFireReps = P(sim)$objfunFireReps,
         tests = P(sim)$DEoptimTests,
@@ -857,7 +869,7 @@ spreadFitPrep <- function(sim) {
                                          fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
                                          upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
                                          fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
-                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin))
+                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par)))
   }
 
   if (is.null(P(sim)$lower) || any(is.na(P(sim)$lower))) {
@@ -868,7 +880,7 @@ spreadFitPrep <- function(sim) {
                                           fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
                                          upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
                                          fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
-                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin))
+                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par)))
   }
   ## hillSlope1 (the spread link's slope) and inflectionPoint1 (its Richards exponent) are fixed at 1,
   ## not fitted (see estimateSpreadParams()). A supplied 'upper'/'lower' naming either would silently
@@ -929,13 +941,13 @@ spreadFitPrep <- function(sim) {
     mod$covsX1000$annualDTx1000, mod$covsX1000$nonAnnualDTx1000, sim$fireSense_spreadFormula,
     covMinMax = sim$covMinMax_spread, mutuallyExclusive = P(sim)[[mec]])
 
-  ## With climate outside the ceiling (spreadLink), the climate reference is found once, from the same data, on
+  ## With climate outside the ceiling (spreadLink) or moving it (spreadClimate), the climate reference is found once, from the same data, on
   ## the same scale (after the centre), and every fit, validation and prediction of this fit uses it.
   ## NULL with the default link, so nothing downstream (calls, cache keys, the ledger row) changes.
   sim$climateRef_spread <- NULL
-  if (identical(P(sim)$spreadLink, "climateOutside")) {
+  if (climateAsReference(P(sim))) {
     if (!length(fireSenseUtils::spreadClimateCols(sim$fireSense_spreadFormula, mod$covsX1000$annualDTx1000)))
-      stop("fireSense_spreadFit: spreadLink = 'climateOutside' needs a climate covariate in the spread formula (",
+      stop("fireSense_spreadFit: ", if (identical(P(sim)$spreadLink, "climateOutside")) "spreadLink = 'climateOutside'" else "spreadClimate = 'ceiling'", " needs a climate covariate in the spread formula (",
            sim$fireSense_spreadFormula, " has none: an annual covariate that is not a 0/1 indicator).")
     sim$climateRef_spread <- fireSenseUtils::spreadClimateRef(
       mod$covsX1000$annualDTx1000, mod$covsX1000$nonAnnualDTx1000, sim$fireSense_spreadFormula,
