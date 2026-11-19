@@ -36,6 +36,8 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params, inSample =
   ## for climate outside the ceiling, powerLawGamma for the power laws, lowerAsymptote and richardsNu for the links that
   ## have them -- never powerLawGamma for "richards", which does not use it), and prediction applies the same link.
   ## A fit with the default link writes none of these columns.
+  ## `spreadClimate = "ceiling"` adds nothing of its own: a power-law link with climateRef_spread (set for it too) and
+  ## the p50 below is what prediction reads as climate moving the ceiling.
   if (!identical(P(sim)$spreadLink, "ceiling")) df[[fireSenseUtils::spreadLinkTxt]] <- P(sim)$spreadLink
   if (!is.null(sim$climateRef_spread))
     df[[fireSenseUtils::spreadFitClimateRefTxt]] <- I(list(sim$climateRef_spread))
@@ -46,7 +48,7 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params, inSample =
   if (P(sim)$spreadLink %in% fireSenseUtils::spreadPowerLawLinks) {
     df[[fireSenseUtils::spreadFitPowerLawGammaTxt]] <- powerLawGammaOf(sim)
     df[[fireSenseUtils::spreadFitPowerLawShapeTxt]] <- P(sim)$powerLawShape
-    ## the calibration that set gamma (unless given) and p_c's upper bound (p50 + margin), to compare p_c with
+    ## the calibration that set gamma (unless given) and p_c's upper bound (p50 + margin; p50 exactly with spreadClimate = "ceiling"), to compare p_c with
     df[[fireSenseUtils::spreadFitPowerLawPc50Txt]] <- sim$powerLawCalibration$p50
     df[[fireSenseUtils::spreadFitPowerLawR2Txt]] <- sim$powerLawCalibration$R2
     df[[fireSenseUtils::spreadFitPowerLawPcMarginTxt]] <- P(sim)$powerLawPcMargin

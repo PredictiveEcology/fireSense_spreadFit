@@ -43,3 +43,38 @@ omitArgsCO <- function(params = list()) {
   rec
 }
 
+## the mean of the rescaled CMDsm over the 9 toy pixel-years, with the range the fit stores
+cmdMean <- function(sim) {
+  cmd <- c(10, 20, 30, 40, 25, 15, 12, 22, 32)
+  rng <- sim$covMinMax_spread$CMDsm
+  mean((cmd - rng[1]) / (rng[2] - rng[1]))
+}
+
+## records the validation data calls and the Plots() calls instead of simulating and drawing
+mockValidation <- function(sim, rec) {
+  rec$data <- list(); rec$plots <- list()
+  mockInModule(sim,
+    spreadFitValidationData = function(par, seed, ...) {
+      a <- list(...)
+      d <- data.table::data.table(year = names(a$historicalFires)[1], pixelID = 1L, observed = 1L,
+                                  simulated = 0.5, p = 0.2)
+      rec$data[[length(rec$data) + 1L]] <- list(par = par, seed = seed, args = a, d = d)
+      d
+    },
+    ## spreadFitPrep() also calls Plots() (covariate histograms); only these figures are recorded
+    Plots = function(data, fn, filename, ...) {
+      if (!startsWith(filename, "spreadFit")) return(invisible(NULL))
+      a <- list(...)
+      rec$plots[[length(rec$plots) + 1L]] <- list(data = data, fn = fn, types = a$types, path = a$path,
+                                                  filename = filename)
+      invisible(NULL)
+    })
+}
+
+fitWithPlots <- function(params = list(), objects = list()) {
+  rec <- new.env()
+  sim <- toySim(c(list(profileReps = 0L, simulateMembers = 0L), params), objects)
+  mockFitAndLedger(sim, rec)
+  mockValidation(sim, rec)
+  list(sim = suppressMessages(SpaDES.core::spades(sim)), rec = rec)
+}

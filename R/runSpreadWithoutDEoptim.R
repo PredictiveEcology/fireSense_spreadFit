@@ -17,6 +17,8 @@
 #'   rescaled covariates, as in the fit; `NULL` (no intercept) centres nothing. Passed to `.objfunSpreadFit()`.
 #' @param climateRef named list, the fit's climate reference (`fireSenseUtils::spreadClimateRef()`; `spreadLink =
 #'   "climateOutside"`), or `NULL` (the default link). Passed to `.objfunSpreadFit()` like `covCentre`.
+#' @param powerLawPc50 numeric or `NULL`; with `climateRef` and `spreadClimate = "ceiling"`, the landscape's runaway
+#'   threshold p50 (`fireSenseUtils::spreadLinkInputs()`). Passed to `.objfunSpreadFit()`.
 #' @param powerLawGamma numeric; the `"powerLaw"` link's `gamma` (`fireSenseUtils::powerLawLink()`), used with
 #'   `link = "powerLaw"`. Passed to `.objfunSpreadFit()`.
 #' @param powerLawShape numeric; the `"powerLaw"` link's `shape`, passed like `powerLawGamma`.
@@ -39,7 +41,7 @@ runSpreadWithoutDEoptim <- function(nSets = 1L, lower, upper, fireSense_spreadFo
                                     annualDTx1000, nonAnnualDTx1000, fireBufferedListDT,
                                     mutuallyExclusive = list("youngAge" = "vegPC"),
                                     doObjFunAssertions,
-                                    historicalFires, covMinMax, covCentre = NULL, climateRef = NULL, objfunFireReps, maxFireSpread,
+                                    historicalFires, covMinMax, covCentre = NULL, climateRef = NULL, powerLawPc50 = NULL, objfunFireReps, maxFireSpread,
                                     weighted = TRUE, tests = "crps",
                                     formulaToFit,
                                     pars = NULL, plot.it = TRUE,
@@ -86,7 +88,7 @@ runSpreadWithoutDEoptim <- function(nSets = 1L, lower, upper, fireSense_spreadFo
                      historicalFires = historicalFires,
                      formulaToFit = formulaToFit,
                      tests = tests,
-                     covMinMax = covMinMax, covCentre = covCentre, climateRef = climateRef,
+                     covMinMax = covMinMax, covCentre = covCentre, climateRef = climateRef, powerLawPc50 = powerLawPc50,
                      Nreps = objfunFireReps,
                      maxFireSpread = maxFireSpread,
                      verbose = TRUE,

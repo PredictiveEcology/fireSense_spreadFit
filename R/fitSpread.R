@@ -249,7 +249,7 @@ spreadLink <- function(Par) {
 }
 
 ## The link's arguments of the objective, `fireSenseUtils::runDEoptim()`, `spreadProbGates()` and
-## `runSpreadWithoutDEoptim()`: `link`, the power law's `gamma` (calibrated unless given) and `shape`, and
+## `runSpreadWithoutDEoptim()`: `link`, `powerLawPc50` (with `spreadClimate = "ceiling"`), the power law's `gamma` (calibrated unless given) and `shape`, and
 ## `lowerAsymptote` and `richardsNu` for the links that use them (the others keep the objective's defaults).
 ## With `forKey` (arguments that are also a cache key) every argument that `fireSenseUtils::powerLawOmitArgs()` leaves
 ## out of the key is left out, so the key is what it was
@@ -259,17 +259,29 @@ spreadLinkArgs <- function(sim, forKey = FALSE) {
   args <- list(powerLawGamma = powerLawGammaOf(sim), powerLawShape = Par$powerLawShape,
                lowerAsymptote = Par$lowerAsymptote, richardsNu = Par$richardsNu)
   omit <- fireSenseUtils::powerLawOmitArgs(link, Par$powerLawShape)
-  c(list(link = link), args[setdiff(names(args), if (forKey) omit else intersect(omit, c("lowerAsymptote", "richardsNu")))])
+  c(list(link = link), args[setdiff(names(args), if (forKey) omit else intersect(omit, c("lowerAsymptote", "richardsNu")))],
+    ## only with spreadClimate = "ceiling": NULL adds nothing, so the other fits' arguments and keys are what they were
+    if (!is.null(p50 <- spreadPowerLawPc50(sim))) list(powerLawPc50 = p50))
 }
 
 ## The bounds of `maxAsymptote`: for `spreadLink = "powerLaw"` or "powerLawSmooth" it is p_c, which must stay above the floor and,
 ## per ELF, within `margin` of the calibrated threshold `p50` (fireSenseUtils::powerLawPcBounds()). "richards" has no
 ## calibration, so p_c is bounded by the outer limits, `fireSenseUtils::spreadPowerLawPcBounds`
-maxAsymptoteBoundsOf <- function(spreadLink = "ceiling", p50 = NULL, margin = 0.005) {
-  if (spreadLink %in% fireSenseUtils::spreadPowerLawLinks && !is.null(p50)) fireSenseUtils::powerLawPcBounds(p50, margin)
+maxAsymptoteBoundsOf <- function(spreadLink = "ceiling", p50 = NULL, margin = 0.005, climateCeiling = FALSE) {
+  if (spreadLink %in% fireSenseUtils::spreadPowerLawLinks && !is.null(p50))
+    fireSenseUtils::powerLawPcBounds(p50, margin, climateCeiling = climateCeiling)
   else if (identical(spreadLink, "richards")) fireSenseUtils::spreadPowerLawPcBounds # no calibration: the outer limits
   else c(fireSenseUtils::spreadProbFloor, fireSenseUtils::spreadProbCeiling)
 }
+
+## `spreadClimate = "ceiling"`: climate moves p_c toward p50 (`fireSenseUtils::spreadLinkInputs()`); `Par` is `P(sim)`
+isCeiling <- function(Par) identical(Par$spreadClimate, "ceiling")
+
+## The fit takes the climate reference (`fireSenseUtils::spreadClimateRef()`) with `climateOutside` and with the ceiling
+climateAsReference <- function(Par) identical(Par$spreadLink, "climateOutside") || isCeiling(Par)
+
+## The runaway threshold p50 the objective, the gates and the figures need when climate moves the ceiling, else NULL
+spreadPowerLawPc50 <- function(sim) if (isCeiling(P(sim))) sim$powerLawCalibration$p50
 
 ## Stop on a `spreadLink` the fit does not know, or one that cannot go with the other parameters
 checkSpreadLink <- function(Par) {
@@ -278,6 +290,11 @@ checkSpreadLink <- function(Par) {
          "; got ", dQuote(Par$spreadLink, FALSE))
   if (Par$spreadLink %in% fireSenseUtils::spreadLinearLinks && identical(Par$link, "logistic3pUpper"))
     stop("fireSense_spreadFit: spreadLink = '", Par$spreadLink, "' cannot be combined with link = 'logistic3pUpper'")
+  if (!Par$spreadClimate %in% c("predictor", "ceiling"))
+    stop("fireSense_spreadFit: spreadClimate must be 'predictor' or 'ceiling'; got ", dQuote(Par$spreadClimate, FALSE))
+  if (isCeiling(Par) && !Par$spreadLink %in% fireSenseUtils::spreadPowerLawLinks)
+    stop("fireSense_spreadFit: spreadClimate = 'ceiling' needs spreadLink one of ",
+         paste(dQuote(fireSenseUtils::spreadPowerLawLinks, FALSE), collapse = ", "), "; got ", dQuote(Par$spreadLink, FALSE))
   tryCatch(fireSenseUtils::checkLinkParams(Par$spreadLink, Par$lowerAsymptote, Par$richardsNu),
            error = function(e) stop("fireSense_spreadFit: ", conditionMessage(e), call. = FALSE))
   if (Par$spreadLink %in% fireSenseUtils::spreadPowerLawLinks) {
