@@ -72,7 +72,7 @@
       <h1 data-toc-skip>fireSense_spreadFit Manual</h1>
             <h3 data-toc-skip class="subtitle">v.1.2.0.9055</h3>
             
-            <h4 data-toc-skip class="date">Last updated: 2026-11-18</h4>
+            <h4 data-toc-skip class="date">Last updated: 2026-11-19</h4>
       
 
       <div class="hidden name"><code>fireSense_spreadFit.Rmd</code></div>
@@ -886,6 +886,29 @@ NA
 </td>
 <td style="text-align:left;">
 Where climate enters the spread probability (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadProbFromCovs.html" class="external-link">fireSenseUtils::spreadProbFromCovs()</a></code>). ‘powerLaw’ (default): see below. ‘ceiling’: climate is a covariate inside the logistic, under the <code>maxAsymptote</code> ceiling, the link before ‘powerLaw’ became the default – its fits and cache keys are unchanged. ‘climateOutside’: the logistic, with its ceiling, is fitted to the other covariates only (intercept, fuels, <code>youngAge</code>, non-forest), giving p0; the climate term is added on the logit after it, p = plogis(qlogis(p0) + beta_clim (climate - climateRef)), uncapped, and the year effect <code>yearSpreadSD</code> (eps_Y) on the same logit. Where fuel put a pixel near the ceiling, climate could add almost nothing under ‘ceiling’ (2026-10 hindcasts: 59-77% of pixels within 0.01 of the ceiling every year, spread nearly the same in every year). <code>climateRef</code> is the mean of each climate covariate over the fit’s pixel-years (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateRef.html" class="external-link">fireSenseUtils::spreadClimateRef()</a></code>, <code>sim$climateRef_spread</code>), stored in the ledger row with this choice (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadFitClimateRefTxt</a></code>, <code>spreadLinkTxt</code>) so <code>fireSense_spreadPredict</code> applies the same link; a row without them is ‘ceiling’. The objective’s gates and saturation summary then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate covariate in the formula (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateCols.html" class="external-link">fireSenseUtils::spreadClimateCols()</a></code>). ‘powerLaw’: the link from a percolation calibration, p = p_c - (p_c - lowerSpreadProb) exp(-x / <code>powerLawGamma</code>), with x the linear predictor and p below 0 set to 0 (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/powerLawLink.html" class="external-link">fireSenseUtils::powerLawLink()</a></code>). The calibration (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/calibratePowerLaw.html" class="external-link">fireSenseUtils::calibratePowerLaw()</a></code>, on <code>flammableRTM</code>, once per ELF) runs when the job fits or validates, not when it uses the ledger row: its p_c50, the spread probability at which half the fires burn a quarter of the largest flammable patch, sets the bounds of p_c (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/powerLawPcBounds.html" class="external-link">fireSenseUtils::powerLawPcBounds()</a></code>: <code>lowerSpreadProb</code> + 0.01 to p_c50 + <code>powerLawPcMargin</code>), so a fit never tries thresholds far above the ELF’s own. <code>maxAsymptote</code> is p_c, fitted; the year effect <code>yearSpreadSD</code> is added to x, not to the logit of p, so no year takes p past p_c. Stored in the ledger row with <code>powerLawGamma</code> (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadLinkTxt</a></code>, <code>spreadFitPowerLawGammaTxt</code>) so <code>fireSense_spreadPredict</code> applies the same link. Not with <code>link = 'logistic3pUpper'</code>. ‘powerLaw’ treats <code>lowerSpreadProb</code> as p at x = 0, not as a lower asymptote: p falls to 0 for a low enough x, so such cells cannot burn and escaped fires stop early in low-spread years. ‘powerLawSmooth’: the same curve for x &gt;= 0 (so the same calibration, <code>powerLawGamma</code>, <code>powerLawShape</code> and bounds of p_c), and for x &lt; 0 p falls from <code>lowerSpreadProb</code> towards the lower asymptote <code>lowerAsymptote</code>, never below it (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/powerLawSmoothLink.html" class="external-link">fireSenseUtils::powerLawSmoothLink()</a></code>). ‘richards’: a generalized logistic between <code>lowerAsymptote</code> and p_c with the fixed shape <code>richardsNu</code> (0 is Gompertz) and the fixed scale 1 / <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadPowerLawGamma</a></code> (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/richardsLink.html" class="external-link">fireSenseUtils::richardsLink()</a></code>). It does not use the calibration (not run, <code>powerLawGamma</code> ignored and not written to the ledger), and bounds p_c by <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadProbBounds.html" class="external-link">fireSenseUtils::spreadPowerLawPcBounds</a></code>. Both are fitted like ‘powerLaw’: <code>maxAsymptote</code> is p_c and <code>yearSpreadSD</code> is added to x; the ledger row records the link, <code>lowerAsymptote</code> and (with ‘richards’) <code>richardsNu</code> (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadFitLowerAsymptoteTxt</a></code>, <code>spreadFitRichardsNuTxt</code>).
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+spreadClimate
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+predictor
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Where climate enters a power-law <code>spreadLink</code> (‘powerLaw’, ‘powerLawSmooth’). ‘predictor’ (default): in the linear predictor with the fuels, under the fixed ceiling p_c, so p never passes <code>maxAsymptote</code> and simulated burned area grows with drought about half as fast as observed. ‘ceiling’: climate moves the ceiling toward the landscape’s runaway threshold p50 and never past it: p_c = max(p50 - (p50 - p_c0) exp(-sum(beta_clim (climate - climateRef))), <code>lowerSpreadProb</code>), with p_c0 = <code>maxAsymptote</code> (fitted, bounded above by p50 exactly, not p50 + <code>powerLawPcMargin</code>) and x the fuel terms only (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadLinkInputs.html" class="external-link">fireSenseUtils::spreadLinkInputs()</a></code>). Needs a power-law <code>spreadLink</code> and a climate covariate (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateCols.html" class="external-link">fireSenseUtils::spreadClimateCols()</a></code>). <code>climateRef</code> is found as with ‘climateOutside’ (<code>sim$climateRef_spread</code>); with the p50 in the ledger row (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadFitPowerLawPc50Txt</a></code>) it makes <code>fireSense_spreadPredict</code> apply the same ceiling.
 </td>
 <td style="text-align:left;">
 TRUE
@@ -2224,7 +2247,7 @@ climateRef_spread
 list
 </td>
 <td style="text-align:left;">
-With <code>spreadLink = 'climateOutside'</code>, the reference value of each climate covariate of the formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit’s pixel-years (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateRef.html" class="external-link">fireSenseUtils::spreadClimateRef()</a></code>), the climate at which the spread probability is the fuel ceiling’s p0. Given to the fit, the validation and the ledger row. <code>NULL</code> with <code>spreadLink = 'ceiling'</code>.
+With <code>spreadLink = 'climateOutside'</code>, the reference value of each climate covariate of the formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit’s pixel-years (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateRef.html" class="external-link">fireSenseUtils::spreadClimateRef()</a></code>), the climate at which the spread probability is the fuel ceiling’s p0. Given to the fit, the validation and the ledger row. With <code>spreadClimate = 'ceiling'</code> it is the reference of the shift that moves p_c. <code>NULL</code> with <code>spreadLink = 'ceiling'</code> and <code>spreadClimate = 'predictor'</code>.
 </td>
 </tr>
 <tr>

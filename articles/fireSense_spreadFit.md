@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
 subtitle: "v.1.2.0.9055"
-date: "Last updated: 2026-11-18"
+date: "Last updated: 2026-11-19"
 output:
   bookdown::html_document2:
     toc: true
@@ -380,6 +380,15 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Where climate enters the spread probability (`fireSenseUtils::spreadProbFromCovs()`). 'powerLaw' (default): see below. 'ceiling': climate is a covariate inside the logistic, under the `maxAsymptote` ceiling, the link before 'powerLaw' became the default -- its fits and cache keys are unchanged. 'climateOutside': the logistic, with its ceiling, is fitted to the other covariates only (intercept, fuels, `youngAge`, non-forest), giving p0; the climate term is added on the logit after it, p = plogis(qlogis(p0) + beta_clim (climate - climateRef)), uncapped, and the year effect `yearSpreadSD` (eps_Y) on the same logit. Where fuel put a pixel near the ceiling, climate could add almost nothing under 'ceiling' (2026-10 hindcasts: 59-77% of pixels within 0.01 of the ceiling every year, spread nearly the same in every year). `climateRef` is the mean of each climate covariate over the fit's pixel-years (`fireSenseUtils::spreadClimateRef()`, `sim$climateRef_spread`), stored in the ledger row with this choice (`fireSenseUtils::spreadFitClimateRefTxt`, `spreadLinkTxt`) so `fireSense_spreadPredict` applies the same link; a row without them is 'ceiling'. The objective's gates and saturation summary then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate covariate in the formula (`fireSenseUtils::spreadClimateCols()`). 'powerLaw': the link from a percolation calibration, p = p_c - (p_c - lowerSpreadProb) exp(-x / `powerLawGamma`), with x the linear predictor and p below 0 set to 0 (`fireSenseUtils::powerLawLink()`). The calibration (`fireSenseUtils::calibratePowerLaw()`, on `flammableRTM`, once per ELF) runs when the job fits or validates, not when it uses the ledger row: its p_c50, the spread probability at which half the fires burn a quarter of the largest flammable patch, sets the bounds of p_c (`fireSenseUtils::powerLawPcBounds()`: `lowerSpreadProb` + 0.01 to p_c50 + `powerLawPcMargin`), so a fit never tries thresholds far above the ELF's own. `maxAsymptote` is p_c, fitted; the year effect `yearSpreadSD` is added to x, not to the logit of p, so no year takes p past p_c. Stored in the ledger row with `powerLawGamma` (`fireSenseUtils::spreadLinkTxt`, `spreadFitPowerLawGammaTxt`) so `fireSense_spreadPredict` applies the same link. Not with `link = 'logistic3pUpper'`. 'powerLaw' treats `lowerSpreadProb` as p at x = 0, not as a lower asymptote: p falls to 0 for a low enough x, so such cells cannot burn and escaped fires stop early in low-spread years. 'powerLawSmooth': the same curve for x &gt;= 0 (so the same calibration, `powerLawGamma`, `powerLawShape` and bounds of p_c), and for x &lt; 0 p falls from `lowerSpreadProb` towards the lower asymptote `lowerAsymptote`, never below it (`fireSenseUtils::powerLawSmoothLink()`). 'richards': a generalized logistic between `lowerAsymptote` and p_c with the fixed shape `richardsNu` (0 is Gompertz) and the fixed scale 1 / `fireSenseUtils::spreadPowerLawGamma` (`fireSenseUtils::richardsLink()`). It does not use the calibration (not run, `powerLawGamma` ignored and not written to the ledger), and bounds p_c by `fireSenseUtils::spreadPowerLawPcBounds`. Both are fitted like 'powerLaw': `maxAsymptote` is p_c and `yearSpreadSD` is added to x; the ledger row records the link, `lowerAsymptote` and (with 'richards') `richardsNu` (`fireSenseUtils::spreadFitLowerAsymptoteTxt`, `spreadFitRichardsNuTxt`). </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> spreadClimate </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> predictor </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Where climate enters a power-law `spreadLink` ('powerLaw', 'powerLawSmooth'). 'predictor' (default): in the linear predictor with the fuels, under the fixed ceiling p_c, so p never passes `maxAsymptote` and simulated burned area grows with drought about half as fast as observed. 'ceiling': climate moves the ceiling toward the landscape's runaway threshold p50 and never past it: p_c = max(p50 - (p50 - p_c0) exp(-sum(beta_clim (climate - climateRef))), `lowerSpreadProb`), with p_c0 = `maxAsymptote` (fitted, bounded above by p50 exactly, not p50 + `powerLawPcMargin`) and x the fuel terms only (`fireSenseUtils::spreadLinkInputs()`). Needs a power-law `spreadLink` and a climate covariate (`fireSenseUtils::spreadClimateCols()`). `climateRef` is found as with 'climateOutside' (`sim$climateRef_spread`); with the p50 in the ledger row (`fireSenseUtils::spreadFitPowerLawPc50Txt`) it makes `fireSense_spreadPredict` apply the same ceiling. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -919,7 +928,7 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-sprea
   <tr>
    <td style="text-align:left;"> climateRef_spread </td>
    <td style="text-align:left;"> list </td>
-   <td style="text-align:left;"> With `spreadLink = 'climateOutside'`, the reference value of each climate covariate of the formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit's pixel-years (`fireSenseUtils::spreadClimateRef()`), the climate at which the spread probability is the fuel ceiling's p0. Given to the fit, the validation and the ledger row. `NULL` with `spreadLink = 'ceiling'`. </td>
+   <td style="text-align:left;"> With `spreadLink = 'climateOutside'`, the reference value of each climate covariate of the formula, on the rescaled (and, with an intercept, centred) scale: its mean over the fit's pixel-years (`fireSenseUtils::spreadClimateRef()`), the climate at which the spread probability is the fuel ceiling's p0. Given to the fit, the validation and the ledger row. With `spreadClimate = 'ceiling'` it is the reference of the shift that moves p_c. `NULL` with `spreadLink = 'ceiling'` and `spreadClimate = 'predictor'`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> powerLawCalibration </td>

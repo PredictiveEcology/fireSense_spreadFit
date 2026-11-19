@@ -72,6 +72,7 @@
 <span>  <span class="va">covMinMax</span>,</span>
 <span>  covCentre <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  climateRef <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  powerLawPc50 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">objfunFireReps</span>,</span>
 <span>  <span class="va">maxFireSpread</span>,</span>
 <span>  weighted <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -149,6 +150,11 @@ rescaled covariates, as in the fit; <code>NULL</code> (no intercept) centres not
 
 <dt id="arg-climateref">climateRef<a class="anchor" aria-label="anchor" href="#arg-climateref"></a></dt>
 <dd><p>named list, the fit's climate reference (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadClimateRef.html" class="external-link">fireSenseUtils::spreadClimateRef()</a></code>; <code>spreadLink = "climateOutside"</code>), or <code>NULL</code> (the default link). Passed to <code>.objfunSpreadFit()</code> like <code>covCentre</code>.</p></dd>
+
+
+<dt id="arg-powerlawpc-">powerLawPc50<a class="anchor" aria-label="anchor" href="#arg-powerlawpc-"></a></dt>
+<dd><p>numeric or <code>NULL</code>; with <code>climateRef</code> and <code>spreadClimate = "ceiling"</code>, the landscape's runaway
+threshold p50 (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadLinkInputs.html" class="external-link">fireSenseUtils::spreadLinkInputs()</a></code>). Passed to <code>.objfunSpreadFit()</code>.</p></dd>
 
 
 <dt id="arg-objfunfirereps">objfunFireReps<a class="anchor" aria-label="anchor" href="#arg-objfunfirereps"></a></dt>
