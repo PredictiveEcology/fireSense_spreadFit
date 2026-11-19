@@ -48,7 +48,7 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params, inSample =
   if (P(sim)$spreadLink %in% fireSenseUtils::spreadPowerLawLinks) {
     df[[fireSenseUtils::spreadFitPowerLawGammaTxt]] <- powerLawGammaOf(sim)
     df[[fireSenseUtils::spreadFitPowerLawShapeTxt]] <- P(sim)$powerLawShape
-    ## the calibration that set gamma (unless given) and p_c's upper bound (p50 + margin), to compare p_c with
+    ## the calibration that set gamma (unless given) and p_c's upper bound (p50 + margin; p50 exactly with spreadClimate = "ceiling"), to compare p_c with
     df[[fireSenseUtils::spreadFitPowerLawPc50Txt]] <- sim$powerLawCalibration$p50
     df[[fireSenseUtils::spreadFitPowerLawR2Txt]] <- sim$powerLawCalibration$R2
     df[[fireSenseUtils::spreadFitPowerLawPcMarginTxt]] <- P(sim)$powerLawPcMargin
