@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9055"
-date: "Last updated: 2026-11-19"
+subtitle: "v.1.2.0.9056"
+date: "Last updated: 2026-11-20"
 output:
   bookdown::html_document2:
     toc: true
@@ -388,7 +388,25 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> predictor </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Where climate enters a power-law `spreadLink` ('powerLaw', 'powerLawSmooth'). 'predictor' (default): in the linear predictor with the fuels, under the fixed ceiling p_c, so p never passes `maxAsymptote` and simulated burned area grows with drought about half as fast as observed. 'ceiling': climate moves the ceiling toward the landscape's runaway threshold p50 and never past it: p_c = max(p50 - (p50 - p_c0) exp(-sum(beta_clim (climate - climateRef))), `lowerSpreadProb`), with p_c0 = `maxAsymptote` (fitted, bounded above by p50 exactly, not p50 + `powerLawPcMargin`) and x the fuel terms only (`fireSenseUtils::spreadLinkInputs()`). Needs a power-law `spreadLink` and a climate covariate (`fireSenseUtils::spreadClimateCols()`). `climateRef` is found as with 'climateOutside' (`sim$climateRef_spread`); with the p50 in the ledger row (`fireSenseUtils::spreadFitPowerLawPc50Txt`) it makes `fireSense_spreadPredict` apply the same ceiling. </td>
+   <td style="text-align:left;"> Where climate enters a power-law `spreadLink` ('powerLaw', 'powerLawSmooth'). 'predictor' (default): in the linear predictor with the fuels, under the fixed ceiling p_c, so p never passes `maxAsymptote` and simulated burned area grows with drought about half as fast as observed. 'ceiling': climate moves the ceiling toward the landscape's runaway threshold p50 and never past it: p_c = max(p50 - (p50 - p_c0) exp(-sum(beta_clim (climate - climateRef))), `lowerSpreadProb`), with p_c0 = `maxAsymptote` (fitted, bounded above by p50 exactly, not p50 + `powerLawPcMargin`) and x the fuel terms only (`fireSenseUtils::spreadLinkInputs()`). Needs a power-law `spreadLink` and a climate covariate (`fireSenseUtils::spreadClimateCols()`). `climateRef` is found as with 'climateOutside' (`sim$climateRef_spread`); with the p50 in the ledger row (`fireSenseUtils::spreadFitPowerLawPc50Txt`) it makes `fireSense_spreadPredict` apply the same ceiling. 'activation': the roles are swapped. Fuel sets each pixel's own ceiling, p_c = `lowerSpreadProb` + (p50 - `lowerSpreadProb`) plogis(eta), eta the linear predictor of the non-climate terms (with the intercept), and climate is x: x = activationIntercept + sum(beta_clim (climate - climateRef)), with the year effect added to x (`fireSenseUtils::spreadLinkInputs()`). p never passes p50 and the ratio of p - `lowerSpreadProb` between two pixels does not change with climate. `activationIntercept` is fitted (`activationInterceptBounds`), `maxAsymptote` is not (the ledger row has p50 there). Needs `spreadLink = 'powerLawSmooth'`, `lowerAsymptote` = `fireSenseUtils::spreadProbFloor` and a climate covariate. The ledger row records the choice (`fireSenseUtils::spreadClimateTxt`), and `fireSense_spreadPredict` predicts each row by its own. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> activationInterceptBounds </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> -10, 10 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> With `spreadClimate = 'activation'`, the bounds of `activationIntercept`, x at the reference climate, when `lower`/`upper` are not supplied. It comes right after the covariate coefficients, before the random-effect sds. Not bounded away from 0: a low value with a large `yearSpreadSD` makes many years 'duds' (every pixel at the floor); the fit reports and stores that share (`fireSenseUtils::activationDudYearShare()`) instead. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> activationFuelInterceptBounds </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> -6, 6 </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> With `spreadClimate = 'activation'` and a formula with an intercept, the bounds of the intercept, which sits inside plogis() there (each pixel's ceiling is `lowerSpreadProb` + (p50 - `lowerSpreadProb`) plogis(eta)), when `lower`/`upper` are not supplied; the other modes keep +-`upperAndLowerVal`. Beyond about +-6 plogis is flat (every pixel's ceiling at the floor or at p50, no fuel effect), so a wider range only feeds the ridge between it and `activationIntercept`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -434,6 +452,15 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> With `spreadLink = 'powerLaw'` or 'powerLawSmooth', the upper bound of p_c is the calibrated p_c50 plus this (`fireSenseUtils::powerLawPcBounds()`). Written to the ledger row. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> powerLawPcAtP50 </td>
+   <td style="text-align:left;"> logical </td>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> With `spreadLink = 'powerLaw'` or 'powerLawSmooth', fix p_c (`maxAsymptote`) at the calibrated p_c50 instead of fitting it below p_c50: it is left out of `lower`/`upper` and the objective puts p_c50 in its place (`fireSenseUtils::.objfunSpreadFit(pcAtP50 = TRUE)`), as with `spreadClimate = 'activation'`; the ledger row carries p_c50 as `maxAsymptote`. With `powerLawShape = 1` every pixel's distance to p_c50 then scales with exp(-x / gamma). Stops with `spreadClimate = 'ceiling'` or another link. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>

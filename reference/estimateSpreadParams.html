@@ -35,7 +35,7 @@ reinserts both before the objective evaluates par)."><!-- mathjax --><script src
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9055</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9056</span>
       </span>
     </div>
 
@@ -103,7 +103,9 @@ reinserts both before the objective evaluates <code>par</code>).</p>
 <span>  upperTailBounds <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fireSpreadSDBounds <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  yearSpreadSDBounds <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  maxAsymptoteBounds <span class="op">=</span> <span class="fu">maxAsymptoteBoundsOf</span><span class="op">(</span><span class="op">)</span></span>
+<span>  maxAsymptoteBounds <span class="op">=</span> <span class="fu">maxAsymptoteBoundsOf</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  activationInterceptBounds <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  interceptBounds <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -144,7 +146,18 @@ effects' sds, added last, <code>fireSpreadSD</code> before <code>yearSpreadSD</c
 
 
 <dt id="arg-maxasymptotebounds">maxAsymptoteBounds<a class="anchor" aria-label="anchor" href="#arg-maxasymptotebounds"></a></dt>
-<dd><p>numeric(2); the bounds of <code>maxAsymptote</code> (<code>maxAsymptoteBoundsOf()</code>).</p></dd>
+<dd><p>numeric(2); the bounds of <code>maxAsymptote</code> (<code>maxAsymptoteBoundsOf()</code>); <code>NULL</code> (with
+<code>spreadClimate = "activation"</code> or <code>powerLawPcAtP50</code>) leaves it out: it is not fitted.</p></dd>
+
+
+<dt id="arg-activationinterceptbounds">activationInterceptBounds<a class="anchor" aria-label="anchor" href="#arg-activationinterceptbounds"></a></dt>
+<dd><p>numeric(2) or <code>NULL</code>; the bounds of <code>activationIntercept</code>
+(<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::activationInterceptTxt</a></code>, <code>spreadClimate = "activation"</code>), added right after the formula terms.</p></dd>
+
+
+<dt id="arg-interceptbounds">interceptBounds<a class="anchor" aria-label="anchor" href="#arg-interceptbounds"></a></dt>
+<dd><p>numeric(2) or <code>NULL</code> (default: +-<code>upperAndLower</code>); the bounds of the intercept, when the
+formula has one (<code>activationFuelInterceptBounds</code> with <code>spreadClimate = "activation"</code>).</p></dd>
 
 </dl></div>
     <div id="value">
@@ -152,7 +165,8 @@ effects' sds, added last, <code>fireSpreadSD</code> before <code>yearSpreadSD</c
     <p>named numeric vector: <code>maxAsymptote</code> (bounded by <code>maxAsymptoteBounds</code>, by default
 <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadProbBounds.html" class="external-link">fireSenseUtils::spreadProbFloor</a></code> and <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadProbBounds.html" class="external-link">fireSenseUtils::spreadProbCeiling</a></code>), <code>upperTail1</code> (with <code>upperTailBounds</code>), then
 <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadInterceptTxt</a></code> if the formula has an intercept (<code>~ 1 + ...</code>), then formula
-terms. No <code>hillSlope1</code> or <code>inflectionPoint1</code> – both are fixed at 1, not fitted.</p>
+terms, then <code>activationIntercept</code> (with <code>activationInterceptBounds</code>), then the random effects' sds. No <code>hillSlope1</code> or
+<code>inflectionPoint1</code> – both are fixed at 1, not fitted.</p>
     </div>
 
   </div>

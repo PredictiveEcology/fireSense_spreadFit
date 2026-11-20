@@ -26,7 +26,7 @@ an old row keeps predicting with its own fitted values."><!-- mathjax --><script
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9055</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9056</span>
       </span>
     </div>
 
@@ -75,7 +75,7 @@ an old row keeps predicting with its own fitted values.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">addFixedParsToLedger</span><span class="op">(</span><span class="va">paramsBest</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">addFixedParsToLedger</span><span class="op">(</span><span class="va">paramsBest</span>, maxAsymptote <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -86,6 +86,11 @@ an old row keeps predicting with its own fitted values.</p>
 <dd><p>a <code>data.table</code>, one row per parameter set, as <code>bestParamSets()$params</code> returns
 it: columns named <code>names(P(sim)$lower)</code>, so without <code>hillSlope1</code> and <code>inflectionPoint1</code>,
 <code>maxAsymptote</code> first.</p></dd>
+
+
+<dt id="arg-maxasymptote">maxAsymptote<a class="anchor" aria-label="anchor" href="#arg-maxasymptote"></a></dt>
+<dd><p><code>NULL</code> (default), or with <code>spreadClimate = "activation"</code>, where <code>maxAsymptote</code> is not fitted, the
+value to put first in its place: p50, which the objective uses there (<code>fixedMaxAsymptote()</code>).</p></dd>
 
 </dl></div>
     <div id="value">
