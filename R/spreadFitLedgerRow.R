@@ -40,6 +40,11 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params, inSample =
   ## link, climateRef_spread and the p50 below). Like the link, only a fit with another than the default ("predictor")
   ## writes it; a row without it is read as "ceiling" when it has climateRef_spread and a power-law link, else "predictor".
   if (!identical(P(sim)$spreadClimate, "predictor")) df[[fireSenseUtils::spreadClimateTxt]] <- P(sim)$spreadClimate
+  ## the activation's share of dud years, one per set, to judge the fit on (fireSenseUtils::activationDudYearShare())
+  if (isActivation(P(sim)))
+    df[[fireSenseUtils::spreadFitDudYearShareTxt]] <- I(list(fireSenseUtils::activationDudYearShare(params)))
+  ## p_c fixed at p50: the row's maxAsymptote is p50, not a fitted value at its bound
+  if (isTRUE(P(sim)$powerLawPcAtP50)) df[[fireSenseUtils::spreadFitPcAtP50Txt]] <- TRUE
   if (!identical(P(sim)$spreadLink, "ceiling")) df[[fireSenseUtils::spreadLinkTxt]] <- P(sim)$spreadLink
   if (!is.null(sim$climateRef_spread))
     df[[fireSenseUtils::spreadFitClimateRefTxt]] <- I(list(sim$climateRef_spread))

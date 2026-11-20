@@ -85,3 +85,28 @@ test_that("the start-population gates, the debug call and the validation figures
   expect_identical(args$powerLawPc50, fig$sim$powerLawCalibration$p50)
   expect_identical(args$climateRef, fig$sim$climateRef_spread)
 })
+
+test_that("with an intercept, 'activation' bounds it by activationFuelInterceptBounds; the other modes keep theirs", {
+  formI <- "~ 1 + CMDsm + youngAge + class1 + class2 + nf"
+  ic <- fireSenseUtils::spreadInterceptTxt
+  a <- fittedCO(actParams, formula = formI)$rec$deArgs
+  expect_identical(unname(c(a$lower[[ic]], a$upper[[ic]])), c(-6, 6))
+  b <- fittedCO(c(actParams, list(activationFuelInterceptBounds = c(-3, 2))), formula = formI)$rec$deArgs
+  expect_identical(unname(c(b$lower[[ic]], b$upper[[ic]])), c(-3, 2))
+  for (mode in c("predictor", "ceiling")) {
+    o <- fittedCO(list(spreadLink = "powerLawSmooth", spreadClimate = mode), formula = formI)
+    v <- SpaDES.core::params(o$sim)$fireSense_spreadFit$upperAndLowerVal
+    expect_identical(unname(c(o$rec$deArgs$lower[[ic]], o$rec$deArgs$upper[[ic]])), c(-v, v))
+  }
+})
+
+test_that("an activation row stores each set's share of dud years; other rows have no such column", {
+  out <- fittedCO(actParams)
+  row <- out$rec$geoArgs$studyAreaFireSense
+  share <- row[[fireSenseUtils::spreadFitDudYearShareTxt]][[1]]
+  expect_identical(share, fireSenseUtils::activationDudYearShare(row$params[[1]]))
+  expect_length(share, NROW(row$params[[1]]))
+  expect_true(all(share >= 0 & share <= 1))
+  expect_false(fireSenseUtils::spreadFitDudYearShareTxt %in%
+                 names(fittedCO(list(spreadLink = "powerLawSmooth"))$rec$geoArgs$studyAreaFireSense))
+})
