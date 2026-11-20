@@ -243,6 +243,11 @@ defineModule(sim, list(
     defineParameter("powerLawPcMargin", "numeric", default = 0.005,
                     desc = paste("With `spreadLink = 'powerLaw'` or 'powerLawSmooth', the upper bound of p_c is the calibrated p_c50 plus this",
                                  "(`fireSenseUtils::powerLawPcBounds()`). Written to the ledger row.")),
+    defineParameter("powerLawPcAtP50", "logical", default = FALSE,
+                    desc = paste("With `spreadLink = 'powerLaw'` or 'powerLawSmooth', fix p_c (`maxAsymptote`) at the calibrated p_c50",
+                                 "instead of fitting it below p_c50: both its bounds are p_c50, so it is not fitted and the ledger row",
+                                 "carries p_c50. With `powerLawShape = 1` every pixel's distance to p_c50 then scales with exp(-x / gamma).",
+                                 "Stops with `spreadClimate = 'ceiling'` or another link.")),
     defineParameter("powerLawFires", "integer", default = 400L,
                     desc = paste("Fires per spread probability in the calibration (`fireSenseUtils::calibratePowerLaw()`).",
                                  "400 took 5-10 minutes on 16 cores.")),
@@ -869,7 +874,7 @@ spreadFitPrep <- function(sim) {
                                          fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
                                          upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
                                          fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
-                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par)))
+                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par), atP50 = Par$powerLawPcAtP50))
   }
 
   if (is.null(P(sim)$lower) || any(is.na(P(sim)$lower))) {
@@ -880,7 +885,7 @@ spreadFitPrep <- function(sim) {
                                           fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
                                          upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
                                          fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
-                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par)))
+                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par), atP50 = Par$powerLawPcAtP50))
   }
   ## hillSlope1 (the spread link's slope) and inflectionPoint1 (its Richards exponent) are fixed at 1,
   ## not fitted (see estimateSpreadParams()). A supplied 'upper'/'lower' naming either would silently
