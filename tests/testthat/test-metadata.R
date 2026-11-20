@@ -75,7 +75,7 @@ test_that("parameters are the expected names", {
     sort(c(".c", "convergence", ".plotInterval", ".plots", ".plotSize", ".runInitialTime", ".runName", ".studyAreaName",
            ".useCache", "cores", "covFixedRange", "DEoptimControl", "DEoptimTests", "doFit", "doObjFunAssertions",
            "heldOutFold", "initialpop", "initialPopMethod", "emulatorControl", "emulatorMaxParams", "iterDEoptim", "libPathDEoptim",
-           "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded", "spreadLink", "spreadClimate", "powerLawGamma", "powerLawShape", "lowerAsymptote", "richardsNu", "powerLawPcMargin", "powerLawFires", "powerLawPGrid",
+           "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded", "spreadLink", "spreadClimate", "powerLawGamma", "powerLawShape", "lowerAsymptote", "richardsNu", "powerLawPcMargin", "powerLawPcAtP50", "powerLawFires", "powerLawPGrid",
            "objFunCoresInternal", "objfunFireReps", ".rep", "adWeight", "profileReps", "profileAt", "profileCoefs",
            "simulateMembers", "sizeLik", "sizeLikDf", "escapeSizeHa", "yearAreaWeight", "areaDistWeight", "crpsWeights", "gateRefusal", "penaliseRunaways", "wholeLandscapeSpread", "runawayEdgeFrac", "runawayEdgeMin", "runawayBufferMultiple",
            "jumpTries", "jumpMeanDist", "upperTailBounds", "weighted", "fireSpreadSDBounds", "yearSpreadSDBounds", "fireCauses",

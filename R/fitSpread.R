@@ -266,10 +266,12 @@ spreadLinkArgs <- function(sim, forKey = FALSE) {
 
 ## The bounds of `maxAsymptote`: for `spreadLink = "powerLaw"` or "powerLawSmooth" it is p_c, which must stay above the floor and,
 ## per ELF, within `margin` of the calibrated threshold `p50` (fireSenseUtils::powerLawPcBounds()). "richards" has no
-## calibration, so p_c is bounded by the outer limits, `fireSenseUtils::spreadPowerLawPcBounds`
-maxAsymptoteBoundsOf <- function(spreadLink = "ceiling", p50 = NULL, margin = 0.005, climateCeiling = FALSE) {
+## calibration, so p_c is bounded by the outer limits, `fireSenseUtils::spreadPowerLawPcBounds`. With `atP50` p_c is
+## fixed at p50: both bounds are p50 (the upper bound of `powerLawPcBounds(climateCeiling = TRUE)`), so DEoptim keeps it there
+maxAsymptoteBoundsOf <- function(spreadLink = "ceiling", p50 = NULL, margin = 0.005, climateCeiling = FALSE, atP50 = FALSE) {
   if (spreadLink %in% fireSenseUtils::spreadPowerLawLinks && !is.null(p50))
-    fireSenseUtils::powerLawPcBounds(p50, margin, climateCeiling = climateCeiling)
+    if (isTRUE(atP50)) rep(fireSenseUtils::powerLawPcBounds(p50, climateCeiling = TRUE)[2L], 2L)
+    else fireSenseUtils::powerLawPcBounds(p50, margin, climateCeiling = climateCeiling)
   else if (identical(spreadLink, "richards")) fireSenseUtils::spreadPowerLawPcBounds # no calibration: the outer limits
   else c(fireSenseUtils::spreadProbFloor, fireSenseUtils::spreadProbCeiling)
 }
@@ -295,6 +297,13 @@ checkSpreadLink <- function(Par) {
   if (isCeiling(Par) && !Par$spreadLink %in% fireSenseUtils::spreadPowerLawLinks)
     stop("fireSense_spreadFit: spreadClimate = 'ceiling' needs spreadLink one of ",
          paste(dQuote(fireSenseUtils::spreadPowerLawLinks, FALSE), collapse = ", "), "; got ", dQuote(Par$spreadLink, FALSE))
+  if (isTRUE(Par$powerLawPcAtP50)) {
+    if (isCeiling(Par))
+      stop("fireSense_spreadFit: powerLawPcAtP50 = TRUE cannot be combined with spreadClimate = 'ceiling' (p_c is already p50 or moved toward it)")
+    if (!Par$spreadLink %in% fireSenseUtils::spreadPowerLawLinks)
+      stop("fireSense_spreadFit: powerLawPcAtP50 = TRUE needs spreadLink one of ",
+           paste(dQuote(fireSenseUtils::spreadPowerLawLinks, FALSE), collapse = ", "), "; got ", dQuote(Par$spreadLink, FALSE))
+  }
   tryCatch(fireSenseUtils::checkLinkParams(Par$spreadLink, Par$lowerAsymptote, Par$richardsNu),
            error = function(e) stop("fireSense_spreadFit: ", conditionMessage(e), call. = FALSE))
   if (Par$spreadLink %in% fireSenseUtils::spreadPowerLawLinks) {
