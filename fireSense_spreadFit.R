@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.95)", # requestedWorkers(); .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9181)", # 9181: spreadLinkInputs(), powerLawPc50 (climate in the power-law ceiling, fireSenseUtils#250); 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9183)", # 9183: spreadClimate = "activation" and pcAtP50 (activationInterceptTxt, spreadClimateTxt, checkLinkParams(activation =), activationDudYearShare(), fireSenseUtils#255); 9181: spreadLinkInputs(), powerLawPc50 (climate in the power-law ceiling, fireSenseUtils#250); 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.2.0.9004)"),
   parameters = rbind(
@@ -216,7 +216,30 @@ defineModule(sim, list(
                                  "x the fuel terms only (`fireSenseUtils::spreadLinkInputs()`). Needs a power-law `spreadLink` and a",
                                  "climate covariate (`fireSenseUtils::spreadClimateCols()`). `climateRef` is found as with",
                                  "'climateOutside' (`sim$climateRef_spread`); with the p50 in the ledger row",
-                                 "(`fireSenseUtils::spreadFitPowerLawPc50Txt`) it makes `fireSense_spreadPredict` apply the same ceiling.")),
+                                 "(`fireSenseUtils::spreadFitPowerLawPc50Txt`) it makes `fireSense_spreadPredict` apply the same ceiling.",
+                                 "'activation': the roles are swapped. Fuel sets each pixel's own ceiling,",
+                                 "p_c = `lowerSpreadProb` + (p50 - `lowerSpreadProb`) * plogis(eta), eta the linear predictor of the",
+                                 "non-climate terms (with the intercept), and climate is x:",
+                                 "x = activationIntercept + sum(beta_clim * (climate - climateRef)), with the year effect added to x",
+                                 "(`fireSenseUtils::spreadLinkInputs()`). p never passes p50 and the ratio of p - `lowerSpreadProb`",
+                                 "between two pixels does not change with climate. `activationIntercept` is fitted",
+                                 "(`activationInterceptBounds`), `maxAsymptote` is not (the ledger row has p50 there). Needs",
+                                 "`spreadLink = 'powerLawSmooth'`, `lowerAsymptote` = `fireSenseUtils::spreadProbFloor` and a climate",
+                                 "covariate. The ledger row records the choice (`fireSenseUtils::spreadClimateTxt`), and",
+                                 "`fireSense_spreadPredict` predicts each row by its own.")),
+    defineParameter("activationInterceptBounds", "numeric", default = fireSenseUtils::spreadActivationInterceptBounds,
+                    desc = paste("With `spreadClimate = 'activation'`, the bounds of `activationIntercept`, x at the reference",
+                                 "climate, when `lower`/`upper` are not supplied. It comes right after the covariate",
+                                 "coefficients, before the random-effect sds. Not bounded away from 0: a low value with a",
+                                 "large `yearSpreadSD` makes many years 'duds' (every pixel at the floor); the fit reports",
+                                 "and stores that share (`fireSenseUtils::activationDudYearShare()`) instead.")),
+    defineParameter("activationFuelInterceptBounds", "numeric", default = c(-6, 6),
+                    desc = paste("With `spreadClimate = 'activation'` and a formula with an intercept, the bounds of the",
+                                 "intercept, which sits inside plogis() there (each pixel's ceiling is",
+                                 "`lowerSpreadProb` + (p50 - `lowerSpreadProb`) * plogis(eta)), when `lower`/`upper` are",
+                                 "not supplied; the other modes keep +-`upperAndLowerVal`. Beyond about +-6 plogis is flat",
+                                 "(every pixel's ceiling at the floor or at p50, no fuel effect), so a wider range only",
+                                 "feeds the ridge between it and `activationIntercept`.")),
     defineParameter("powerLawGamma", "numeric", default = NA_real_,
                     desc = paste("The exponent `gamma` of `spreadLink = 'powerLaw'`. `NA` (default): the calibrated value for",
                                  "the ELF's flammable map. A number overrides `gamma` only (the bounds of p_c still come from",
@@ -243,6 +266,12 @@ defineModule(sim, list(
     defineParameter("powerLawPcMargin", "numeric", default = 0.005,
                     desc = paste("With `spreadLink = 'powerLaw'` or 'powerLawSmooth', the upper bound of p_c is the calibrated p_c50 plus this",
                                  "(`fireSenseUtils::powerLawPcBounds()`). Written to the ledger row.")),
+    defineParameter("powerLawPcAtP50", "logical", default = FALSE,
+                    desc = paste("With `spreadLink = 'powerLaw'` or 'powerLawSmooth', fix p_c (`maxAsymptote`) at the calibrated p_c50",
+                                 "instead of fitting it below p_c50: it is left out of `lower`/`upper` and the objective puts p_c50 in its",
+                                 "place (`fireSenseUtils::.objfunSpreadFit(pcAtP50 = TRUE)`), as with `spreadClimate = 'activation'`; the",
+                                 "ledger row carries p_c50 as `maxAsymptote`. With `powerLawShape = 1` every pixel's distance to p_c50 then",
+                                 "scales with exp(-x / gamma). Stops with `spreadClimate = 'ceiling'` or another link.")),
     defineParameter("powerLawFires", "integer", default = 400L,
                     desc = paste("Fires per spread probability in the calibration (`fireSenseUtils::calibratePowerLaw()`).",
                                  "400 took 5-10 minutes on 16 cores.")),
@@ -733,7 +762,12 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         ## hillSlope1 and inflectionPoint1 are fixed at 1, not fitted, so they are not in
         ## names(P(sim)$lower); restore them here, by position, so the ledger row predicts the same way
         ## as one with them fitted (see addFixedParsToLedger()).
-        paramsBest <- addFixedParsToLedger(best$params)
+        paramsBest <- addFixedParsToLedger(best$params, fixedMaxAsymptote(sim))
+        ## the activation's dud years (every pixel at the floor at the reference climate), also in the ledger row
+        if (isActivation(Par))
+          message("fireSense_spreadFit: ", P(sim)$.runName, ": share of dud years at the reference climate, ",
+                  "pnorm(-activationIntercept / yearSpreadSD), of the ", NROW(paramsBest), " sets: ",
+                  paste(format(fireSenseUtils::activationDudYearShare(paramsBest), digits = 3), collapse = ", "))
         objFunValBest <- best$objFunVal
         numIterations <- length(sim$DE)
         
@@ -869,7 +903,10 @@ spreadFitPrep <- function(sim) {
                                          fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
                                          upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
                                          fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
-                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par)))
+                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par),
+                                                                                   pcAtP50 = pcAtP50(Par)),
+                                         activationInterceptBounds = activationInterceptBoundsOf(Par),
+                                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds)
   }
 
   if (is.null(P(sim)$lower) || any(is.na(P(sim)$lower))) {
@@ -880,7 +917,10 @@ spreadFitPrep <- function(sim) {
                                           fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
                                          upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
                                          fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
-                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par)))
+                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par),
+                                                                                   pcAtP50 = pcAtP50(Par)),
+                                         activationInterceptBounds = activationInterceptBoundsOf(Par),
+                                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds)
   }
   ## hillSlope1 (the spread link's slope) and inflectionPoint1 (its Richards exponent) are fixed at 1,
   ## not fitted (see estimateSpreadParams()). A supplied 'upper'/'lower' naming either would silently
@@ -947,7 +987,7 @@ spreadFitPrep <- function(sim) {
   sim$climateRef_spread <- NULL
   if (climateAsReference(P(sim))) {
     if (!length(fireSenseUtils::spreadClimateCols(sim$fireSense_spreadFormula, mod$covsX1000$annualDTx1000)))
-      stop("fireSense_spreadFit: ", if (identical(P(sim)$spreadLink, "climateOutside")) "spreadLink = 'climateOutside'" else "spreadClimate = 'ceiling'", " needs a climate covariate in the spread formula (",
+      stop("fireSense_spreadFit: ", if (identical(P(sim)$spreadLink, "climateOutside")) "spreadLink = 'climateOutside'" else paste0("spreadClimate = '", P(sim)$spreadClimate, "'"), " needs a climate covariate in the spread formula (",
            sim$fireSense_spreadFormula, " has none: an annual covariate that is not a 0/1 indicator).")
     sim$climateRef_spread <- fireSenseUtils::spreadClimateRef(
       mod$covsX1000$annualDTx1000, mod$covsX1000$nonAnnualDTx1000, sim$fireSense_spreadFormula,
@@ -1190,15 +1230,22 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 #'   `maxAsymptote` (link "logistic3pUpper").
 #' @param fireSpreadSDBounds,yearSpreadSDBounds numeric(2) or `NULL`; the bounds of the per-fire and per-year random
 #'   effects' sds, added last, `fireSpreadSD` before `yearSpreadSD` (`randomEffectBounds()`). `NULL` leaves one out.
-#' @param maxAsymptoteBounds numeric(2); the bounds of `maxAsymptote` (`maxAsymptoteBoundsOf()`).
+#' @param maxAsymptoteBounds numeric(2); the bounds of `maxAsymptote` (`maxAsymptoteBoundsOf()`); `NULL` (with
+#'   `spreadClimate = "activation"` or `powerLawPcAtP50`) leaves it out: it is not fitted.
+#' @param interceptBounds numeric(2) or `NULL` (default: +-`upperAndLower`); the bounds of the intercept, when the
+#'   formula has one (`activationFuelInterceptBounds` with `spreadClimate = "activation"`).
+#' @param activationInterceptBounds numeric(2) or `NULL`; the bounds of `activationIntercept`
+#'   (`fireSenseUtils::activationInterceptTxt`, `spreadClimate = "activation"`), added right after the formula terms.
 #' @return named numeric vector: `maxAsymptote` (bounded by `maxAsymptoteBounds`, by default
 #'   `fireSenseUtils::spreadProbFloor` and `fireSenseUtils::spreadProbCeiling`), `upperTail1` (with `upperTailBounds`), then
 #'   `fireSenseUtils::spreadInterceptTxt` if the formula has an intercept (`~ 1 + ...`), then formula
-#'   terms. No `hillSlope1` or `inflectionPoint1` -- both are fixed at 1, not fitted.
+#'   terms, then `activationIntercept` (with `activationInterceptBounds`), then the random effects' sds. No `hillSlope1` or
+#'   `inflectionPoint1` -- both are fixed at 1, not fitted.
 estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, whichBound,
                                  upperAndLower, fuelTerms = character(), upperAndLowerFuel = upperAndLower,
                                  upperTailBounds = NULL, fireSpreadSDBounds = NULL, yearSpreadSDBounds = NULL,
-                                 maxAsymptoteBounds = maxAsymptoteBoundsOf()) {
+                                 maxAsymptoteBounds = maxAsymptoteBoundsOf(), activationInterceptBounds = NULL,
+                                 interceptBounds = NULL) {
 
   stopifnot(whichBound %in% c("upper", "lower"))
 
@@ -1227,11 +1274,17 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
   ## The intercept (a formula with `1 +`) is first among the covariate coefficients. It is the level of
   ## the linear predictor, so like the covariates it gets a wide symmetric box that does not bind.
   if (fireSenseUtils::spreadInterceptTxt %in% fireSenseUtils::spreadDesignCols(fireSense_spreadFormula))
-    newParams <- c(stats::setNames(if (whichBound == "upper") upperAndLower else -upperAndLower,
+    newParams <- c(stats::setNames(if (is.null(interceptBounds)) (if (whichBound == "upper") upperAndLower else -upperAndLower)
+                                   else if (whichBound == "upper") max(interceptBounds) else min(interceptBounds),
                                    fireSenseUtils::spreadInterceptTxt), newParams)
 
-  newParams <- c("maxAsymptote" = if (whichBound == "upper") max(maxAsymptoteBounds) else min(maxAsymptoteBounds),
-                 newParams)
+  if (!is.null(maxAsymptoteBounds))
+    newParams <- c("maxAsymptote" = if (whichBound == "upper") max(maxAsymptoteBounds) else min(maxAsymptoteBounds),
+                   newParams)
+  ## after the covariates, before the random effects' sds (fireSenseUtils::spreadRandomEffectArgs() checks the order)
+  if (!is.null(activationInterceptBounds))
+    newParams <- c(newParams, stats::setNames(if (whichBound == "upper") max(activationInterceptBounds) else min(activationInterceptBounds),
+                                              fireSenseUtils::activationInterceptTxt))
   ## the objective takes the logistic parameters by position, so upperTail1 must be the 2nd
   ## (the fixed hillSlope1 and inflectionPoint1 go between them)
   if (!is.null(upperTailBounds))

@@ -14,10 +14,17 @@
 #' @param paramsBest a `data.table`, one row per parameter set, as `bestParamSets()$params` returns
 #'   it: columns named `names(P(sim)$lower)`, so without `hillSlope1` and `inflectionPoint1`,
 #'   `maxAsymptote` first.
+#' @param maxAsymptote `NULL` (default), or with `spreadClimate = "activation"`, where `maxAsymptote` is not fitted, the
+#'   value to put first in its place: p50, which the objective uses there (`fixedMaxAsymptote()`).
 #' @return `paramsBest` with `hillSlope1` and `inflectionPoint1` columns of 1s inserted right after
 #'   `maxAsymptote`.
-addFixedParsToLedger <- function(paramsBest) {
+addFixedParsToLedger <- function(paramsBest, maxAsymptote = NULL) {
   paramsBest <- data.table::copy(paramsBest)
+  if (!is.null(maxAsymptote)) {
+    nm <- fireSenseUtils::logisticParamNames[["3p"]][[1L]]
+    data.table::set(paramsBest, NULL, nm, maxAsymptote)
+    data.table::setcolorder(paramsBest, nm)
+  }
   fixedPars <- fireSenseUtils::fixedLogisticPars
   for (nm in names(fixedPars)) data.table::set(paramsBest, NULL, nm, fixedPars[[nm]])
   data.table::setcolorder(paramsBest,

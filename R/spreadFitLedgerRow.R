@@ -9,7 +9,7 @@
 #'
 #' @param sim a `simList`; uses `fireSenseUtils::escapeDefinitionOf()` (parameters `escapeSizeHa` and `fireCauses`), `.ELFind`, `studyArea`, `sppEquiv`, `nonForestedLCCGroups`,
 #'   `missingLCCgroup`, `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`, and the parameters
-#'   `spreadLink`, `powerLawGamma`, `powerLawShape`, `lowerAsymptote`, `richardsNu` and `powerLawPcMargin`, and `powerLawCalibration`.
+#'   `spreadLink`, `spreadClimate`, `powerLawGamma`, `powerLawShape`, `lowerAsymptote`, `richardsNu` and `powerLawPcMargin`, and `powerLawCalibration`.
 #' @param numIterations integer, the number of DEoptim generations.
 #' @param objFunVal numeric, the objective values of the members in `params`.
 #' @param params `data.table`, one row per member, with `hillSlope1` and `inflectionPoint1` (see `addFixedParsToLedger()`).
@@ -36,8 +36,15 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params, inSample =
   ## for climate outside the ceiling, powerLawGamma for the power laws, lowerAsymptote and richardsNu for the links that
   ## have them -- never powerLawGamma for "richards", which does not use it), and prediction applies the same link.
   ## A fit with the default link writes none of these columns.
-  ## `spreadClimate = "ceiling"` adds nothing of its own: a power-law link with climateRef_spread (set for it too) and
-  ## the p50 below is what prediction reads as climate moving the ceiling.
+  ## spreadClimate: where climate enters, so prediction tells the activation from the ceiling (both have a power-law
+  ## link, climateRef_spread and the p50 below). Like the link, only a fit with another than the default ("predictor")
+  ## writes it; a row without it is read as "ceiling" when it has climateRef_spread and a power-law link, else "predictor".
+  if (!identical(P(sim)$spreadClimate, "predictor")) df[[fireSenseUtils::spreadClimateTxt]] <- P(sim)$spreadClimate
+  ## the activation's share of dud years, one per set, to judge the fit on (fireSenseUtils::activationDudYearShare())
+  if (isActivation(P(sim)))
+    df[[fireSenseUtils::spreadFitDudYearShareTxt]] <- I(list(fireSenseUtils::activationDudYearShare(params)))
+  ## p_c fixed at p50: the row's maxAsymptote is p50, not a fitted value at its bound
+  if (isTRUE(P(sim)$powerLawPcAtP50)) df[[fireSenseUtils::spreadFitPcAtP50Txt]] <- TRUE
   if (!identical(P(sim)$spreadLink, "ceiling")) df[[fireSenseUtils::spreadLinkTxt]] <- P(sim)$spreadLink
   if (!is.null(sim$climateRef_spread))
     df[[fireSenseUtils::spreadFitClimateRefTxt]] <- I(list(sim$climateRef_spread))
