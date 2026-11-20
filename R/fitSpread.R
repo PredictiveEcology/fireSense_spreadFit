@@ -267,8 +267,10 @@ spreadLinkArgs <- function(sim, forKey = FALSE) {
 ## The bounds of `maxAsymptote`: for `spreadLink = "powerLaw"` or "powerLawSmooth" it is p_c, which must stay above the floor and,
 ## per ELF, within `margin` of the calibrated threshold `p50` (fireSenseUtils::powerLawPcBounds()). "richards" has no
 ## calibration, so p_c is bounded by the outer limits, `fireSenseUtils::spreadPowerLawPcBounds`
-maxAsymptoteBoundsOf <- function(spreadLink = "ceiling", p50 = NULL, margin = 0.005, climateCeiling = FALSE) {
-  if (spreadLink %in% fireSenseUtils::spreadPowerLawLinks && !is.null(p50))
+## With `spreadClimate = "activation"` (`activation`) maxAsymptote is not fitted (NULL): every pixel's ceiling comes from fuel
+maxAsymptoteBoundsOf <- function(spreadLink = "ceiling", p50 = NULL, margin = 0.005, climateCeiling = FALSE, activation = FALSE) {
+  if (isTRUE(activation)) NULL
+  else if (spreadLink %in% fireSenseUtils::spreadPowerLawLinks && !is.null(p50))
     fireSenseUtils::powerLawPcBounds(p50, margin, climateCeiling = climateCeiling)
   else if (identical(spreadLink, "richards")) fireSenseUtils::spreadPowerLawPcBounds # no calibration: the outer limits
   else c(fireSenseUtils::spreadProbFloor, fireSenseUtils::spreadProbCeiling)
@@ -277,11 +279,22 @@ maxAsymptoteBoundsOf <- function(spreadLink = "ceiling", p50 = NULL, margin = 0.
 ## `spreadClimate = "ceiling"`: climate moves p_c toward p50 (`fireSenseUtils::spreadLinkInputs()`); `Par` is `P(sim)`
 isCeiling <- function(Par) identical(Par$spreadClimate, "ceiling")
 
-## The fit takes the climate reference (`fireSenseUtils::spreadClimateRef()`) with `climateOutside` and with the ceiling
-climateAsReference <- function(Par) identical(Par$spreadLink, "climateOutside") || isCeiling(Par)
+## `spreadClimate = "activation"`: fuel sets each pixel's p_c below p50, climate is x (`fireSenseUtils::spreadLinkInputs()`)
+isActivation <- function(Par) identical(Par$spreadClimate, "activation")
 
-## The runaway threshold p50 the objective, the gates and the figures need when climate moves the ceiling, else NULL
-spreadPowerLawPc50 <- function(sim) if (isCeiling(P(sim))) sim$powerLawCalibration$p50
+## The fit takes the climate reference (`fireSenseUtils::spreadClimateRef()`) with `climateOutside`, the ceiling and the activation
+climateAsReference <- function(Par) identical(Par$spreadLink, "climateOutside") || isCeiling(Par) || isActivation(Par)
+
+## The runaway threshold p50 the objective, the gates and the figures need when climate moves the ceiling or with the
+## activation, else NULL
+spreadPowerLawPc50 <- function(sim) if (isCeiling(P(sim)) || isActivation(P(sim))) sim$powerLawCalibration$p50
+
+## The bounds of `activationIntercept` with the activation, else NULL (not fitted)
+activationInterceptBoundsOf <- function(Par) if (isActivation(Par)) Par$activationInterceptBounds
+
+## With the activation `maxAsymptote` is not fitted; the ledger row has p50 in its place (addFixedParsToLedger()), as the
+## objective uses it (fireSenseUtils' splitSpreadPar()). NULL otherwise.
+fixedMaxAsymptote <- function(sim) if (isActivation(P(sim))) sim$powerLawCalibration$p50
 
 ## Stop on a `spreadLink` the fit does not know, or one that cannot go with the other parameters
 checkSpreadLink <- function(Par) {
@@ -290,12 +303,14 @@ checkSpreadLink <- function(Par) {
          "; got ", dQuote(Par$spreadLink, FALSE))
   if (Par$spreadLink %in% fireSenseUtils::spreadLinearLinks && identical(Par$link, "logistic3pUpper"))
     stop("fireSense_spreadFit: spreadLink = '", Par$spreadLink, "' cannot be combined with link = 'logistic3pUpper'")
-  if (!Par$spreadClimate %in% c("predictor", "ceiling"))
-    stop("fireSense_spreadFit: spreadClimate must be 'predictor' or 'ceiling'; got ", dQuote(Par$spreadClimate, FALSE))
+  if (!Par$spreadClimate %in% fireSenseUtils::spreadClimateOptions)
+    stop("fireSense_spreadFit: spreadClimate must be one of ", paste(dQuote(fireSenseUtils::spreadClimateOptions, FALSE), collapse = ", "),
+         "; got ", dQuote(Par$spreadClimate, FALSE))
   if (isCeiling(Par) && !Par$spreadLink %in% fireSenseUtils::spreadPowerLawLinks)
     stop("fireSense_spreadFit: spreadClimate = 'ceiling' needs spreadLink one of ",
          paste(dQuote(fireSenseUtils::spreadPowerLawLinks, FALSE), collapse = ", "), "; got ", dQuote(Par$spreadLink, FALSE))
-  tryCatch(fireSenseUtils::checkLinkParams(Par$spreadLink, Par$lowerAsymptote, Par$richardsNu),
+  ## the activation's link and lower asymptote are checked there too
+  tryCatch(fireSenseUtils::checkLinkParams(Par$spreadLink, Par$lowerAsymptote, Par$richardsNu, activation = isActivation(Par)),
            error = function(e) stop("fireSense_spreadFit: ", conditionMessage(e), call. = FALSE))
   if (Par$spreadLink %in% fireSenseUtils::spreadPowerLawLinks) {
     if (!(is.numeric(Par$powerLawGamma) && length(Par$powerLawGamma) == 1L &&
@@ -398,7 +413,7 @@ fitAndScoreFold <- function(sim, covs, fold, k) {
              .functionName = paste0("simulateHeldOut_", P(sim)$.runName, "_cvFold", k))
   ## the held-out years only: observed against simulated burning from the other fold's fit
   spreadFitValidationFigures(sim, as.matrix(best$params)[1L, ], heldCovs, paste0(P(sim)$.runName, "_cvFold", k, "_heldOut"))
-  fit <- spreadFitLedgerRow(sim, length(DE), best$objFunVal, addFixedParsToLedger(best$params))
+  fit <- spreadFitLedgerRow(sim, length(DE), best$objFunVal, addFixedParsToLedger(best$params, fixedMaxAsymptote(sim)))
   list(sims = data.table(fold = k, s), fit = fit,
        fitYears = years[fold != k], heldOutYears = years[fold == k])
 }
