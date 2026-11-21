@@ -358,6 +358,39 @@ inSampleSizes <- function(DE) {
   list(sizes = fireSenseUtils::scoreFireSizes(sims), byYear = fireSenseUtils::scoreFireSizesByYear(sims))
 }
 
+#' The fuel x climate interaction screen of a fit
+#'
+#' @param sim a `simList`; uses `fireSense_spreadFormula` and the parameters `interactionScreenDraws` and `interactionScreenSeed`.
+#' @param DE the fit, with the `"fitSims"` attribute (see `inSampleSizes()`).
+#' @param covs the covariates the fit used (`mod$covsX1000`).
+#' @return `NULL` without `"fitSims"`; else `fireSenseUtils::fuelClimateInteractionScreen()` of the fit's own fires (`NULL`
+#'   when it has nothing to screen, or the screen failed: a diagnostic does not stop a fit, so a failure is a warning). It is what the ledger row's `fireSenseUtils::spreadFitInteractionScreenTxt` column holds.
+interactionScreen <- function(sim, DE, covs) {
+  sims <- attr(DE, "fitSims")
+  if (is.null(sims)) return(NULL)
+  tryCatch(
+    fireSenseUtils::fuelClimateInteractionScreen(
+      sims, covs$annualDTx1000, covs$nonAnnualDTx1000, covs$fireBufferedListDT, sim$fireSense_spreadFormula,
+      nBoot = P(sim)$interactionScreenDraws, seed = P(sim)$interactionScreenSeed),
+    error = function(e) {
+      warning("The fuel x climate interaction screen was skipped: ", conditionMessage(e), call. = FALSE)
+      NULL
+    })
+}
+
+#' Write the interaction screen's table beside the fit's other outputs
+#'
+#' @param x `interactionScreen()`; nothing is written for `NULL`.
+#' @param sim a `simList`.
+#' @return the file written, invisibly, or `NULL`.
+writeInteractionScreen <- function(x, sim) {
+  if (is.null(x)) return(invisible(NULL))
+  file <- file.path(checkPath(file.path(outputPath(sim), currentModule(sim)), create = TRUE),
+                    paste0("fuelClimateInteraction_", P(sim)$.runName, ".csv"))
+  data.table::fwrite(cbind(data.table(run = P(sim)$.runName, climate = x$climate), x$terms), file)
+  invisible(file)
+}
+
 #' Turn the fit's re-score, profile and simulations into `sim` objects
 #'
 #' @param sim a `simList`.
