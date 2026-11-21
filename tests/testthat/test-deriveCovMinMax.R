@@ -117,3 +117,17 @@ test_that("a covariate that is still constant after the fixed ranges stops with 
   annual <- list(year2001 = dt(pixelID = 1:3, CMDsm = c(10, 40, 50)))
   expect_error(deriveCovMinMax(annual, nonAnnual, fuelCols = character()), "'nf'.*constant")
 })
+
+test_that("the split climate terms (spreadClimateSplit) get ranges derived from their variable's: _yr the same, _dev the same width centred on 0", {
+  annual <- list(year2001 = dt(pixelID = 1:2, Tmaxsm_yr = c(14, 15), Tmaxsm_dev = c(-1, 1), youngAge = c(0, 1)))
+  out <- deriveCovMinMax(annual, list(a = dt(pixelID = 1:2, nf = c(0, 1))), fuelCols = character())
+  expect_identical(out$Tmaxsm_yr, c(0, 10))
+  expect_identical(out$Tmaxsm_dev, c(-5, 5))
+  ## a supplied range for a split term is kept
+  out2 <- deriveCovMinMax(annual, list(a = dt(pixelID = 1:2, nf = c(0, 1))), fuelCols = character(),
+                          fixedRange = c(fireSenseUtils::climateCovRanges, list(Tmaxsm_dev = c(-2, 2))))
+  expect_identical(out2$Tmaxsm_dev, c(-2, 2))
+  ## a split term of a variable with no range still stops
+  expect_error(deriveCovMinMax(list(year2001 = dt(pixelID = 1:2, Foo_yr = c(1, 2))), list(a = dt(pixelID = 1:2, nf = 0:1)),
+                               fuelCols = character()), "no fixed range")
+})
