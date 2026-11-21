@@ -181,20 +181,31 @@ spreadFitNP <- function(sim) {
   clusters::requestedWorkers(cores, nCoresNeeded)
 }
 
-## The spread objective's bodies, for the Cache key of the fit: the objective and
-## everything it calls that decides its value (the spread link, which replicates are cut, the per-fire score,
-## and the terms added to it)
+## The functions of `pkg` that `entry` reaches, by name, sorted (codetools::findGlobals() on each, followed
+## until nothing new turns up)
+calleesOf <- function(entry, pkg = "fireSenseUtils") {
+  ns <- asNamespace(pkg)
+  isFn <- function(nm) exists(nm, envir = ns, inherits = FALSE) && is.function(get(nm, envir = ns))
+  seen <- character()
+  todo <- entry
+  while (length(todo)) {
+    fn <- todo[[1L]]
+    todo <- todo[-1L]
+    if (fn %in% seen) next
+    seen <- c(seen, fn)
+    globals <- codetools::findGlobals(get(fn, envir = ns), merge = TRUE)
+    todo <- c(todo, setdiff(Filter(isFn, globals), seen))
+  }
+  sort(seen)
+}
+
+## The spread objective's bodies, for the Cache key of the fit: the objective (the two functions DEoptim evaluates) and
+## every fireSenseUtils function it reaches (the spread link, the climate ceiling or activation, which replicates are cut,
+## the per-fire score, and the terms added to it). Found from the objective, not listed by hand, so a function added to it
+## is in the key (a hand list had missed crpsAnnualArea, spreadLinkInputs, linkParsMatrix, ...).
 objectiveBodies <- function() {
-  fns <- c("crpsEnsemble", "crpsFireSizes", "crpsTotalArea", "crpsTopFires", "crpsWeightsDefault", # fireSenseUtils >= the CRPS objective
-           "spreadProbFromIntegerCovs", "spreadProbCovsOfYear", "spreadProbFromCovs", "logisticAll", "powerLawLink",
-           "powerLawSmoothLink", "richardsLink", "linearLinkPars", "linearLinkProb", "spreadLinkLower",
-           "dataYearBefore", "addBufferEdge", "bufferEdge", "bufferOpen", "sizeLikT",
-           "adStatistic", "adWeightAuto", "pooledFireSizes", "yearAreaNLL", "areaWeightedCvM",
-           "pitMidRank", "adUniform")
-  fns <- fns[vapply(fns, exists, logical(1), envir = asNamespace("fireSenseUtils"), inherits = FALSE)]
-  c(list(objfunSpreadFit = deparse(fireSenseUtils::.objfunSpreadFit),
-         objFunInner = deparse(utils::getFromNamespace("objFunInner", "fireSenseUtils"))),
-    stats::setNames(lapply(fns, function(f) deparse(utils::getFromNamespace(f, "fireSenseUtils"))), fns))
+  fns <- calleesOf(c(".objfunSpreadFit", "objFunInner"))
+  stats::setNames(lapply(fns, function(f) deparse(utils::getFromNamespace(f, "fireSenseUtils"))), fns)
 }
 
 ## The CRPS objective's options (`crpsWeights`, `gateRefusal`) as `runDEoptim()` arguments: nothing at their

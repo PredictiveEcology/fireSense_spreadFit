@@ -21,7 +21,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.txt", "fireSense_spreadFit.Rmd"),
   loadOrder = list(after = c("fireSense_dataPrepFit", "fireSense_ignitionFit")),
-  reqdPkgs = list("data.table", "DEoptim", "dplyr", "fpCompare", "future",
+  reqdPkgs = list("codetools", "data.table", "DEoptim", "dplyr", "fpCompare", "future",
                   "ggplot2", "googledrive", "hetGP", "httr2", "lhs", "scales", "kSamples",
                   "munsell",
                   "logging", "magrittr", "parallel", "parallelly", "raster", "RhpcBLASctl", "sf", "terra", "tidyr", "withr", ## TODO: remove magrittr
