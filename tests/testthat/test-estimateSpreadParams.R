@@ -104,3 +104,23 @@ test_that("an interaction term is bounded +/- upperAndLower with no sign constra
   ## the names are the design columns, in order, as the objective takes them
   expect_identical(names(up)[-1], fireSenseUtils::spreadDesignCols(formX))
 })
+
+test_that("a between-year interaction (CMD_yr:class1) is bounded +/- upperAndLower: the drought rule of CMD_yr does not reach it", {
+  formX <- "~ 1 + CMD_yr + CMD_dev + youngAge + class1 + CMD_yr:class1"
+  up <- estimateSpreadParams(formX, annual, "upper", upperAndLower = 9, fuelTerms = "class1", upperAndLowerFuel = 20)
+  lo <- estimateSpreadParams(formX, annual, "lower", upperAndLower = 9, fuelTerms = "class1", upperAndLowerFuel = 20)
+  expect_identical(up[["CMD_yr:class1"]], 9)
+  expect_identical(lo[["CMD_yr:class1"]], -9)
+  expect_identical(unname(c(lo[c("CMD_yr", "CMD_dev")])), c(0, 0))
+  expect_identical(names(up)[-1], fireSenseUtils::spreadDesignCols(formX))
+})
+
+test_that("split climate terms keep the sign rule of their variable: CMD_yr and CMD_dev >= 0, Tmaxsm_yr and Tmaxsm_dev free", {
+  f <- "~ 1 + CMD_yr + CMD_dev + Tmaxsm_yr + Tmaxsm_dev + youngAge"
+  up <- estimateSpreadParams(f, annual, whichBound = "upper", upperAndLower = 9)
+  lo <- estimateSpreadParams(f, annual, whichBound = "lower", upperAndLower = 9)
+  expect_identical(unname(lo[c("CMD_yr", "CMD_dev")]), c(0, 0))
+  expect_identical(unname(up[c("CMD_yr", "CMD_dev")]), c(9, 9))
+  expect_identical(unname(lo[c("Tmaxsm_yr", "Tmaxsm_dev")]), c(-9, -9))
+  expect_identical(unname(up[c("Tmaxsm_yr", "Tmaxsm_dev")]), c(9, 9))
+})
