@@ -61,3 +61,28 @@ test_that("changing a function the objective reaches only indirectly changes the
                                               .package = "fireSenseUtils")
   expect_identical(unrelated, before)
 })
+
+test_that("the emulator's cache key holds every module function the start population reaches, found, not listed", {
+  eb <- emulatorBodies()
+  expect_true(all(c("emulatorStartPopulation", "emulatorDefaults", "emulatorControlOf", "emulatorSpace", "emulatorTrustBox",
+                    "emulatorAtBoxEdge", "emulatorTrustStep", "emulatorNoiseSD", "emulatorPointKeys", "emulateObjective",
+                    "emulatorScale", "fitEmulatorGP", "emulatorConverged", "selectEmulatorBatch",
+                    "emulatorSpreadPopulation", "emulatorEvaluator", "objectiveFnArgs") %in% names(eb)))
+  expect_identical(names(eb), sort(names(eb)))
+  ## a function the emulator does not reach is not in the key
+  expect_false("estimateSpreadParams" %in% names(eb))
+  edited <- function(f) {
+    g <- get(f, mode = "function")
+    body(g) <- call("{", quote(.editedForTest <- TRUE), body(g))
+    g
+  }
+  for (f in c("emulatorNoiseSD", "objectiveFnArgs", "emulatorTrustStep")) {
+    after <- local({
+      do.call(testthat::local_mocked_bindings, stats::setNames(list(edited(f)), f))
+      emulatorBodies()
+    })
+    expect_false(identical(eb, after), label = f)
+  }
+  unrelated <- testthat::with_mocked_bindings(emulatorBodies(), estimateSpreadParams = edited("estimateSpreadParams"))
+  expect_identical(unrelated, eb)
+})

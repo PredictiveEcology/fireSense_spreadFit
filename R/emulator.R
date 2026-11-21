@@ -543,13 +543,11 @@ objectiveFnArgs <- function(objArgs, cl) {
   if (is.null(cl)) objArgs else objArgs[setdiff(names(objArgs), emulatorDataArgs)]
 }
 
-## The emulator's code, for the Cache key of its result: Cache() digests the arguments, not the functions they reach
+## The emulator's code, for the Cache key of its result: Cache() digests the arguments, not the functions they reach.
+## Every function of this module that emulatorStartPopulation() reaches, found as objectiveBodies() finds the objective's
 emulatorBodies <- function() {
-  fns <- c("emulatorDefaults", "emulatorControlOf", "emulatorSpace", "emulatorTrustBox", "emulatorAtBoxEdge",
-           "emulatorTrustStep", "emulatorNoiseSD", "emulatorPointKeys", "emulateObjective", "emulatorScale", "fitEmulatorGP",
-           "emulatorConverged", "selectEmulatorBatch", "emulatorSpreadPopulation", "emulatorEvaluator",
-           "objectiveFnArgs")
-  stats::setNames(lapply(fns, function(f) deparse(get(f, mode = "function"))), fns)
+  fns <- calleesOf("emulatorStartPopulation", environment(emulatorStartPopulation))
+  stats::setNames(lapply(fns, function(f) deparse(get(f, envir = environment(emulatorStartPopulation), mode = "function"))), fns)
 }
 
 #' Whether this fit starts from the emulator

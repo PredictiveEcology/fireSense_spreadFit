@@ -903,34 +903,21 @@ spreadFitPrep <- function(sim) {
   sim <- calibratePowerLawFor(sim)
   fireSenseUtils::escapeDefinitionOf(sim) # stops now, not after the fit, if the escape definition differs from the other modules'
   sdBounds <- randomEffectBounds(Par, P(sim)$upper, P(sim)$lower)
-  if (is.null(P(sim)$upper) || any(is.na(P(sim)$upper))) {
-    P(sim)$upper <- estimateSpreadParams(sim$fireSense_spreadFormula,
-                                         sim$fireSense_annualSpreadFitCovariates,
-                                         whichBound = "upper", upperAndLower = Par$upperAndLowerVal,
-                                         fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
-                                         upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
-                                         fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
-                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par),
-                                                                                   pcAtP50 = pcAtP50(Par)),
-                                         activationInterceptBounds = activationInterceptBoundsOf(Par),
-                                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds,
-                                         coefSigns = Par$coefSigns)
-  }
-
-  if (is.null(P(sim)$lower) || any(is.na(P(sim)$lower))) {
-    ## TODO - figure out the 2-4 piece logistic defaults :S
-    P(sim)$lower <-  estimateSpreadParams(sim$fireSense_spreadFormula,
-                                          sim$fireSense_annualSpreadFitCovariates,
-                                          whichBound = "lower", upperAndLower = Par$upperAndLowerVal,
-                                          fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
-                                         upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
-                                         fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
-                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par),
-                                                                                   pcAtP50 = pcAtP50(Par)),
-                                         activationInterceptBounds = activationInterceptBoundsOf(Par),
-                                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds,
-                                         coefSigns = Par$coefSigns)
-  }
+  ## the default bounds, as far as `upper` and `lower` are not supplied
+  defaultBound <- function(whichBound)
+    estimateSpreadParams(sim$fireSense_spreadFormula,
+                         sim$fireSense_annualSpreadFitCovariates,
+                         whichBound = whichBound, upperAndLower = Par$upperAndLowerVal,
+                         fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
+                         upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
+                         fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
+                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par),
+                                                                   pcAtP50 = pcAtP50(Par)),
+                         activationInterceptBounds = activationInterceptBoundsOf(Par),
+                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds,
+                         coefSigns = Par$coefSigns)
+  if (is.null(P(sim)$upper) || any(is.na(P(sim)$upper))) P(sim)$upper <- defaultBound("upper")
+  if (is.null(P(sim)$lower) || any(is.na(P(sim)$lower))) P(sim)$lower <- defaultBound("lower")
   ## hillSlope1 (the spread link's slope) and inflectionPoint1 (its Richards exponent) are fixed at 1,
   ## not fitted (see estimateSpreadParams()). A supplied 'upper'/'lower' naming either would silently
   ## be fitted and then ignored downstream (fireSenseUtils' fixLogisticPars() inserts the fixed values
@@ -1268,17 +1255,15 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
     newParams <- rep(-(upperAndLower), termLength)
   }
   newParams <- as.vector(newParams)
-  ## fuel biomass is biomass / 1e4, not [0, 1], so its coefficients need a wider box
-  whFuel <- formulaTerms %in% fuelTerms
-  newParams[whFuel] <- if (whichBound == "upper") upperAndLowerFuel else -upperAndLowerFuel
-  if (identical(coefSigns, "constrained")) {
-    ## today's sign rules, in one place: more fuel can only raise spread probability (lower 0), drought should
-    ## not increase it (lower 0), and youngAge cannot raise it (upper 0, no self-propagating fires)
-    newParams[whFuel] <- if (whichBound == "upper") upperAndLowerFuel else 0
-    whDrought <- grepl(droughtIndexPattern, formulaTerms)
-    whYA <- formulaTerms %in% youngAge
-    newParams[whDrought] <- ifelse(whichBound == "upper", upperAndLower, 0)
-    newParams[whYA] <- ifelse(whichBound == "upper", 0, -(upperAndLower))
+  upper <- whichBound == "upper"
+  constrained <- identical(coefSigns, "constrained")
+  ## fuel biomass is biomass / 1e4, not [0, 1], so its coefficients need a wider box. "constrained" is today's sign
+  ## rules, in one place: more fuel can only raise spread probability (lower 0), drought should not increase it
+  ## (lower 0), and youngAge cannot raise it (upper 0, no self-propagating fires)
+  newParams[formulaTerms %in% fuelTerms] <- if (upper) upperAndLowerFuel else if (constrained) 0 else -upperAndLowerFuel
+  if (constrained) {
+    newParams[grepl(droughtIndexPattern, formulaTerms)] <- if (upper) upperAndLower else 0
+    newParams[formulaTerms %in% youngAge] <- if (upper) 0 else -upperAndLower
   }
 
   ## an interaction (`CMD:fuel`) is a free term like any other: a wide symmetric box, whatever its covariates are

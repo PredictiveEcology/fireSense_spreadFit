@@ -181,10 +181,9 @@ spreadFitNP <- function(sim) {
   clusters::requestedWorkers(cores, nCoresNeeded)
 }
 
-## The functions of `pkg` that `entry` reaches, by name, sorted (codetools::findGlobals() on each, followed
-## until nothing new turns up)
-calleesOf <- function(entry, pkg = "fireSenseUtils") {
-  ns <- asNamespace(pkg)
+## The functions of `ns` (an environment: fireSenseUtils' namespace, or this module's) that `entry` reaches, by name,
+## sorted (codetools::findGlobals() on each, followed until nothing new turns up)
+calleesOf <- function(entry, ns = asNamespace("fireSenseUtils")) {
   isFn <- function(nm) exists(nm, envir = ns, inherits = FALSE) && is.function(get(nm, envir = ns))
   seen <- character()
   todo <- entry
