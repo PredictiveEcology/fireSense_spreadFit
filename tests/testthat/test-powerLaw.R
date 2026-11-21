@@ -19,18 +19,18 @@ test_that("the defaults leave the fit, the ledger row and the cache keys as they
   expect_true("powerLawGamma" %in% off$omit[[1]])
 })
 
-test_that("the defaults are the powerLaw link, gamma calibrated, no runaway penalty", {
+test_that("the defaults are the powerLawSmooth link, gamma calibrated, no runaway penalty", {
   md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
   dflt <- function(p) md$parameters$default[[which(md$parameters$paramName == p)]]
-  expect_identical(dflt("spreadLink"), "powerLaw")
+  expect_identical(dflt("spreadLink"), "powerLawSmooth")
   expect_true(is.na(dflt("powerLawGamma")))
   expect_identical(dflt("powerLawPcMargin"), 0.005)
   expect_false(dflt("penaliseRunaways"))
-  ## a run with the module's own defaults (only the calibration made small) fits the powerLaw link, calibrated
+  ## a run with the module's own defaults (only the calibration made small) fits the powerLawSmooth link, calibrated
   out <- fittedCO(list(spreadLink = NULL, penaliseRunaways = NULL))
-  expect_identical(out$rec$deArgs$link, "powerLaw")
+  expect_identical(out$rec$deArgs$link, "powerLawSmooth")
   expect_false(out$rec$deArgs$penaliseRunaways)
-  expect_identical(out$rec$geoArgs$studyAreaFireSense[[linkCol]], "powerLaw")
+  expect_identical(out$rec$geoArgs$studyAreaFireSense[[linkCol]], "powerLawSmooth")
   expect_identical(out$rec$deArgs$powerLawGamma, out$sim$powerLawCalibration$gamma)
 })
 
@@ -73,8 +73,8 @@ test_that("a numeric powerLawGamma overrides gamma only: the calibration still r
   base <- fittedCO()$rec$deArgs
   expect_identical(a$lower[-1], base$lower[-1])
   expect_identical(a$upper[-1], base$upper[-1])
-  expect_identical(unname(a$lower[["CMDsm"]]), 0)
-  expect_identical(unname(a$upper[["youngAge"]]), 0)
+  expect_identical(unname(a$lower[["CMDsm"]]), -50) # signs are free by default (coefSigns)
+  expect_identical(unname(a$upper[["youngAge"]]), 50)
 })
 
 test_that("ceiling and climateOutside run no calibration and need no flammableRTM", {
@@ -154,9 +154,9 @@ test_that("maxAsymptoteBoundsOf() and estimateSpreadParams(): p_c's bounds follo
   expect_equal(pl, c(fireSenseUtils::spreadProbFloor + 0.01, 0.265))
   expect_error(maxAsymptoteBoundsOf("powerLaw", p50 = 0.5), "outside")
   expect_identical(estimateSpreadParams(form, annual, "lower", 9, maxAsymptoteBounds = pl),
-                   c(maxAsymptote = pl[1], CMDsm = 0, youngAge = -9))
+                   c(maxAsymptote = pl[1], CMDsm = -9, youngAge = -9))
   expect_identical(estimateSpreadParams(form, annual, "upper", 9, maxAsymptoteBounds = pl),
-                   c(maxAsymptote = pl[2], CMDsm = 9, youngAge = 0))
+                   c(maxAsymptote = pl[2], CMDsm = 9, youngAge = 9))
 })
 
 ## calibratePowerLaw() forks one process per fire; only a job that fits (or validates) uses its result
@@ -185,9 +185,9 @@ test_that("calibratePowerLaw runs when the job fits, and not when it uses the le
 ## powerLawShape: p = p_c - (p_c - lowerSpreadProb) * exp(-sign(x) * abs(x / gamma)^shape); 1 is the original link
 shapeCol <- fireSenseUtils::spreadFitPowerLawShapeTxt
 
-test_that("powerLawShape defaults to 1, which leaves the cache keys as they were; another value reaches the fit, the keys and the ledger row", {
+test_that("powerLawShape defaults to 0.5; 1 leaves the cache keys as they were, another value reaches the fit, the keys and the ledger row", {
   md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
-  expect_identical(md$parameters$default[[which(md$parameters$paramName == "powerLawShape")]], 1)
+  expect_identical(md$parameters$default[[which(md$parameters$paramName == "powerLawShape")]], 0.5)
   expect_identical(shapeCol, "powerLawShape_spread")
   d <- fittedCO(list(spreadLink = "powerLaw"))
   expect_identical(d$rec$deArgs$powerLawShape, 1)

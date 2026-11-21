@@ -119,8 +119,8 @@ test_that("defaults of the objective and of the post-fit diagnostics", {
   ## the annual-area and area-distribution terms and jumping are on by default
   expect_identical(def$yearAreaWeight, "auto")
   expect_identical(def$areaDistWeight, "auto")
-  expect_null(def$crpsWeights)                  # the CRPS objective is off unless DEoptimTests asks for it
-  expect_identical(def$gateRefusal, "minLik")
+  expect_identical(def$crpsWeights$annualArea, 520) # the decided configuration (test-decidedDefaults.R)
+  expect_identical(def$gateRefusal, "simulate")
   expect_identical(def$jumpTries, 20)
   expect_identical(def$jumpMeanDist, 3)
   expect_identical(def$link, "logistic3p")

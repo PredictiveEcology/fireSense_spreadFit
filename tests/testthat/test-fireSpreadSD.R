@@ -1,7 +1,8 @@
 ## fireSpreadSD, the sd of a per-fire random effect on spread (fireSenseUtils#221): fitted only with
 ## wholeLandscapeSpread, just before yearSpreadSD. The ledger row holds it and the escape definition.
 
-wholeP <- list(wholeLandscapeSpread = TRUE, spreadLink = "powerLaw", powerLawGamma = 1.9, penaliseRunaways = FALSE)
+wholeP <- list(wholeLandscapeSpread = TRUE, spreadLink = "powerLaw", powerLawGamma = 1.9, penaliseRunaways = FALSE,
+               fireSpreadSDBounds = c(0, 10)) # the module default is NA (no per-fire effect)
 moduleParamDefault <- function(nm) {
   p <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)$parameters
   p$default[[match(nm, p$paramName)]]
@@ -23,13 +24,14 @@ test_that("estimateSpreadParams puts fireSpreadSD just before yearSpreadSD, and 
   expect_false("fireSpreadSD" %in% names(estimateSpreadParams(form, annual, "upper", 9, yearSpreadSDBounds = c(0, 5))))
 })
 
-test_that("the default bounds have fireSpreadSD (0, 10) before yearSpreadSD when the fit is whole, and not otherwise", {
-  expect_identical(moduleParamDefault("fireSpreadSDBounds"), c(0, 10))
+test_that("the default is no per-fire effect; c(0, 10) gives fireSpreadSD before yearSpreadSD when the fit is whole, and not otherwise", {
+  expect_identical(moduleParamDefault("fireSpreadSDBounds"), NA_real_)
+  expect_false("fireSpreadSD" %in% names(P1(prepared(wholeP[names(wholeP) != "fireSpreadSDBounds"]))$upper))
   whole <- P1(prepared(wholeP))
   expect_identical(tail(names(whole$upper), 2), c("fireSpreadSD", "yearSpreadSD"))
   expect_identical(tail(names(whole$lower), 2), c("fireSpreadSD", "yearSpreadSD"))
   expect_identical(unname(c(whole$lower["fireSpreadSD"], whole$upper["fireSpreadSD"])), c(0, 10))
-  notWhole <- P1(prepared())
+  notWhole <- P1(prepared(list(fireSpreadSDBounds = c(0, 10))))
   expect_false("fireSpreadSD" %in% c(names(notWhole$upper), names(notWhole$lower)))
   expect_identical(tail(names(notWhole$upper), 1), "yearSpreadSD")
 })
@@ -44,7 +46,7 @@ test_that("a fit that is not whole says it leaves fireSpreadSD out", {
 })
 
 test_that("fireSpreadSDBounds = NA turns it off; a supplied bound without it keeps the other bound aligned", {
-  off <- P1(prepared(c(wholeP, list(fireSpreadSDBounds = NA))))
+  off <- P1(prepared(utils::modifyList(wholeP, list(fireSpreadSDBounds = NA))))
   expect_false("fireSpreadSD" %in% c(names(off$upper), names(off$lower)))
   up <- c(maxAsymptote = 0.3, CMDsm = 1, youngAge = 0, class1 = 2, class2 = 3, nf = 4)
   p <- P1(prepared(c(wholeP, list(upper = up))))

@@ -7,7 +7,7 @@
 
 test_that("the 'ceiling' link leaves the fit, the ledger row and the cache keys as they were", {
   md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
-  expect_identical(md$parameters$default[[which(md$parameters$paramName == "spreadLink")]], "powerLaw") # the module's default
+  expect_identical(md$parameters$default[[which(md$parameters$paramName == "spreadLink")]], "powerLawSmooth") # the module's default (the decided configuration)
   expect_identical(fireSenseUtils::spreadLinkOptions[1], "ceiling")
   out <- fittedCO()
   expect_null(out$sim$climateRef_spread)

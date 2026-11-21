@@ -85,16 +85,14 @@ test_that("penaliseRunaways = FALSE reaches the fit, the debug call and the obje
   expect_true(all(vapply(seen, function(a) identical(a$penaliseRunaways, FALSE), logical(1))))
 })
 
-test_that("the CRPS objective's options reach the fit and the debug call, and are absent from the fit at their defaults", {
+test_that("the CRPS objective's options reach the fit and the debug call, at their defaults too (the decided configuration)", {
   crps <- list(crpsWeights = list(top10 = 5), gateRefusal = "simulate")
   for (a in list(debugArgs(crps), fitArgs(crps))) {
     expect_identical(a$tests, "crps")
     expect_identical(a$crpsWeights, list(top10 = 5))
     expect_identical(a$gateRefusal, "simulate")
   }
-  ## defaults: the fit's arguments are what they were (no new names), the debug call gets the defaults
-  expect_false(any(c("crpsWeights", "gateRefusal") %in% names(fitArgs())))
-  dbg <- debugArgs()
-  expect_null(dbg$crpsWeights)
-  expect_identical(dbg$gateRefusal, "minLik")
+  ## defaults: the decided configuration (test-decidedDefaults.R)
+  for (a in list(debugArgs(), fitArgs()))
+    expect_identical(a$crpsWeights$annualArea, 520)
 })

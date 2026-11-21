@@ -72,7 +72,7 @@ test_that("parameters are the expected names", {
   md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
   expect_identical(
     sort(md$parameters$paramName),
-    sort(c(".c", "convergence", ".plotInterval", ".plots", ".plotSize", ".runInitialTime", ".runName", ".studyAreaName",
+    sort(c("coefSigns", ".c", "convergence", ".plotInterval", ".plots", ".plotSize", ".runInitialTime", ".runName", ".studyAreaName",
            ".useCache", "cores", "covFixedRange", "DEoptimControl", "DEoptimTests", "doFit", "doObjFunAssertions",
            "heldOutFold", "initialpop", "initialPopMethod", "emulatorControl", "emulatorMaxParams", "iterDEoptim", "libPathDEoptim",
            "link", "lower", "maxFireSpread", "mode", "mutuallyExclusiveCols", "nCoresNeeded", "spreadLink", "spreadClimate", "activationInterceptBounds", "activationFuelInterceptBounds", "powerLawGamma", "powerLawShape", "lowerAsymptote", "richardsNu", "powerLawPcMargin", "powerLawPcAtP50", "powerLawFires", "powerLawPGrid",
