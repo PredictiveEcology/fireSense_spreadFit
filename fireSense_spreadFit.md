@@ -1,6 +1,6 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9057"
+subtitle: "v.1.2.0.9058"
 date: "Last updated: 2026-11-21"
 output:
   bookdown::html_document2:
@@ -242,25 +242,25 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> crps </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> `'crps'` (default): an objective of proper scores (per-fire CRPS on log size, adTest, areaDist, CRPS of the log total area, CRPS of the 10 largest fires; weights in `crpsWeights`; no annual-area term). Or any of `'adTest'` (pooled Anderson-Darling on fire sizes) and `'pitAD'` (rank-based Anderson-Darling: each fire's observed size ranked among its replicates; does not depend on the fit buffers). The 2026-10-28 profile used `'crps'` alone, with `gateRefusal = 'simulate'` and `objfunFireReps = 100L`. `'SNLL_FS'` was removed and stops the fit. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. </td>
+   <td style="text-align:left;"> `'crps'` (default): an objective of proper scores (per-fire CRPS on log size, adTest, areaDist, CRPS of the log total area, CRPS of the 10 largest fires; weights in `crpsWeights`; annual-area term when `crpsWeights` weights it). Or any of `'adTest'` (pooled Anderson-Darling on fire sizes) and `'pitAD'` (rank-based Anderson-Darling: each fire's observed size ranked among its replicates; does not depend on the fit buffers). The 2026-10-28 profile used `'crps'` alone, with `gateRefusal = 'simulate'` and `objfunFireReps = 100L`. `'SNLL_FS'` was removed and stops the fit. Passed to `tests` in `fireSenseUtils::.objfunSpreadFit()`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> crpsWeights </td>
    <td style="text-align:left;"> list </td>
-   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> 1, 0.34,.... </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Named list of the multipliers of the `'crps'` objective's terms: `fire`, `adTest`, `areaDist`, `totalArea`, `top10`. Names left out take `fireSenseUtils::crpsWeightsDefault()` (1, 0.34, 2.6, 164, 16.5: set by the 2026-10-28 profile on ELFs 6.6.2, 14.3 and 11.3). NULL (default) is all defaults. Passed to `fireSenseUtils::runDEoptim()`; unused without `'crps'` in `DEoptimTests`. </td>
+   <td style="text-align:left;"> Named list of the multipliers of the `'crps'` objective's terms: `fire`, `adTest`, `areaDist`, `totalArea`, `top10`, `annualArea`, `topShare`. Names left out take `fireSenseUtils::crpsWeightsDefault()` (1, 0.34, 2.6, 164, 16.5, 0, 0). The default is the decided configuration (trial lp05): top10 49.5 (3 times the profile's 16.5) and an annual-area term of 520, which `crpsWeightsDefault()` leaves out. NULL is all `crpsWeightsDefault()`. Passed to `fireSenseUtils::runDEoptim()`; unused without `'crps'` in `DEoptimTests`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> gateRefusal </td>
    <td style="text-align:left;"> character </td>
-   <td style="text-align:left;"> minLik </td>
+   <td style="text-align:left;"> simulate </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> What a year that fails the spread-probability gates gets in the objective: 'minLik' (default) is not simulated and scores the floor; 'simulate' simulates and scores it like any other year. Passed to `fireSenseUtils::runDEoptim()`, for any `DEoptimTests`. </td>
+   <td style="text-align:left;"> What a year that fails the spread-probability gates gets in the objective: 'simulate' (default) simulates and scores it like any other year; 'minLik' is not simulated and scores the floor. Passed to `fireSenseUtils::runDEoptim()`, for any `DEoptimTests`. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -374,10 +374,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> spreadLink </td>
    <td style="text-align:left;"> character </td>
-   <td style="text-align:left;"> powerLaw </td>
+   <td style="text-align:left;"> powerLaw.... </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Where climate enters the spread probability (`fireSenseUtils::spreadProbFromCovs()`). 'powerLaw' (default): see below. 'ceiling': climate is a covariate inside the logistic, under the `maxAsymptote` ceiling, the link before 'powerLaw' became the default -- its fits and cache keys are unchanged. 'climateOutside': the logistic, with its ceiling, is fitted to the other covariates only (intercept, fuels, `youngAge`, non-forest), giving p0; the climate term is added on the logit after it, p = plogis(qlogis(p0) + beta_clim (climate - climateRef)), uncapped, and the year effect `yearSpreadSD` (eps_Y) on the same logit. Where fuel put a pixel near the ceiling, climate could add almost nothing under 'ceiling' (2026-10 hindcasts: 59-77% of pixels within 0.01 of the ceiling every year, spread nearly the same in every year). `climateRef` is the mean of each climate covariate over the fit's pixel-years (`fireSenseUtils::spreadClimateRef()`, `sim$climateRef_spread`), stored in the ledger row with this choice (`fireSenseUtils::spreadFitClimateRefTxt`, `spreadLinkTxt`) so `fireSense_spreadPredict` applies the same link; a row without them is 'ceiling'. The objective's gates and saturation summary then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate covariate in the formula (`fireSenseUtils::spreadClimateCols()`). 'powerLaw': the link from a percolation calibration, p = p_c - (p_c - lowerSpreadProb) exp(-x / `powerLawGamma`), with x the linear predictor and p below 0 set to 0 (`fireSenseUtils::powerLawLink()`). The calibration (`fireSenseUtils::calibratePowerLaw()`, on `flammableRTM`, once per ELF) runs when the job fits or validates, not when it uses the ledger row: its p_c50, the spread probability at which half the fires burn a quarter of the largest flammable patch, sets the bounds of p_c (`fireSenseUtils::powerLawPcBounds()`: `lowerSpreadProb` + 0.01 to p_c50 + `powerLawPcMargin`), so a fit never tries thresholds far above the ELF's own. `maxAsymptote` is p_c, fitted; the year effect `yearSpreadSD` is added to x, not to the logit of p, so no year takes p past p_c. Stored in the ledger row with `powerLawGamma` (`fireSenseUtils::spreadLinkTxt`, `spreadFitPowerLawGammaTxt`) so `fireSense_spreadPredict` applies the same link. Not with `link = 'logistic3pUpper'`. 'powerLaw' treats `lowerSpreadProb` as p at x = 0, not as a lower asymptote: p falls to 0 for a low enough x, so such cells cannot burn and escaped fires stop early in low-spread years. 'powerLawSmooth': the same curve for x &gt;= 0 (so the same calibration, `powerLawGamma`, `powerLawShape` and bounds of p_c), and for x &lt; 0 p falls from `lowerSpreadProb` towards the lower asymptote `lowerAsymptote`, never below it (`fireSenseUtils::powerLawSmoothLink()`). 'richards': a generalized logistic between `lowerAsymptote` and p_c with the fixed shape `richardsNu` (0 is Gompertz) and the fixed scale 1 / `fireSenseUtils::spreadPowerLawGamma` (`fireSenseUtils::richardsLink()`). It does not use the calibration (not run, `powerLawGamma` ignored and not written to the ledger), and bounds p_c by `fireSenseUtils::spreadPowerLawPcBounds`. Both are fitted like 'powerLaw': `maxAsymptote` is p_c and `yearSpreadSD` is added to x; the ledger row records the link, `lowerAsymptote` and (with 'richards') `richardsNu` (`fireSenseUtils::spreadFitLowerAsymptoteTxt`, `spreadFitRichardsNuTxt`). </td>
+   <td style="text-align:left;"> Where climate enters the spread probability (`fireSenseUtils::spreadProbFromCovs()`). 'powerLawSmooth' (default, the decided configuration, trial lp05): see below. 'powerLaw': the first power-law link, below. 'ceiling': climate is a covariate inside the logistic, under the `maxAsymptote` ceiling, the link before the power laws -- its fits and cache keys are unchanged. 'climateOutside': the logistic, with its ceiling, is fitted to the other covariates only (intercept, fuels, `youngAge`, non-forest), giving p0; the climate term is added on the logit after it, p = plogis(qlogis(p0) + beta_clim (climate - climateRef)), uncapped, and the year effect `yearSpreadSD` (eps_Y) on the same logit. Where fuel put a pixel near the ceiling, climate could add almost nothing under 'ceiling' (2026-10 hindcasts: 59-77% of pixels within 0.01 of the ceiling every year, spread nearly the same in every year). `climateRef` is the mean of each climate covariate over the fit's pixel-years (`fireSenseUtils::spreadClimateRef()`, `sim$climateRef_spread`), stored in the ledger row with this choice (`fireSenseUtils::spreadFitClimateRefTxt`, `spreadLinkTxt`) so `fireSense_spreadPredict` applies the same link; a row without them is 'ceiling'. The objective's gates and saturation summary then look at p0. The climate coefficient's sign follows `coefSigns`. Needs a climate covariate in the formula (`fireSenseUtils::spreadClimateCols()`). 'powerLaw': the link from a percolation calibration, p = p_c - (p_c - lowerSpreadProb) exp(-x / `powerLawGamma`), with x the linear predictor and p below 0 set to 0 (`fireSenseUtils::powerLawLink()`). The calibration (`fireSenseUtils::calibratePowerLaw()`, on `flammableRTM`, once per ELF) runs when the job fits or validates, not when it uses the ledger row: its p_c50, the spread probability at which half the fires burn a quarter of the largest flammable patch, sets the bounds of p_c (`fireSenseUtils::powerLawPcBounds()`: `lowerSpreadProb` + 0.01 to p_c50 + `powerLawPcMargin`), so a fit never tries thresholds far above the ELF's own. `maxAsymptote` is p_c, fitted; the year effect `yearSpreadSD` is added to x, not to the logit of p, so no year takes p past p_c. Stored in the ledger row with `powerLawGamma` (`fireSenseUtils::spreadLinkTxt`, `spreadFitPowerLawGammaTxt`) so `fireSense_spreadPredict` applies the same link. Not with `link = 'logistic3pUpper'`. 'powerLaw' treats `lowerSpreadProb` as p at x = 0, not as a lower asymptote: p falls to 0 for a low enough x, so such cells cannot burn and escaped fires stop early in low-spread years. 'powerLawSmooth': the same curve for x &gt;= 0 (so the same calibration, `powerLawGamma`, `powerLawShape` and bounds of p_c), and for x &lt; 0 p falls from `lowerSpreadProb` towards the lower asymptote `lowerAsymptote`, never below it (`fireSenseUtils::powerLawSmoothLink()`). 'richards': a generalized logistic between `lowerAsymptote` and p_c with the fixed shape `richardsNu` (0 is Gompertz) and the fixed scale 1 / `fireSenseUtils::spreadPowerLawGamma` (`fireSenseUtils::richardsLink()`). It does not use the calibration (not run, `powerLawGamma` ignored and not written to the ledger), and bounds p_c by `fireSenseUtils::spreadPowerLawPcBounds`. Both are fitted like 'powerLaw': `maxAsymptote` is p_c and `yearSpreadSD` is added to x; the ledger row records the link, `lowerAsymptote` and (with 'richards') `richardsNu` (`fireSenseUtils::spreadFitLowerAsymptoteTxt`, `spreadFitRichardsNuTxt`). </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -419,10 +419,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> powerLawShape </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> 0.5 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> The curvature exponent `shape` of `spreadLink = 'powerLaw'`: p = p_c - (p_c - lowerSpreadProb) exp(-sign(x) abs(x / `powerLawGamma`)^`shape`) (`fireSenseUtils::powerLawLink()`). 1 (default) is the original exponential approach to p_c. A `shape` above 1 gives a lower p for a moderate x and a p closer to p_c for a large x, so extreme pixels and years can burn large without the medium ones burning too much. Fixed, not fitted. At 1 it is left out of the cache keys; the ledger row gets `fireSenseUtils::spreadFitPowerLawShapeTxt` with a `powerLaw` fit. Ignored with the other links. </td>
+   <td style="text-align:left;"> The curvature exponent `shape` of `spreadLink = 'powerLaw'`: p = p_c - (p_c - lowerSpreadProb) exp(-sign(x) abs(x / `powerLawGamma`)^`shape`) (`fireSenseUtils::powerLawLink()`). 0.5 is the default (the decided configuration, trial lp05); 1 is the original exponential approach to p_c. A `shape` above 1 gives a lower p for a moderate x and a p closer to p_c for a large x, so extreme pixels and years can burn large without the medium ones burning too much. Fixed, not fitted. At 1 (`fireSenseUtils::spreadPowerLawShape`) it is left out of the cache keys; the ledger row gets `fireSenseUtils::spreadFitPowerLawShapeTxt` with a `powerLaw` fit. Ignored with the other links. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -635,10 +635,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> wholeLandscapeSpread </td>
    <td style="text-align:left;"> logical </td>
-   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:left;"> TRUE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> TRUE spreads every fire of the fit on all pixels of the covariate tables, with no buffer edge, so no fire is cut and every fire is scored at the size it burns. For tables of the whole ELF (`fireSense_dataPrepFit`, parameter `wholeLandscapeSpreadCovariates`); the spread probability is computed only on the cells a fire reaches, so an evaluation costs about what a buffered one does. Needs `spreadLink` "powerLaw", "powerLawSmooth" or "richards" and `penaliseRunaways = FALSE`. Passed to `fireSenseUtils::runDEoptim()` and `.objfunSpreadFit()` as `wholeLandscape`. FALSE changes nothing, including the fit's cache key. </td>
+   <td style="text-align:left;"> TRUE spreads every fire of the fit on all pixels of the covariate tables, with no buffer edge, so no fire is cut and every fire is scored at the size it burns. For tables of the whole ELF (`fireSense_dataPrepFit`, parameter `wholeLandscapeSpreadCovariates`); the spread probability is computed only on the cells a fire reaches, so an evaluation costs about what a buffered one does. Needs `spreadLink` "powerLaw", "powerLawSmooth" or "richards" and `penaliseRunaways = FALSE`. Passed to `fireSenseUtils::runDEoptim()` and `.objfunSpreadFit()` as `wholeLandscape`. Default TRUE (the decided configuration, trial lp05); set `wholeLandscapeSpreadCovariates` of `fireSense_dataPrepFit` to match. FALSE is the buffered fit, with the cache key it had. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -869,10 +869,10 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
   <tr>
    <td style="text-align:left;"> fireSpreadSDBounds </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 0, 10 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Bounds of `fireSpreadSD`, the sd of a per-fire random effect on spread (added to the linear predictor like `yearSpreadSD`; each fire draws its own eps), when `lower`/`upper` are not supplied. It comes just before `yearSpreadSD` in the bounds. Only a fit with `wholeLandscapeSpread = TRUE` can fit it (`fireSenseUtils::runDEoptim()` stops otherwise): with FALSE it is left out of the bounds, with a message, and the fit is what it was. `NA` turns it off. </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Bounds of `fireSpreadSD`, the sd of a per-fire random effect on spread (added to the linear predictor like `yearSpreadSD`; each fire draws its own eps), when `lower`/`upper` are not supplied. It comes just before `yearSpreadSD` in the bounds. Only a fit with `wholeLandscapeSpread = TRUE` can fit it (`fireSenseUtils::runDEoptim()` stops otherwise): with FALSE it is left out of the bounds, with a message, and the fit is what it was. `NA` (default: no per-fire effect, the decided configuration, trial lp05) turns it off; `c(0, 10)` was the default before. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
@@ -899,7 +899,16 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 50 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Bound given to each covariate coefficient (`upper` = this, `lower` = minus this) when `upper` or `lower` is not supplied. Bounds should be wide enough that they do not influence the fitted value; only the sign of drought-index, `youngAge` and fuel biomass terms is constrained (see `estimateSpreadParams()`). A held-out experiment (7 ELFs x 2 folds) found estimates up to 25.7 and youngAge medians down to -23.0 with the previous default of 9. </td>
+   <td style="text-align:left;"> Bound given to each covariate coefficient (`upper` = this, `lower` = minus this) when `upper` or `lower` is not supplied. Bounds should be wide enough that they do not influence the fitted value; with `coefSigns = 'constrained'` the sign of drought-index, `youngAge` and fuel biomass terms is restricted (see `estimateSpreadParams()`). A held-out experiment (7 ELFs x 2 folds) found estimates up to 25.7 and youngAge medians down to -23.0 with the previous default of 9. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> coefSigns </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> free </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Sign rules of the default `lower`/`upper` bounds (`estimateSpreadParams()`). 'free' (default): every covariate coefficient (drought and other climate, fuel biomass, `youngAge`, non-forest, interactions) may be positive or negative, within the same magnitudes (+-`upperAndLowerVal`, fuel +-`upperAndLowerValFuel`), and the data decide the sign. 'constrained': the rules before this parameter: drought-index terms (`CMD`, `MDC`) and fuel biomass &gt;= 0, `youngAge` &lt;= 0. Part of the bounds, so part of the fit's cache key. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
