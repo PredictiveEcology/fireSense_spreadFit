@@ -15,7 +15,7 @@ defineModule(sim, list(
     person("Alex M.", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(fireSense_spreadFit = "1.2.0.9057"),
+  version = list(fireSense_spreadFit = "1.2.0.9058"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = NA_character_, # e.g., "year",
   citation = list("citation.bib"),
@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.95)", # requestedWorkers(); .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9183)", # 9183: spreadClimate = "activation" and pcAtP50 (activationInterceptTxt, spreadClimateTxt, checkLinkParams(activation =), activationDudYearShare(), fireSenseUtils#255); 9181: spreadLinkInputs(), powerLawPc50 (climate in the power-law ceiling, fireSenseUtils#250); 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9186)", # 9186: climateSplitRanges() (fireSenseUtils#244); 9183: spreadClimate = "activation" and pcAtP50 (activationInterceptTxt, spreadClimateTxt, checkLinkParams(activation =), activationDudYearShare(), fireSenseUtils#255); 9181: spreadLinkInputs(), powerLawPc50 (climate in the power-law ceiling, fireSenseUtils#250); 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.2.0.9004)"),
   parameters = rbind(
@@ -1023,11 +1023,15 @@ fuelColumns <- function(nonAnnualList) {
 #' @param nonAnnualList list of `data.table`s of non-annual covariates, fuel biomass on the LINEAR scale.
 #' @param fuelCols names of the fuel biomass columns, from [fuelColumns()].
 #' @param fixedRange named list of `c(min, max)` that replace the data's range for those covariates;
-#'   default `fireSenseUtils::climateCovRanges`. Every annual covariate that is not a 0/1 indicator is
+#'   default `fireSenseUtils::climateCovRanges`, with the ranges of the split terms of each variable added
+#'   (`fireSenseUtils::climateSplitRanges()`). Every annual covariate that is not a 0/1 indicator is
 #'   climate and must be in it, or this stops. Indicators are always `c(0, 1)`.
 #' @return `data.table` with 2 rows (min, max) and one column per covariate. Stops if a covariate that
 #'   is not given a fixed range has max <= min.
 deriveCovMinMax <- function(annualList, nonAnnualList, fuelCols, fixedRange = fireSenseUtils::climateCovRanges) {
+
+  ## the split climate terms (`<var>_yr`, `<var>_dev`) of fireSense_dataPrepFit's spreadClimateSplit have ranges derived from the variable's
+  fixedRange <- fireSenseUtils::climateSplitRanges(fixedRange)
 
   nonAnnRescales <- rbindlist(nonAnnualList)
   vals1 <- setdiff(colnames(nonAnnRescales), "pixelID")
@@ -1355,5 +1359,7 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
 youngAge <- fireSenseUtils::youngAgeTxt
 
 ## drought-index terms (CMD or MDC anywhere in the name, e.g. CMD, CMD_sm, CMD_sp, CMDsm, cumMDC,
-## MDC): wetter conditions should not increase spread probability, so these get a lower bound of 0
+## MDC): wetter conditions should not increase spread probability, so these get a lower bound of 0.
+## The split terms of such a variable (`CMD_yr`, `CMD_dev`; fireSense_dataPrepFit's `spreadClimateSplit`) have it
+## in their names and so the same bound; `Tmaxsm_yr` and `Tmaxsm_dev` are not constrained, as `Tmaxsm` is not.
 droughtIndexPattern <- "CMD|MDC"

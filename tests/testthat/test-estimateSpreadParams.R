@@ -120,3 +120,27 @@ test_that("coefSigns: free (default) gives symmetric bounds to CMD, a fuel class
   expect_identical(con$lower, c(maxAsymptote = fireSenseUtils::spreadProbFloor, CMDsm = 0, youngAge = -9, fuel1 = 0, nf = -9))
   expect_error(bnd(coefSigns = "both"))
 })
+
+test_that("a between-year interaction (CMD_yr:class1) is bounded +/- upperAndLower: the drought rule of CMD_yr (coefSigns = 'constrained') does not reach it", {
+  formX <- "~ 1 + CMD_yr + CMD_dev + youngAge + class1 + CMD_yr:class1"
+  up <- estimateSpreadParams(formX, annual, "upper", upperAndLower = 9, fuelTerms = "class1", upperAndLowerFuel = 20, coefSigns = "constrained")
+  lo <- estimateSpreadParams(formX, annual, "lower", upperAndLower = 9, fuelTerms = "class1", upperAndLowerFuel = 20, coefSigns = "constrained")
+  expect_identical(up[["CMD_yr:class1"]], 9)
+  expect_identical(lo[["CMD_yr:class1"]], -9)
+  expect_identical(unname(c(lo[c("CMD_yr", "CMD_dev")])), c(0, 0))
+  expect_identical(names(up)[-1], fireSenseUtils::spreadDesignCols(formX))
+})
+
+test_that("split climate terms: CMD_yr and CMD_dev >= 0 under 'constrained' (the rule of their variable), every split term free by default", {
+  f <- "~ 1 + CMD_yr + CMD_dev + Tmaxsm_yr + Tmaxsm_dev + youngAge"
+  bounds <- function(...) list(up = estimateSpreadParams(f, annual, whichBound = "upper", upperAndLower = 9, ...),
+                               lo = estimateSpreadParams(f, annual, whichBound = "lower", upperAndLower = 9, ...))
+  con <- bounds(coefSigns = "constrained")
+  expect_identical(unname(con$lo[c("CMD_yr", "CMD_dev")]), c(0, 0))
+  expect_identical(unname(con$up[c("CMD_yr", "CMD_dev")]), c(9, 9))
+  expect_identical(unname(con$lo[c("Tmaxsm_yr", "Tmaxsm_dev")]), c(-9, -9))
+  expect_identical(unname(con$up[c("Tmaxsm_yr", "Tmaxsm_dev")]), c(9, 9))
+  free <- bounds()
+  expect_identical(unname(free$lo[c("CMD_yr", "CMD_dev", "Tmaxsm_yr", "Tmaxsm_dev")]), rep(-9, 4))
+  expect_identical(unname(free$up[c("CMD_yr", "CMD_dev", "Tmaxsm_yr", "Tmaxsm_dev")]), rep(9, 4))
+})
