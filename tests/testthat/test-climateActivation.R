@@ -22,7 +22,7 @@ test_that("'activation' fits activationIntercept right before yearSpreadSD and n
   expect_named(out$sim$climateRef_spread, "CMDsm")
   expect_identical(a$climateRef, out$sim$climateRef_spread)
   expect_identical(a$powerLawPc50, p50)
-  expect_identical(unname(a$lower[["CMDsm"]]), 0)   # the climate sign constraint is unchanged
+  expect_identical(unname(a$lower[["CMDsm"]]), -50)   # the climate sign is free by default (coefSigns)
   ## its own bounds
   b2 <- fittedCO(c(actParams, list(activationInterceptBounds = c(-3, 4))))$rec$deArgs
   expect_identical(unname(c(b2$lower[[actTxt]], b2$upper[[actTxt]])), c(-3, 4))

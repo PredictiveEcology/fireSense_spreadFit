@@ -13,17 +13,23 @@ test_that("default bounds are built from the formula and the annual covariates, 
   ## fireSenseUtils::fixLogisticPars()).
   p <- P1(prepared())
   expect_identical(p$upper, c(maxAsymptote = 0.276,
-                              CMDsm = 50, youngAge = 0, class1 = 100, class2 = 100, nf = 50, yearSpreadSD = 10))
+                              CMDsm = 50, youngAge = 50, class1 = 100, class2 = 100, nf = 50, yearSpreadSD = 10))
   expect_identical(p$lower, c(maxAsymptote = fireSenseUtils::spreadProbFloor,
-                              CMDsm = 0, youngAge = -50, class1 = 0, class2 = 0, nf = -50, yearSpreadSD = 0))
+                              CMDsm = -50, youngAge = -50, class1 = -100, class2 = -100, nf = -50, yearSpreadSD = 0))
   expect_false(any(c("hillSlope1", "inflectionPoint1") %in% c(names(p$upper), names(p$lower))))
+  ## coefSigns = "constrained" restores the one-sided bounds
+  pc <- P1(prepared(list(coefSigns = "constrained")))
+  expect_identical(pc$upper, c(maxAsymptote = 0.276,
+                               CMDsm = 50, youngAge = 0, class1 = 100, class2 = 100, nf = 50, yearSpreadSD = 10))
+  expect_identical(pc$lower, c(maxAsymptote = fireSenseUtils::spreadProbFloor,
+                               CMDsm = 0, youngAge = -50, class1 = 0, class2 = 0, nf = -50, yearSpreadSD = 0))
 })
 
 test_that("upperAndLowerValFuel sets the fuel bounds, and only those", {
   ## fuel is biomass / 1e4, not [0, 1]: bounds should be wide enough not to bind, not narrow
   p <- P1(prepared(list(upperAndLowerValFuel = 25)))
   expect_identical(unname(p$upper[c("class1", "class2", "nf", "CMDsm")]), c(25, 25, 50, 50))
-  expect_identical(unname(p$lower[c("class1", "class2", "nf", "youngAge")]), c(0, 0, -50, -50))  # fuel lower is 0
+  expect_identical(unname(p$lower[c("class1", "class2", "nf", "youngAge")]), c(-25, -25, -50, -50))  # fuel is symmetric too (coefSigns = "free")
 })
 
 test_that("upperAndLowerVal sets the size of the default bounds", {
@@ -38,7 +44,7 @@ test_that("supplied bounds are kept; only the missing one is filled", {
           CMDsm = 1, youngAge = 0, class1 = 2, class2 = 3, nf = 4)
   p <- P1(prepared(list(upper = up)))
   expect_identical(p$upper, up)
-  expect_identical(unname(p$lower[c("class1", "nf")]), c(0, -50))
+  expect_identical(unname(p$lower[c("class1", "nf")]), c(-100, -50))
   ## the supplied upper has no yearSpreadSD, so the filled-in lower has none either
   expect_identical(names(p$lower), names(up))
 })
@@ -162,8 +168,11 @@ test_that("a split climate formula (spreadClimateSplit) gets fixed ranges for bo
   sim <- prepared(objects = list(fireSense_annualSpreadFitCovariates = annual,
                                  fireSense_spreadFormula = "~ 0 + CMDsm_yr + CMDsm_dev + youngAge + class1 + class2 + nf"))
   p <- P1(sim)
-  expect_identical(unname(p$lower[c("CMDsm_yr", "CMDsm_dev")]), c(0, 0))     # drought terms are >= 0 by name
+  expect_identical(unname(p$lower[c("CMDsm_yr", "CMDsm_dev")]), c(-50, -50))  # free by default
   expect_identical(unname(p$upper[c("CMDsm_yr", "CMDsm_dev")]), c(50, 50))
+  pc <- P1(prepared(list(coefSigns = "constrained"), objects = list(fireSense_annualSpreadFitCovariates = annual,
+                                 fireSense_spreadFormula = "~ 0 + CMDsm_yr + CMDsm_dev + youngAge + class1 + class2 + nf")))
+  expect_identical(unname(pc$lower[c("CMDsm_yr", "CMDsm_dev")]), c(0, 0))     # drought terms are >= 0 by name
   expect_identical(sim$covMinMax_spread$CMDsm_yr, c(0, 100))
   expect_identical(sim$covMinMax_spread$CMDsm_dev, c(-50, 50))
 })
@@ -179,7 +188,7 @@ test_that("a split climate formula with a _yr:fuel interaction: symmetric bounds
   p <- P1(sim)
   expect_identical(unname(c(p$lower[["CMDsm_yr:class1"]], p$upper[["CMDsm_yr:class1"]])), c(-50, 50))
   expect_identical(unname(c(p$lower[["CMDsm_yr:class2"]], p$upper[["CMDsm_yr:class2"]])), c(-50, 50))
-  expect_identical(unname(p$lower[c("CMDsm_yr", "CMDsm_dev")]), c(0, 0))
+  expect_identical(unname(p$lower[c("CMDsm_yr", "CMDsm_dev")]), c(-50, -50))
   expect_false(any(grepl(":", names(sim$covMinMax_spread))))
   expect_identical(sim$covMinMax_spread$CMDsm_yr, c(0, 100))
 })

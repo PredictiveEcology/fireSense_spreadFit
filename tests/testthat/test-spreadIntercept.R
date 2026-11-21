@@ -10,8 +10,8 @@ icptName <- fireSenseUtils::spreadInterceptTxt
 
 test_that("estimateSpreadParams(): an intercept is bounded +/- upperAndLower, first among the coefficients", {
   annual <- list(year2001 = data.table::data.table(pixelID = 1L, CMDsm = 1, youngAge = 0))
-  up <- estimateSpreadParams("~ 1 + CMDsm + youngAge + nf", annual, "upper", upperAndLower = 9)
-  lo <- estimateSpreadParams("~ 1 + CMDsm + youngAge + nf", annual, "lower", upperAndLower = 9)
+  up <- estimateSpreadParams("~ 1 + CMDsm + youngAge + nf", annual, "upper", upperAndLower = 9, coefSigns = "constrained")
+  lo <- estimateSpreadParams("~ 1 + CMDsm + youngAge + nf", annual, "lower", upperAndLower = 9, coefSigns = "constrained")
   expect_identical(up, c(maxAsymptote = 0.276, `(Intercept)` = 9, CMDsm = 9, youngAge = 0, nf = 9))
   expect_identical(lo, c(maxAsymptote = fireSenseUtils::spreadProbFloor, `(Intercept)` = -9, CMDsm = 0, youngAge = -9, nf = -9))
   ## with upperTail1 it still comes right after the logistic parameters, and yearSpreadSD stays last
@@ -169,4 +169,16 @@ test_that("a fit with an interaction centres its covariates, not the product, an
                    c(icptName, "CMDsm", "class1", "CMDsm:class1"))
   ## no column of covMinMax for the interaction: it is rescaled from its covariates
   expect_false("CMDsm:class1" %in% names(out$sim$covMinMax_spread))
+})
+
+test_that("spreadFitPrepare: the coefSigns parameter reaches the default bounds, and changes them", {
+  bounds <- function(pars) {
+    p <- SpaDES.core::params(runEvents(runEvents(toySim(pars, toyObjectsI(formX)), "init"), "spreadFitPrepare"))[[moduleName]]
+    list(lower = p$lower, upper = p$upper)
+  }
+  free <- bounds(list())
+  con <- bounds(list(coefSigns = "constrained"))
+  expect_identical(free$lower[["CMDsm"]], -50)
+  expect_identical(con$lower[["CMDsm"]], 0)
+  expect_false(identical(free$lower, con$lower))
 })

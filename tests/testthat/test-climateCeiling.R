@@ -25,7 +25,7 @@ test_that("'ceiling' gives the fit the climate reference and p50, and bounds p_c
   expect_identical(a$powerLawPc50, p50)
   expect_identical(unname(a$upper[["maxAsymptote"]]), p50)
   expect_equal(unname(a$lower[["maxAsymptote"]]), fireSenseUtils::spreadProbFloor + 0.01)
-  expect_identical(unname(a$lower[["CMDsm"]]), 0)   # the climate sign constraint is unchanged
+  expect_identical(unname(a$lower[["CMDsm"]]), -50)   # the climate sign is free by default (coefSigns)
   ## its cache key carries both
   on <- omitArgsCO(list(spreadLink = "powerLaw", spreadClimate = "ceiling"))
   expect_false(any(c("climateRef", "powerLawPc50") %in% on$omit[[1]]))
