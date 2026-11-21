@@ -21,7 +21,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.txt", "fireSense_spreadFit.Rmd"),
   loadOrder = list(after = c("fireSense_dataPrepFit", "fireSense_ignitionFit")),
-  reqdPkgs = list("data.table", "DEoptim", "dplyr", "fpCompare", "future",
+  reqdPkgs = list("codetools", "data.table", "DEoptim", "dplyr", "fpCompare", "future",
                   "ggplot2", "googledrive", "hetGP", "httr2", "lhs", "scales", "kSamples",
                   "munsell",
                   "logging", "magrittr", "parallel", "parallelly", "raster", "RhpcBLASctl", "sf", "terra", "tidyr", "withr", ## TODO: remove magrittr
@@ -64,21 +64,21 @@ defineModule(sim, list(
                     cacheKey = FALSE),
     defineParameter("DEoptimTests", "character", default = "crps",
                     desc = paste("`'crps'` (default): an objective of proper scores (per-fire CRPS on log size, adTest, areaDist,",
-                                 "CRPS of the log total area, CRPS of the 10 largest fires; weights in `crpsWeights`; no annual-area",
-                                 "term). Or any of `'adTest'` (pooled Anderson-Darling on fire sizes) and `'pitAD'` (rank-based",
+                                 "CRPS of the log total area, CRPS of the 10 largest fires; weights in `crpsWeights`; annual-area term when",
+                                 "`crpsWeights` weights it). Or any of `'adTest'` (pooled Anderson-Darling on fire sizes) and `'pitAD'` (rank-based",
                                  "Anderson-Darling: each fire's observed size ranked among its replicates; does not depend on the fit",
                                  "buffers). The 2026-10-28 profile used `'crps'` alone, with `gateRefusal = 'simulate'` and",
                                  "`objfunFireReps = 100L`. `'SNLL_FS'` was removed and stops the fit. Passed to `tests` in",
                                  "`fireSenseUtils::.objfunSpreadFit()`.")),
-    defineParameter("crpsWeights", "list", default = NULL,
+    defineParameter("crpsWeights", "list",
+                    default = list(fire = 1, adTest = 0.34, areaDist = 2.6, totalArea = 164, top10 = 49.5, annualArea = 520),
                     desc = paste("Named list of the multipliers of the `'crps'` objective's terms: `fire`, `adTest`,",
-                                 "`areaDist`, `totalArea`, `top10`. Names left out take `fireSenseUtils::crpsWeightsDefault()`",
-                                 "(1, 0.34, 2.6, 164, 16.5: set by the 2026-10-28 profile on ELFs 6.6.2, 14.3 and 11.3). NULL (default)",
-                                 "is all defaults. Passed to `fireSenseUtils::runDEoptim()`; unused without `'crps'` in `DEoptimTests`.")),
-    defineParameter("gateRefusal", "character", default = "minLik",
-                    desc = paste("What a year that fails the spread-probability gates gets in the objective: 'minLik'",
-                                 "(default) is not simulated and scores the floor; 'simulate' simulates and scores it like",
-                                 "any other year. Passed to `fireSenseUtils::runDEoptim()`, for any `DEoptimTests`.")),
+                                 "`areaDist`, `totalArea`, `top10`, `annualArea`, `topShare`. Names left out take `fireSenseUtils::crpsWeightsDefault()`",
+                                 "(1, 0.34, 2.6, 164, 16.5, 0, 0). The default is the decided configuration (trial lp05): top10 49.5 (3 times the",
+                                 "profile's 16.5) and an annual-area term of 520, which `crpsWeightsDefault()` leaves out. NULL is all `crpsWeightsDefault()`. Passed to `fireSenseUtils::runDEoptim()`; unused without `'crps'` in `DEoptimTests`.")),
+    defineParameter("gateRefusal", "character", default = "simulate",
+                    desc = paste("What a year that fails the spread-probability gates gets in the objective: 'simulate'",
+                                 "(default) simulates and scores it like any other year; 'minLik' is not simulated and scores the floor. Passed to `fireSenseUtils::runDEoptim()`, for any `DEoptimTests`.")),
     defineParameter("doFit", "logical", default = FALSE,
                     desc = paste("Whether to fit this polygon. FALSE (default): never fit -- use the ledger's fit, and",
                                  "stop with an error if it holds none for this polygon (`spreadFitFilename` picks the ledger),",
@@ -169,10 +169,10 @@ defineModule(sim, list(
                                  "Stukel's upper tail, one more parameter `upperTail1` that changes only how the",
                                  "curve approaches its ceiling (`fireSenseUtils::logistic3pUpper()`). Its default",
                                  "bounds are `upperTailBounds`.")),
-    defineParameter("spreadLink", "character", default = "powerLaw",
+    defineParameter("spreadLink", "character", default = "powerLawSmooth",
                     desc = paste("Where climate enters the spread probability (`fireSenseUtils::spreadProbFromCovs()`).",
-                                 "'powerLaw' (default): see below. 'ceiling': climate is a covariate inside the logistic, under the `maxAsymptote`",
-                                 "ceiling, the link before 'powerLaw' became the default -- its fits and cache keys are unchanged. 'climateOutside': the",
+                                 "'powerLawSmooth' (default, the decided configuration, trial lp05): see below. 'powerLaw': the first power-law link, below. 'ceiling': climate is a covariate inside the logistic, under the `maxAsymptote`",
+                                 "ceiling, the link before the power laws -- its fits and cache keys are unchanged. 'climateOutside': the",
                                  "logistic, with its ceiling, is fitted to the other covariates only (intercept, fuels,",
                                  "`youngAge`, non-forest), giving p0; the climate term is added on the logit after it,",
                                  "p = plogis(qlogis(p0) + beta_clim * (climate - climateRef)), uncapped, and the year effect",
@@ -183,7 +183,7 @@ defineModule(sim, list(
                                  "`sim$climateRef_spread`), stored in the ledger row with this choice",
                                  "(`fireSenseUtils::spreadFitClimateRefTxt`, `spreadLinkTxt`) so `fireSense_spreadPredict` applies",
                                  "the same link; a row without them is 'ceiling'. The objective's gates and saturation summary",
-                                 "then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate",
+                                 "then look at p0. The climate coefficient's sign follows `coefSigns`. Needs a climate",
                                  "covariate in the formula (`fireSenseUtils::spreadClimateCols()`). 'powerLaw': the link from a",
                                  "percolation calibration, p = p_c - (p_c - lowerSpreadProb) * exp(-x / `powerLawGamma`), with x the",
                                  "linear predictor and p below 0 set to 0 (`fireSenseUtils::powerLawLink()`). The calibration",
@@ -245,12 +245,12 @@ defineModule(sim, list(
                                  "the ELF's flammable map. A number overrides `gamma` only (the bounds of p_c still come from",
                                  "the calibration). It is fixed, not fitted: it is exactly confounded with the scale of the",
                                  "coefficients. Ignored with the other links.")),
-    defineParameter("powerLawShape", "numeric", default = fireSenseUtils::spreadPowerLawShape,
+    defineParameter("powerLawShape", "numeric", default = 0.5,
                     desc = paste("The curvature exponent `shape` of `spreadLink = 'powerLaw'`: p = p_c - (p_c - lowerSpreadProb) *",
-                                 "exp(-sign(x) * abs(x / `powerLawGamma`)^`shape`) (`fireSenseUtils::powerLawLink()`). 1 (default) is the",
-                                 "original exponential approach to p_c. A `shape` above 1 gives a lower p for a moderate x and a p",
+                                 "exp(-sign(x) * abs(x / `powerLawGamma`)^`shape`) (`fireSenseUtils::powerLawLink()`). 0.5 is the default (the",
+                                 "decided configuration, trial lp05); 1 is the original exponential approach to p_c. A `shape` above 1 gives a lower p for a moderate x and a p",
                                  "closer to p_c for a large x, so extreme pixels and years can burn large without the medium ones",
-                                 "burning too much. Fixed, not fitted. At 1 it is left out of the cache keys; the ledger row",
+                                 "burning too much. Fixed, not fitted. At 1 (`fireSenseUtils::spreadPowerLawShape`) it is left out of the cache keys; the ledger row",
                                  "gets `fireSenseUtils::spreadFitPowerLawShapeTxt` with a `powerLaw` fit. Ignored with the other links.")),
     defineParameter("lowerAsymptote", "numeric", default = fireSenseUtils::spreadProbFloor,
                     desc = paste("The lower asymptote L of `spreadLink = 'powerLawSmooth'` or 'richards', from",
@@ -374,14 +374,15 @@ defineModule(sim, list(
                                  "density at the observed size in the size likelihood, and the other terms score the size",
                                  "it reached. TRUE also stops such a fire at the first open pixel of its own buffer, which",
                                  "saves time. Passed to `fireSenseUtils::runDEoptim()`.")),
-    defineParameter("wholeLandscapeSpread", "logical", default = FALSE,
+    defineParameter("wholeLandscapeSpread", "logical", default = TRUE,
                     desc = paste("TRUE spreads every fire of the fit on all pixels of the covariate tables, with no buffer",
                                  "edge, so no fire is cut and every fire is scored at the size it burns. For tables of the",
                                  "whole ELF (`fireSense_dataPrepFit`, parameter `wholeLandscapeSpreadCovariates`); the spread",
                                  "probability is computed only on the cells a fire reaches, so an evaluation costs about what",
                                  "a buffered one does. Needs `spreadLink` \"powerLaw\", \"powerLawSmooth\" or \"richards\" and `penaliseRunaways = FALSE`.",
                                  "Passed to `fireSenseUtils::runDEoptim()` and `.objfunSpreadFit()` as `wholeLandscape`.",
-                                 "FALSE changes nothing, including the fit's cache key.")),
+                                 "Default TRUE (the decided configuration, trial lp05); set `wholeLandscapeSpreadCovariates` of `fireSense_dataPrepFit`",
+                                 "to match. FALSE is the buffered fit, with the cache key it had.")),
     defineParameter("runawayBufferMultiple", "numeric", default = NA_real_,
                     desc = paste("Retired: a cut fire is scored at the size it reached. It set the size a runaway counted",
                                  "as in the Anderson-Darling, annual-area and area-distribution terms.",
@@ -490,13 +491,13 @@ defineModule(sim, list(
                                  "range. `youngAge`, the `nfLCC_*` groups and the `treedWetland` indicator are always `c(0, 1)`",
                                  "(`fireSenseUtils::spreadIndicatorRanges()`). `fireSense_spreadPredict` rescales with the",
                                  "stored `covMinMax_spread`, so it follows.")),
-    defineParameter("fireSpreadSDBounds", "numeric", default = c(0, 10),
+    defineParameter("fireSpreadSDBounds", "numeric", default = NA_real_,
                     desc = paste("Bounds of `fireSpreadSD`, the sd of a per-fire random effect on spread (added to the",
                                  "linear predictor like `yearSpreadSD`; each fire draws its own eps), when `lower`/`upper` are",
                                  "not supplied. It comes just before `yearSpreadSD` in the bounds. Only a fit with",
                                  "`wholeLandscapeSpread = TRUE` can fit it (`fireSenseUtils::runDEoptim()` stops otherwise): with",
-                                 "FALSE it is left out of the bounds, with a message, and the fit is what it was. `NA` turns it",
-                                 "off.")),
+                                 "FALSE it is left out of the bounds, with a message, and the fit is what it was. `NA` (default: no per-fire",
+                                 "effect, the decided configuration, trial lp05) turns it off; `c(0, 10)` was the default before.")),
     defineParameter("yearSpreadSDBounds", "numeric", default = c(0, 10),
                     desc = paste("Bounds of `yearSpreadSD`, the sd of a per-year random effect on spread",
                                  "(`fireSenseUtils::.objfunSpreadFit()`), when `lower`/`upper` are not supplied. It is",
@@ -511,9 +512,16 @@ defineModule(sim, list(
     defineParameter("upperAndLowerVal", "numeric", default = 50,
                     desc = paste("Bound given to each covariate coefficient (`upper` = this, `lower` = minus this) when `upper` or",
                                  "`lower` is not supplied. Bounds should be wide enough that they do not influence the fitted",
-                                 "value; only the sign of drought-index, `youngAge` and fuel biomass terms is constrained (see",
-                                 "`estimateSpreadParams()`). A held-out experiment (7 ELFs x 2 folds) found estimates up to",
+                                 "value; with `coefSigns = 'constrained'` the sign of drought-index, `youngAge` and fuel biomass terms is",
+                                 "restricted (see `estimateSpreadParams()`). A held-out experiment (7 ELFs x 2 folds) found estimates up to",
                                  "25.7 and youngAge medians down to -23.0 with the previous default of 9.")),
+    defineParameter("coefSigns", "character", default = "free",
+                    desc = paste("Sign rules of the default `lower`/`upper` bounds (`estimateSpreadParams()`). 'free' (default): every",
+                                 "covariate coefficient (drought and other climate, fuel biomass, `youngAge`, non-forest,",
+                                 "interactions) may be positive or negative, within the same magnitudes (+-`upperAndLowerVal`, fuel",
+                                 "+-`upperAndLowerValFuel`), and the data decide the sign. 'constrained': the rules before this",
+                                 "parameter: drought-index terms (`CMD`, `MDC`) and fuel biomass >= 0, `youngAge` <= 0. Part of the",
+                                 "bounds, so part of the fit's cache key.")),
     defineParameter("upperAndLowerValFuel", "numeric", default = 100,
                     desc = paste("As `upperAndLowerVal`, for the fuel biomass covariates. They are biomass / 1e4, so their",
                                  "coefficients are larger than those of covariates rescaled to [0, 1]. The same held-out",
@@ -886,9 +894,8 @@ spreadFitPrep <- function(sim) {
   })
 
   # veg coefficients should probably have bounds of 4
-  # however youngAge should have an upper limit of zero to prevent self-propagating fires
-  # MDC should have a lower limit of zero - drought shouldn't increase spread probability
-  # fuel biomass should have a lower limit of zero - more fuel shouldn't decrease spread probability
+  # coefSigns = "constrained": youngAge has an upper limit of zero (no self-propagating fires), drought-index
+  # terms and fuel biomass a lower limit of zero; "free" (default) leaves every sign to the data
   ## yearSpreadSD (the per-year random effect) is in the default bounds unless turned off; when one bound
   ## is supplied, the one filled in includes it only if the supplied one does, so the two stay aligned
   checkSpreadLink(Par)
@@ -896,32 +903,21 @@ spreadFitPrep <- function(sim) {
   sim <- calibratePowerLawFor(sim)
   fireSenseUtils::escapeDefinitionOf(sim) # stops now, not after the fit, if the escape definition differs from the other modules'
   sdBounds <- randomEffectBounds(Par, P(sim)$upper, P(sim)$lower)
-  if (is.null(P(sim)$upper) || any(is.na(P(sim)$upper))) {
-    P(sim)$upper <- estimateSpreadParams(sim$fireSense_spreadFormula,
-                                         sim$fireSense_annualSpreadFitCovariates,
-                                         whichBound = "upper", upperAndLower = Par$upperAndLowerVal,
-                                         fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
-                                         upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
-                                         fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
-                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par),
-                                                                                   pcAtP50 = pcAtP50(Par)),
-                                         activationInterceptBounds = activationInterceptBoundsOf(Par),
-                                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds)
-  }
-
-  if (is.null(P(sim)$lower) || any(is.na(P(sim)$lower))) {
-    ## TODO - figure out the 2-4 piece logistic defaults :S
-    P(sim)$lower <-  estimateSpreadParams(sim$fireSense_spreadFormula,
-                                          sim$fireSense_annualSpreadFitCovariates,
-                                          whichBound = "lower", upperAndLower = Par$upperAndLowerVal,
-                                          fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
-                                         upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
-                                         fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
-                                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par),
-                                                                                   pcAtP50 = pcAtP50(Par)),
-                                         activationInterceptBounds = activationInterceptBoundsOf(Par),
-                                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds)
-  }
+  ## the default bounds, as far as `upper` and `lower` are not supplied
+  defaultBound <- function(whichBound)
+    estimateSpreadParams(sim$fireSense_spreadFormula,
+                         sim$fireSense_annualSpreadFitCovariates,
+                         whichBound = whichBound, upperAndLower = Par$upperAndLowerVal,
+                         fuelTerms = fuelCols, upperAndLowerFuel = Par$upperAndLowerValFuel,
+                         upperTailBounds = if (identical(Par$link, "logistic3pUpper")) Par$upperTailBounds,
+                         fireSpreadSDBounds = sdBounds$fireSpreadSD, yearSpreadSDBounds = sdBounds$yearSpreadSD,
+                         maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par),
+                                                                   pcAtP50 = pcAtP50(Par)),
+                         activationInterceptBounds = activationInterceptBoundsOf(Par),
+                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds,
+                         coefSigns = Par$coefSigns)
+  if (is.null(P(sim)$upper) || any(is.na(P(sim)$upper))) P(sim)$upper <- defaultBound("upper")
+  if (is.null(P(sim)$lower) || any(is.na(P(sim)$lower))) P(sim)$lower <- defaultBound("lower")
   ## hillSlope1 (the spread link's slope) and inflectionPoint1 (its Richards exponent) are fixed at 1,
   ## not fitted (see estimateSpreadParams()). A supplied 'upper'/'lower' naming either would silently
   ## be fitted and then ignored downstream (fireSenseUtils' fixLogisticPars() inserts the fixed values
@@ -1199,11 +1195,12 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 
 #' Default `upper` or `lower` bounds for DEoptim
 #'
-#' Bounds should be wide enough that they do not influence the fitted value, except to constrain
-#' sign. Covariate coefficients get +/- `upperAndLower`, except drought-index terms (name matches
+#' Bounds should be wide enough that they do not influence the fitted value. With `coefSigns = "free"` (the
+#' default) every covariate coefficient gets +/- `upperAndLower` (fuel biomass terms, `fuelTerms`: +/- `upperAndLowerFuel`),
+#' and the data decide the sign. With `coefSigns = "constrained"`: drought-index terms (name matches
 #' `droughtIndexPattern`, e.g. `CMD`, `CMD_sm`, `cumMDC` -- lower bound 0, since drought should not
-#' increase spread probability), fuel biomass terms (`fuelTerms`: lower bound 0, upper `upperAndLowerFuel`)
-#' and `youngAge` (upper bound 0, to prevent self-propagating fires). Fuel is bounded below by 0
+#' increase spread probability), fuel biomass terms (lower bound 0, upper `upperAndLowerFuel`)
+#' and `youngAge` (upper bound 0, to prevent self-propagating fires). Fuel was bounded below by 0
 #' because, with the intercept and centred covariates, fits put the intercept near the spread-probability
 #' ceiling and gave fuel biomass negative coefficients, so low-biomass (recently burned) stands were the
 #' most flammable. That positive feedback produced runaway fires 3-6 times the observed area in NRV runs
@@ -1223,9 +1220,10 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 #' @param anyAnnualCovariates list of annual covariate `data.table`s; kept for call-site
 #'   compatibility but no longer used -- bound sign is now decided by term name, not by annual
 #'   table membership.
+#' @param coefSigns "free" (default) or "constrained": see the module parameter `coefSigns`.
 #' @param whichBound "upper" or "lower".
 #' @param upperAndLower numeric; absolute bound for covariate coefficients.
-#' @param fuelTerms,upperAndLowerFuel character names of the fuel biomass terms, and their upper bound (lower is 0).
+#' @param fuelTerms,upperAndLowerFuel character names of the fuel biomass terms, and their bound (lower is 0 only when `coefSigns = "constrained"`).
 #' @param upperTailBounds numeric; if not `NULL`, the bounds of `upperTail1`, which is added after
 #'   `maxAsymptote` (link "logistic3pUpper").
 #' @param fireSpreadSDBounds,yearSpreadSDBounds numeric(2) or `NULL`; the bounds of the per-fire and per-year random
@@ -1245,9 +1243,9 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
                                  upperAndLower, fuelTerms = character(), upperAndLowerFuel = upperAndLower,
                                  upperTailBounds = NULL, fireSpreadSDBounds = NULL, yearSpreadSDBounds = NULL,
                                  maxAsymptoteBounds = maxAsymptoteBoundsOf(), activationInterceptBounds = NULL,
-                                 interceptBounds = NULL) {
+                                 interceptBounds = NULL, coefSigns = "free") {
 
-  stopifnot(whichBound %in% c("upper", "lower"))
+  stopifnot(whichBound %in% c("upper", "lower"), coefSigns %in% c("free", "constrained"))
 
   formulaTerms <- attr(terms(as.formula(fireSense_spreadFormula, env = .GlobalEnv)), "term.labels")
   termLength <- length(formulaTerms)
@@ -1257,13 +1255,16 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
     newParams <- rep(-(upperAndLower), termLength)
   }
   newParams <- as.vector(newParams)
-  ## fuel biomass is biomass / 1e4, not [0, 1], so its coefficients need a wider box
-  ## and a lower bound of 0: more fuel can only raise spread probability
-  newParams[formulaTerms %in% fuelTerms] <- if (whichBound == "upper") upperAndLowerFuel else 0
-  whDrought <- grepl(droughtIndexPattern, formulaTerms)
-  whYA <- formulaTerms %in% youngAge
-  newParams[whDrought] <- ifelse(whichBound == "upper", upperAndLower, 0)
-  newParams[whYA] <- ifelse(whichBound == "upper", 0, -(upperAndLower))
+  upper <- whichBound == "upper"
+  constrained <- identical(coefSigns, "constrained")
+  ## fuel biomass is biomass / 1e4, not [0, 1], so its coefficients need a wider box. "constrained" is today's sign
+  ## rules, in one place: more fuel can only raise spread probability (lower 0), drought should not increase it
+  ## (lower 0), and youngAge cannot raise it (upper 0, no self-propagating fires)
+  newParams[formulaTerms %in% fuelTerms] <- if (upper) upperAndLowerFuel else if (constrained) 0 else -upperAndLowerFuel
+  if (constrained) {
+    newParams[grepl(droughtIndexPattern, formulaTerms)] <- if (upper) upperAndLower else 0
+    newParams[formulaTerms %in% youngAge] <- if (upper) 0 else -upperAndLower
+  }
 
   ## an interaction (`CMD:fuel`) is a free term like any other: a wide symmetric box, whatever its covariates are
   ## called (a drought climate's name would match droughtIndexPattern) and whatever sign they are bounded to

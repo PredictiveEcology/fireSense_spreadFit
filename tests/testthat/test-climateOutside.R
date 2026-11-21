@@ -7,7 +7,7 @@
 
 test_that("the 'ceiling' link leaves the fit, the ledger row and the cache keys as they were", {
   md <- SpaDES.core::moduleMetadata(module = moduleName, path = modulePath)
-  expect_identical(md$parameters$default[[which(md$parameters$paramName == "spreadLink")]], "powerLaw") # the module's default
+  expect_identical(md$parameters$default[[which(md$parameters$paramName == "spreadLink")]], "powerLawSmooth") # the module's default (the decided configuration)
   expect_identical(fireSenseUtils::spreadLinkOptions[1], "ceiling")
   out <- fittedCO()
   expect_null(out$sim$climateRef_spread)
@@ -27,8 +27,8 @@ test_that("with climateOutside the fit gets the climate reference, found once fr
   expect_identical(a$climateRef, ref)
   expect_equal(ref, fireSenseUtils::spreadClimateRef(a$annualDTx1000, a$nonAnnualDTx1000, a$formulaToFit,
                                                      a$covMinMax, a$mutuallyExclusive, covCentre = a$covCentre))
-  ## the climate coefficient keeps its sign constraint
-  expect_identical(unname(a$lower[["CMDsm"]]), 0)
+  ## the climate coefficient's sign is free by default
+  expect_identical(unname(a$lower[["CMDsm"]]), -50)
 })
 
 test_that("the ledger row records the link and the reference; the parameter sets are unchanged in form", {
