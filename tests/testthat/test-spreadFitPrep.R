@@ -167,3 +167,17 @@ test_that("a split climate formula (spreadClimateSplit) gets fixed ranges for bo
   expect_identical(sim$covMinMax_spread$CMDsm_yr, c(0, 100))
   expect_identical(sim$covMinMax_spread$CMDsm_dev, c(-50, 50))
 })
+
+test_that("with climate in the ceiling (spreadClimate = 'ceiling') both split terms have a climate reference", {
+  annual <- list(
+    year2001 = data.table::data.table(pixelID = c(2L, 3L, 4L, 55L, 56L, 57L), CMDsm_yr = 30,
+                                      CMDsm_dev = c(-20, -10, 0, 10, -5, 15), youngAge = c(0, 1, 0, 0, 0, 1)),
+    year2002 = data.table::data.table(pixelID = c(88L, 89L, 90L), CMDsm_yr = 35,
+                                      CMDsm_dev = c(-23, -13, -3), youngAge = c(0, 0, 1)))
+  form <- "~ 0 + CMDsm_yr + CMDsm_dev + youngAge + class1 + class2 + nf"
+  sim <- toySim(list(spreadLink = "powerLaw", spreadClimate = "ceiling"),
+                c(toyObjectsCO(form), list(fireSense_annualSpreadFitCovariates = annual)))
+  mockFitAndLedger(sim, new.env())
+  sim <- suppressMessages(SpaDES.core::spades(sim))
+  expect_named(sim$climateRef_spread, c("CMDsm_yr", "CMDsm_dev"))
+})
