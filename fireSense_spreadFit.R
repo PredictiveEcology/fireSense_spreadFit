@@ -183,7 +183,7 @@ defineModule(sim, list(
                                  "`sim$climateRef_spread`), stored in the ledger row with this choice",
                                  "(`fireSenseUtils::spreadFitClimateRefTxt`, `spreadLinkTxt`) so `fireSense_spreadPredict` applies",
                                  "the same link; a row without them is 'ceiling'. The objective's gates and saturation summary",
-                                 "then look at p0. The sign constraint on the climate coefficient is unchanged. Needs a climate",
+                                 "then look at p0. The climate coefficient's sign follows `coefSigns`. Needs a climate",
                                  "covariate in the formula (`fireSenseUtils::spreadClimateCols()`). 'powerLaw': the link from a",
                                  "percolation calibration, p = p_c - (p_c - lowerSpreadProb) * exp(-x / `powerLawGamma`), with x the",
                                  "linear predictor and p below 0 set to 0 (`fireSenseUtils::powerLawLink()`). The calibration",
@@ -511,9 +511,16 @@ defineModule(sim, list(
     defineParameter("upperAndLowerVal", "numeric", default = 50,
                     desc = paste("Bound given to each covariate coefficient (`upper` = this, `lower` = minus this) when `upper` or",
                                  "`lower` is not supplied. Bounds should be wide enough that they do not influence the fitted",
-                                 "value; only the sign of drought-index, `youngAge` and fuel biomass terms is constrained (see",
-                                 "`estimateSpreadParams()`). A held-out experiment (7 ELFs x 2 folds) found estimates up to",
+                                 "value; with `coefSigns = 'constrained'` the sign of drought-index, `youngAge` and fuel biomass terms is",
+                                 "restricted (see `estimateSpreadParams()`). A held-out experiment (7 ELFs x 2 folds) found estimates up to",
                                  "25.7 and youngAge medians down to -23.0 with the previous default of 9.")),
+    defineParameter("coefSigns", "character", default = "free",
+                    desc = paste("Sign rules of the default `lower`/`upper` bounds (`estimateSpreadParams()`). 'free' (default): every",
+                                 "covariate coefficient (drought and other climate, fuel biomass, `youngAge`, non-forest,",
+                                 "interactions) may be positive or negative, within the same magnitudes (+-`upperAndLowerVal`, fuel",
+                                 "+-`upperAndLowerValFuel`), and the data decide the sign. 'constrained': the rules before this",
+                                 "parameter: drought-index terms (`CMD`, `MDC`) and fuel biomass >= 0, `youngAge` <= 0. Part of the",
+                                 "bounds, so part of the fit's cache key.")),
     defineParameter("upperAndLowerValFuel", "numeric", default = 100,
                     desc = paste("As `upperAndLowerVal`, for the fuel biomass covariates. They are biomass / 1e4, so their",
                                  "coefficients are larger than those of covariates rescaled to [0, 1]. The same held-out",
@@ -886,9 +893,8 @@ spreadFitPrep <- function(sim) {
   })
 
   # veg coefficients should probably have bounds of 4
-  # however youngAge should have an upper limit of zero to prevent self-propagating fires
-  # MDC should have a lower limit of zero - drought shouldn't increase spread probability
-  # fuel biomass should have a lower limit of zero - more fuel shouldn't decrease spread probability
+  # coefSigns = "constrained": youngAge has an upper limit of zero (no self-propagating fires), drought-index
+  # terms and fuel biomass a lower limit of zero; "free" (default) leaves every sign to the data
   ## yearSpreadSD (the per-year random effect) is in the default bounds unless turned off; when one bound
   ## is supplied, the one filled in includes it only if the supplied one does, so the two stay aligned
   checkSpreadLink(Par)
@@ -906,7 +912,8 @@ spreadFitPrep <- function(sim) {
                                          maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par),
                                                                                    pcAtP50 = pcAtP50(Par)),
                                          activationInterceptBounds = activationInterceptBoundsOf(Par),
-                                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds)
+                                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds,
+                                         coefSigns = Par$coefSigns)
   }
 
   if (is.null(P(sim)$lower) || any(is.na(P(sim)$lower))) {
@@ -920,7 +927,8 @@ spreadFitPrep <- function(sim) {
                                          maxAsymptoteBounds = maxAsymptoteBoundsOf(Par$spreadLink, sim$powerLawCalibration$p50, Par$powerLawPcMargin, climateCeiling = isCeiling(Par),
                                                                                    pcAtP50 = pcAtP50(Par)),
                                          activationInterceptBounds = activationInterceptBoundsOf(Par),
-                                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds)
+                                         interceptBounds = if (isActivation(Par)) Par$activationFuelInterceptBounds,
+                                         coefSigns = Par$coefSigns)
   }
   ## hillSlope1 (the spread link's slope) and inflectionPoint1 (its Richards exponent) are fixed at 1,
   ## not fitted (see estimateSpreadParams()). A supplied 'upper'/'lower' naming either would silently
@@ -1199,11 +1207,12 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 
 #' Default `upper` or `lower` bounds for DEoptim
 #'
-#' Bounds should be wide enough that they do not influence the fitted value, except to constrain
-#' sign. Covariate coefficients get +/- `upperAndLower`, except drought-index terms (name matches
+#' Bounds should be wide enough that they do not influence the fitted value. With `coefSigns = "free"` (the
+#' default) every covariate coefficient gets +/- `upperAndLower` (fuel biomass terms, `fuelTerms`: +/- `upperAndLowerFuel`),
+#' and the data decide the sign. With `coefSigns = "constrained"`: drought-index terms (name matches
 #' `droughtIndexPattern`, e.g. `CMD`, `CMD_sm`, `cumMDC` -- lower bound 0, since drought should not
-#' increase spread probability), fuel biomass terms (`fuelTerms`: lower bound 0, upper `upperAndLowerFuel`)
-#' and `youngAge` (upper bound 0, to prevent self-propagating fires). Fuel is bounded below by 0
+#' increase spread probability), fuel biomass terms (lower bound 0, upper `upperAndLowerFuel`)
+#' and `youngAge` (upper bound 0, to prevent self-propagating fires). Fuel was bounded below by 0
 #' because, with the intercept and centred covariates, fits put the intercept near the spread-probability
 #' ceiling and gave fuel biomass negative coefficients, so low-biomass (recently burned) stands were the
 #' most flammable. That positive feedback produced runaway fires 3-6 times the observed area in NRV runs
@@ -1223,9 +1232,10 @@ histOfCovariates <- function(annualList, nonAnnualList) {
 #' @param anyAnnualCovariates list of annual covariate `data.table`s; kept for call-site
 #'   compatibility but no longer used -- bound sign is now decided by term name, not by annual
 #'   table membership.
+#' @param coefSigns "free" (default) or "constrained": see the module parameter `coefSigns`.
 #' @param whichBound "upper" or "lower".
 #' @param upperAndLower numeric; absolute bound for covariate coefficients.
-#' @param fuelTerms,upperAndLowerFuel character names of the fuel biomass terms, and their upper bound (lower is 0).
+#' @param fuelTerms,upperAndLowerFuel character names of the fuel biomass terms, and their bound (lower is 0 only when `coefSigns = "constrained"`).
 #' @param upperTailBounds numeric; if not `NULL`, the bounds of `upperTail1`, which is added after
 #'   `maxAsymptote` (link "logistic3pUpper").
 #' @param fireSpreadSDBounds,yearSpreadSDBounds numeric(2) or `NULL`; the bounds of the per-fire and per-year random
@@ -1245,9 +1255,9 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
                                  upperAndLower, fuelTerms = character(), upperAndLowerFuel = upperAndLower,
                                  upperTailBounds = NULL, fireSpreadSDBounds = NULL, yearSpreadSDBounds = NULL,
                                  maxAsymptoteBounds = maxAsymptoteBoundsOf(), activationInterceptBounds = NULL,
-                                 interceptBounds = NULL) {
+                                 interceptBounds = NULL, coefSigns = "free") {
 
-  stopifnot(whichBound %in% c("upper", "lower"))
+  stopifnot(whichBound %in% c("upper", "lower"), coefSigns %in% c("free", "constrained"))
 
   formulaTerms <- attr(terms(as.formula(fireSense_spreadFormula, env = .GlobalEnv)), "term.labels")
   termLength <- length(formulaTerms)
@@ -1258,12 +1268,17 @@ estimateSpreadParams <- function(fireSense_spreadFormula, anyAnnualCovariates, w
   }
   newParams <- as.vector(newParams)
   ## fuel biomass is biomass / 1e4, not [0, 1], so its coefficients need a wider box
-  ## and a lower bound of 0: more fuel can only raise spread probability
-  newParams[formulaTerms %in% fuelTerms] <- if (whichBound == "upper") upperAndLowerFuel else 0
-  whDrought <- grepl(droughtIndexPattern, formulaTerms)
-  whYA <- formulaTerms %in% youngAge
-  newParams[whDrought] <- ifelse(whichBound == "upper", upperAndLower, 0)
-  newParams[whYA] <- ifelse(whichBound == "upper", 0, -(upperAndLower))
+  whFuel <- formulaTerms %in% fuelTerms
+  newParams[whFuel] <- if (whichBound == "upper") upperAndLowerFuel else -upperAndLowerFuel
+  if (identical(coefSigns, "constrained")) {
+    ## today's sign rules, in one place: more fuel can only raise spread probability (lower 0), drought should
+    ## not increase it (lower 0), and youngAge cannot raise it (upper 0, no self-propagating fires)
+    newParams[whFuel] <- if (whichBound == "upper") upperAndLowerFuel else 0
+    whDrought <- grepl(droughtIndexPattern, formulaTerms)
+    whYA <- formulaTerms %in% youngAge
+    newParams[whDrought] <- ifelse(whichBound == "upper", upperAndLower, 0)
+    newParams[whYA] <- ifelse(whichBound == "upper", 0, -(upperAndLower))
+  }
 
   ## an interaction (`CMD:fuel`) is a free term like any other: a wide symmetric box, whatever its covariates are
   ## called (a drought climate's name would match droughtIndexPattern) and whatever sign they are bounded to

@@ -22,7 +22,7 @@ test_that("parameter classes", {
       .rep = "integer", rescaleAll = "logical", skipUnusedFitPrep = "logical",
       spreadFitFilename = "character", sppEquivCol = "character", fuelClassCol = "character", spreadFitGoogleDriveFolder = "character",
       stopIfNoPreRunFit = "logical", strategy = "integer", trace = "numeric", upper = "numeric",
-      upperAndLowerVal = "numeric", upperAndLowerValFuel = "numeric", useCache_DE = "logical",
+      upperAndLowerVal = "numeric", upperAndLowerValFuel = "numeric", coefSigns = "character", useCache_DE = "logical",
       covFixedRange = "list",
       link = "character", spreadLink = "character", spreadClimate = "character", activationInterceptBounds = "numeric", activationFuelInterceptBounds = "numeric", powerLawGamma = "numeric", powerLawShape = "numeric", lowerAsymptote = "numeric", richardsNu = "numeric", powerLawPcMargin = "numeric", powerLawPcAtP50 = "logical", powerLawFires = "integer", powerLawPGrid = "numeric", profileReps = "integer", profileAt = "numeric", profileCoefs = "character", simulateMembers = "integer",
       sizeLik = "character", sizeLikDf = "numeric", escapeSizeHa = "numeric", weighted = "logical|character",
@@ -104,6 +104,7 @@ test_that("numeric defaults", {
   expect_identical(def$maxFireSpread, fireSenseUtils::spreadProbCeiling)
   expect_identical(def$upperAndLowerVal, 50)
   expect_identical(def$upperAndLowerValFuel, 100)
+  expect_identical(def$coefSigns, "free")
   expect_identical(def$covFixedRange, fireSenseUtils::climateCovRanges)
   expect_identical(def$.plotSize, list(height = 1600, width = 2000))
 })

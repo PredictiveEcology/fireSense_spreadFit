@@ -8,7 +8,7 @@ annual <- list(year2001 = data.table::data.table(pixelID = 1L, CMDsm = 1, youngA
 
 test_that("upper bounds: +B for covariates, 0 for youngAge, maxAsymptote first, no hillSlope1 or inflectionPoint1", {
   expect_identical(
-    estimateSpreadParams(form, annual, whichBound = "upper", upperAndLower = 9),
+    estimateSpreadParams(form, annual, whichBound = "upper", upperAndLower = 9, coefSigns = "constrained"),
     c(maxAsymptote = fireSenseUtils::spreadProbCeiling,
       CMDsm = 9, youngAge = 0, class1 = 9, nf = 9))
   expect_false(any(names(fireSenseUtils::fixedLogisticPars) %in%
@@ -18,7 +18,7 @@ test_that("upper bounds: +B for covariates, 0 for youngAge, maxAsymptote first, 
 
 test_that("lower bounds: -B for non-drought covariates and youngAge, 0 for drought-index terms, no hillSlope1 or inflectionPoint1", {
   expect_identical(
-    estimateSpreadParams(form, annual, whichBound = "lower", upperAndLower = 9),
+    estimateSpreadParams(form, annual, whichBound = "lower", upperAndLower = 9, coefSigns = "constrained"),
     c(maxAsymptote = fireSenseUtils::spreadProbFloor,
       CMDsm = 0, youngAge = -9, class1 = -9, nf = -9))
   expect_false("inflectionPoint1" %in% names(estimateSpreadParams(form, annual, "lower", upperAndLower = 9)))
@@ -47,9 +47,9 @@ test_that("a term is bounded by name, not by annual-table membership", {
   annual2 <- list(year2001 = data.table::data.table(pixelID = 1L, CMD = 1, cumMDC = 1,
                                                      PPT_sm = 1, youngAge = 0))
   up <- estimateSpreadParams(form2, annual2, "upper", upperAndLower = 50,
-                             fuelTerms = "fuel1", upperAndLowerFuel = 100)
+                             fuelTerms = "fuel1", upperAndLowerFuel = 100, coefSigns = "constrained")
   lo <- estimateSpreadParams(form2, annual2, "lower", upperAndLower = 50,
-                             fuelTerms = "fuel1", upperAndLowerFuel = 100)
+                             fuelTerms = "fuel1", upperAndLowerFuel = 100, coefSigns = "constrained")
   expect_identical(unname(c(lo["CMD"], up["CMD"])), c(0, 50))
   expect_identical(unname(c(lo["cumMDC"], up["cumMDC"])), c(0, 50))
   expect_identical(unname(c(lo["PPT_sm"], up["PPT_sm"])), c(-50, 50))
@@ -59,8 +59,8 @@ test_that("a term is bounded by name, not by annual-table membership", {
 
   ## youngAge absent from the annual table: still bounded as youngAge, by name
   noYA <- list(year2001 = data.table::data.table(pixelID = 1L, CMDsm = 1))
-  expect_identical(unname(estimateSpreadParams(form, noYA, "upper", 9)["youngAge"]), 0)
-  expect_identical(unname(estimateSpreadParams(form, noYA, "lower", 9)["youngAge"]), -9)
+  expect_identical(unname(estimateSpreadParams(form, noYA, "upper", 9, coefSigns = "constrained")["youngAge"]), 0)
+  expect_identical(unname(estimateSpreadParams(form, noYA, "lower", 9, coefSigns = "constrained")["youngAge"]), -9)
   ## no drought or youngAge term in the formula at all
   expect_identical(estimateSpreadParams("~ 0 + class1", annual, "lower", 3),
                    c(maxAsymptote = fireSenseUtils::spreadProbFloor, class1 = -3))
@@ -92,8 +92,8 @@ test_that("the per-year random effect's sd is bounded last, after an upper-tail 
 test_that("an interaction term is bounded +/- upperAndLower with no sign constraint, even with a drought climate or a fuel term in its name", {
   ## the drought pattern (CMD|MDC) must not match the interaction `CMDsm:class1`, and `fuelTerms` is exact names
   formX <- "~ 1 + CMDsm + youngAge + class1 + CMDsm:class1 + nf"
-  up <- estimateSpreadParams(formX, annual, "upper", upperAndLower = 9, fuelTerms = "class1", upperAndLowerFuel = 20)
-  lo <- estimateSpreadParams(formX, annual, "lower", upperAndLower = 9, fuelTerms = "class1", upperAndLowerFuel = 20)
+  up <- estimateSpreadParams(formX, annual, "upper", upperAndLower = 9, fuelTerms = "class1", upperAndLowerFuel = 20, coefSigns = "constrained")
+  lo <- estimateSpreadParams(formX, annual, "lower", upperAndLower = 9, fuelTerms = "class1", upperAndLowerFuel = 20, coefSigns = "constrained")
   expect_identical(names(up), c("maxAsymptote", fireSenseUtils::spreadInterceptTxt, "CMDsm", "youngAge", "class1", "nf",
                                 "CMDsm:class1"))
   expect_identical(up[["CMDsm:class1"]], 9)
@@ -103,4 +103,20 @@ test_that("an interaction term is bounded +/- upperAndLower with no sign constra
   expect_identical(names(up), names(lo))
   ## the names are the design columns, in order, as the objective takes them
   expect_identical(names(up)[-1], fireSenseUtils::spreadDesignCols(formX))
+})
+
+test_that("coefSigns: free (default) gives symmetric bounds to CMD, a fuel class and youngAge; constrained is today's", {
+  fo <- "~ 0 + CMDsm + youngAge + fuel1 + nf"
+  an <- list(year2001 = data.table::data.table(pixelID = 1L, CMDsm = 1, youngAge = 0))
+  args <- list(fo, an, upperAndLower = 9, fuelTerms = "fuel1", upperAndLowerFuel = 20)
+  bnd <- function(...) lapply(c(upper = "upper", lower = "lower"), function(b)
+    do.call(estimateSpreadParams, c(args[1:2], list(whichBound = b), args[-(1:2)], list(...))))
+  free <- bnd()
+  expect_identical(free, bnd(coefSigns = "free"))
+  expect_identical(free$upper, c(maxAsymptote = fireSenseUtils::spreadProbCeiling, CMDsm = 9, youngAge = 9, fuel1 = 20, nf = 9))
+  expect_identical(free$lower, c(maxAsymptote = fireSenseUtils::spreadProbFloor, CMDsm = -9, youngAge = -9, fuel1 = -20, nf = -9))
+  con <- bnd(coefSigns = "constrained")
+  expect_identical(con$upper, c(maxAsymptote = fireSenseUtils::spreadProbCeiling, CMDsm = 9, youngAge = 0, fuel1 = 20, nf = 9))
+  expect_identical(con$lower, c(maxAsymptote = fireSenseUtils::spreadProbFloor, CMDsm = 0, youngAge = -9, fuel1 = 0, nf = -9))
+  expect_error(bnd(coefSigns = "both"))
 })

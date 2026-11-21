@@ -27,8 +27,8 @@ test_that("with climateOutside the fit gets the climate reference, found once fr
   expect_identical(a$climateRef, ref)
   expect_equal(ref, fireSenseUtils::spreadClimateRef(a$annualDTx1000, a$nonAnnualDTx1000, a$formulaToFit,
                                                      a$covMinMax, a$mutuallyExclusive, covCentre = a$covCentre))
-  ## the climate coefficient keeps its sign constraint
-  expect_identical(unname(a$lower[["CMDsm"]]), 0)
+  ## the climate coefficient's sign is free by default
+  expect_identical(unname(a$lower[["CMDsm"]]), -50)
 })
 
 test_that("the ledger row records the link and the reference; the parameter sets are unchanged in form", {
