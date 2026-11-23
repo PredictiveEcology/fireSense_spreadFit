@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9058"
-date: "Last updated: 2026-11-21"
+subtitle: "v.1.2.0.9059"
+date: "Last updated: 2026-11-23"
 output:
   bookdown::html_document2:
     toc: true
@@ -278,7 +278,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> TRUE </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> TRUE (default): a job that uses the ledger's fit and does not validate or hold out a fold (`fireSenseUtils::fitDataNeeded()`: not fitting, `mode` without "validate" or "profile", no `heldOutFold`) does not schedule `spreadFitPrepare`, whose covariates only a fit, `crossValidate` and a profile read. A prediction reads the ledger row's `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`; only a ledger row without ranges (written before `covMinMax_spread`) falls back on `sim$covMinMax_spread`. FALSE: always schedule `spreadFitPrepare`, as before this parameter existed. The same parameter of `fireSense_dataPrepFit`: set it for both with `.globals = list(skipUnusedFitPrep = FALSE)`. Not part of the cache keys. The modules must agree on it and on `doFit`. </td>
+   <td style="text-align:left;"> TRUE (default): a job that uses the ledger's fit and does not validate or hold out a fold (`fireSenseUtils::fitDataNeeded()`: not fitting, `mode` without "validate" or "profile", no `heldOutFold`) does not schedule `spreadFitPrepare`, whose covariates only a fit, `crossValidate` and a profile read. A prediction reads the ledger row's `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`; only a ledger row without ranges (written before `covMinMax_spread`) falls back on `sim$covMinMax_spread`. The row also holds `covMedianNonZero_spread` and `covSD_spread`, the fuel covariates' median non-zero value and sd on the scale of `covCentre_spread`; prediction does not read them, `fireSenseUtils::spreadFuelEffect()` does. FALSE: always schedule `spreadFitPrepare`, as before this parameter existed. The same parameter of `fireSense_dataPrepFit`: set it for both with `.globals = list(skipUnusedFitPrep = FALSE)`. Not part of the cache keys. The modules must agree on it and on `doFit`. </td>
    <td style="text-align:left;"> FALSE </td>
   </tr>
   <tr>
@@ -972,7 +972,17 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-fireSense-sprea
   <tr>
    <td style="text-align:left;"> covCentre_spread </td>
    <td style="text-align:left;"> list </td>
-   <td style="text-align:left;"> Named list, the mean of each rescaled covariate over the fitting data (`fireSenseUtils::spreadCovCentre()`), subtracted from it in the fit; `NULL` unless the formula has an intercept. Stored in the ledger row as `fireSenseUtils::spreadFitCovCentreTxt`, so `fireSense_spreadPredict` centres alike. </td>
+   <td style="text-align:left;"> Named list, the mean of each rescaled covariate over the fitting data (`fireSenseUtils::spreadCovCentre()`), subtracted from it in the fit; `NULL` unless the formula has an intercept. Stored in the ledger row as `fireSenseUtils::spreadFitCovCentreTxt`, so `fireSense_spreadPredict` centres alike. The fuel covariates' median non-zero values and sds, on the same scale, are `covMedianNonZero_spread` and `covSD_spread`. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> covMedianNonZero_spread </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> Named list, one value per fuel covariate of the formula (`dom_agb_ `, `sec_agb_ `, `treedWetland_agb`): the median of its non-zero values over the fitting data, on the scale of `covCentre_spread` (rescaled, before centring; `fireSenseUtils::spreadCovStats()`). `NULL` without a fuel covariate. Stored in the ledger row as `fireSenseUtils::spreadFitCovMedianNonZeroTxt`, so the change in spread probability a fuel makes (`fireSenseUtils::spreadFuelEffect()`) can be found from the row alone. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> covSD_spread </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> Named list, the standard deviation of each fuel covariate over all of the fitting data, on the same scale as `covMedianNonZero_spread`; `NULL` without a fuel covariate. Stored in the ledger row as `fireSenseUtils::spreadFitCovSDTxt`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> DE </td>
