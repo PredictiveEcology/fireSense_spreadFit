@@ -3,12 +3,13 @@
 #' One row of the shared fit ledger: the polygon's geometry, the columns in
 #' `fireSenseUtils::spreadFitAdditionalColNamesTxt`, `polygonID`, and, when the fit has an intercept, the
 #' covariate centres (`fireSenseUtils::spreadFitCovCentreTxt`) and, when the fit simulated its members, the in-sample
-#' fire sizes (`fireSenseUtils::spreadFitInSampleSizesTxt`). The `run` event writes it to the
+#' fire sizes (`fireSenseUtils::spreadFitInSampleSizesTxt`) and, when the fit has fuel covariates, their median non-zero values
+#' and sds (`fireSenseUtils::spreadFitCovMedianNonZeroTxt`, `fireSenseUtils::spreadFitCovSDTxt`). The `run` event writes it to the
 #' ledger, and a held-out fold saves it beside its held-out result, so `fireSense_spreadPredict` reads
 #' either the same way.
 #'
 #' @param sim a `simList`; uses `fireSenseUtils::escapeDefinitionOf()` (parameters `escapeSizeHa` and `fireCauses`), `.ELFind`, `studyArea`, `sppEquiv`, `nonForestedLCCGroups`,
-#'   `missingLCCgroup`, `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`, and the parameters
+#'   `missingLCCgroup`, `covMinMax_spread`, `covCentre_spread`, `covMedianNonZero_spread`, `covSD_spread` and `climateRef_spread`, and the parameters
 #'   `spreadLink`, `spreadClimate`, `powerLawGamma`, `powerLawShape`, `lowerAsymptote`, `richardsNu` and `powerLawPcMargin`, and `powerLawCalibration`.
 #' @param numIterations integer, the number of DEoptim generations.
 #' @param objFunVal numeric, the objective values of the members in `params`.
@@ -29,6 +30,12 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params, inSample =
   ## A fit without one has no such column, so its row is what it always was.
   if (!is.null(sim$covCentre_spread))
     df[[fireSenseUtils::spreadFitCovCentreTxt]] <- I(list(sim$covCentre_spread))
+  ## the fuel covariates' median non-zero value and sd, on the scale of the centres: what fireSenseUtils::spreadFuelEffect() reads.
+  ## A fit without a fuel covariate has no such columns, and a row written before them has neither.
+  if (!is.null(sim$covMedianNonZero_spread))
+    df[[fireSenseUtils::spreadFitCovMedianNonZeroTxt]] <- I(list(sim$covMedianNonZero_spread))
+  if (!is.null(sim$covSD_spread))
+    df[[fireSenseUtils::spreadFitCovSDTxt]] <- I(list(sim$covSD_spread))
   ## inSample: the fit's own fires, simulated and observed (not a held-out fold's), for a report to read later
   if (!is.null(inSample))
     df[[fireSenseUtils::spreadFitInSampleSizesTxt]] <- I(list(inSample))
