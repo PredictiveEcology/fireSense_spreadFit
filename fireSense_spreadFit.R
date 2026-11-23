@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.95)", # requestedWorkers(); .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9186)", # 9186: climateSplitRanges() (fireSenseUtils#244); 9183: spreadClimate = "activation" and pcAtP50 (activationInterceptTxt, spreadClimateTxt, checkLinkParams(activation =), activationDudYearShare(), fireSenseUtils#255); 9181: spreadLinkInputs(), powerLawPc50 (climate in the power-law ceiling, fireSenseUtils#250); 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9191)", # 9191 (placeholder until fireSenseUtils#260 merges and is bumped): spreadCovStats(), spreadFuelEffect(), spreadFitCovMedianNonZeroTxt, spreadFitCovSDTxt (fireSenseUtils fuel effect PR); 9186: climateSplitRanges() (fireSenseUtils#244); 9183: spreadClimate = "activation" and pcAtP50 (activationInterceptTxt, spreadClimateTxt, checkLinkParams(activation =), activationDudYearShare(), fireSenseUtils#255); 9181: spreadLinkInputs(), powerLawPc50 (climate in the power-law ceiling, fireSenseUtils#250); 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.2.0.9004)"),
   parameters = rbind(
@@ -93,6 +93,8 @@ defineModule(sim, list(
                                  "does not schedule `spreadFitPrepare`, whose covariates only a fit, `crossValidate` and a profile read.",
                                  "A prediction reads the ledger row's `covMinMax_spread`, `covCentre_spread` and `climateRef_spread`; only a",
                                  "ledger row without ranges (written before `covMinMax_spread`) falls back on `sim$covMinMax_spread`.",
+                                 "The row also holds `covMedianNonZero_spread` and `covSD_spread`, the fuel covariates' median non-zero value and sd on the",
+                                 "scale of `covCentre_spread`; prediction does not read them, `fireSenseUtils::spreadFuelEffect()` does.",
                                  "FALSE: always schedule `spreadFitPrepare`, as before this parameter existed.",
                                  "The same parameter of `fireSense_dataPrepFit`: set it for both with",
                                  "`.globals = list(skipUnusedFitPrep = FALSE)`. Not part of the cache keys. The modules must agree on it",
@@ -588,7 +590,18 @@ defineModule(sim, list(
                   desc = paste("Named list, the mean of each rescaled covariate over the fitting data",
                                "(`fireSenseUtils::spreadCovCentre()`), subtracted from it in the fit; `NULL` unless the",
                                "formula has an intercept. Stored in the ledger row as",
-                               "`fireSenseUtils::spreadFitCovCentreTxt`, so `fireSense_spreadPredict` centres alike.")),
+                               "`fireSenseUtils::spreadFitCovCentreTxt`, so `fireSense_spreadPredict` centres alike. The fuel covariates' median",
+                               "non-zero values and sds, on the same scale, are `covMedianNonZero_spread` and `covSD_spread`.")),
+    createsOutput("covMedianNonZero_spread", "list",
+                  desc = paste("Named list, one value per fuel covariate of the formula (`dom_agb_*`, `sec_agb_*`, `treedWetland_agb`):",
+                               "the median of its non-zero values over the fitting data, on the scale of `covCentre_spread` (rescaled,",
+                               "before centring; `fireSenseUtils::spreadCovStats()`). `NULL` without a fuel covariate. Stored in",
+                               "the ledger row as `fireSenseUtils::spreadFitCovMedianNonZeroTxt`, so the change in spread probability a fuel",
+                               "makes (`fireSenseUtils::spreadFuelEffect()`) can be found from the row alone.")),
+    createsOutput("covSD_spread", "list",
+                  desc = paste("Named list, the standard deviation of each fuel covariate over all of the fitting data, on the same scale",
+                               "as `covMedianNonZero_spread`; `NULL` without a fuel covariate. Stored in the ledger row as",
+                               "`fireSenseUtils::spreadFitCovSDTxt`.")),
     createsOutput("DE", "data.table",
                   desc = "list of `DEoptim` objects, one per generation, ordered by best objective value"),
     createsOutput("studyAreaWithSpreadParams", "sf",
@@ -972,10 +985,15 @@ spreadFitPrep <- function(sim) {
     paramOrder = P(sim)$upper)
   
   ## With an intercept the covariates are centred; the centre is found once, from the data the objective
-  ## uses, and every fit, validation and prediction of this fit uses it (NULL: no intercept).
-  sim$covCentre_spread <- fireSenseUtils::spreadCovCentre(
+  ## uses, and every fit, validation and prediction of this fit uses it (NULL: no intercept). The same pass finds the fuel covariates'
+  ## median non-zero value and sd, on the same scale: with the centre, what the change in spread probability a fuel makes is found
+  ## from (fireSenseUtils::spreadFuelEffect()); NULL without a fuel covariate.
+  covStats <- fireSenseUtils::spreadCovStats(
     mod$covsX1000$annualDTx1000, mod$covsX1000$nonAnnualDTx1000, sim$fireSense_spreadFormula,
     covMinMax = sim$covMinMax_spread, mutuallyExclusive = P(sim)[[mec]])
+  sim$covCentre_spread <- covStats$centre
+  sim$covMedianNonZero_spread <- covStats$medianNonZero
+  sim$covSD_spread <- covStats$sd
 
   ## With climate outside the ceiling (spreadLink) or moving it (spreadClimate), the climate reference is found once, from the same data, on
   ## the same scale (after the centre), and every fit, validation and prediction of this fit uses it.
