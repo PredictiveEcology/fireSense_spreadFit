@@ -18,6 +18,7 @@ test_that("inputs are the expected names and classes", {
   expect_identical(
     inputs[order(names(inputs))],
     c(.ELFind                                = "character",
+      climateHingeKnots                      = "list",
       fireBufferedListDT                     = "list",
       fireSense_annualSpreadFitCovariates    = "data.table",
       fireSense_nonAnnualSpreadFitCovariates = "data.table",
