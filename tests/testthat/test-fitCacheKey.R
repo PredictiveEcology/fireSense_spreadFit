@@ -14,7 +14,8 @@ test_that("the fit's cache key includes the objective's bodies", {
   ## ... and what it had missed: the annual-area and tail-share terms, the climate ceiling and activation, the split
   ## climate terms, the link's parameters, the gates, the crop to the cells a fire reaches
   expect_true(all(c("crpsAnnualArea", "crpsTopShare", "spreadLinkInputs", "spreadClimateSplit", "splitSpreadPar",
-                    "linkParsMatrix", "unburnableLinkPars", "spreadProbGateTest", "cropToCells") %in% names(ob)))
+                    "linkParsMatrix", "unburnableLinkPars", "spreadProbGateTest", "cropToCells",
+                    "annualTotals", "annualYearWeights", "crpsClimateSlope", "spreadYearClimate") %in% names(ob)))
   expect_identical(names(ob), sort(names(ob))) # one order, so the key is stable
   expect_identical(ob, objectiveBodies())
   ## a function the objective does not reach is not in the key

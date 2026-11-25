@@ -207,11 +207,12 @@ objectiveBodies <- function() {
   stats::setNames(lapply(fns, function(f) deparse(utils::getFromNamespace(f, "fireSenseUtils"))), fns)
 }
 
-## The CRPS objective's options (`crpsWeights`, `gateRefusal`) as `runDEoptim()` arguments: nothing at their
+## The CRPS objective's options (`crpsWeights`, `annualAreaYearWeights`, `gateRefusal`) as `runDEoptim()` arguments: nothing at their
 ## defaults, so a fit's cache key is what it was before they existed
 crpsObjectiveArgs <- function(Par) {
   out <- list()
   out$crpsWeights <- Par$crpsWeights
+  if (!identical(Par$annualAreaYearWeights, "equal")) out$annualAreaYearWeights <- Par$annualAreaYearWeights
   if (!identical(Par$gateRefusal, "minLik")) out$gateRefusal <- Par$gateRefusal
   ## only a whole-landscape fit has it, so every other fit keeps its cache key
   if (isTRUE(Par$wholeLandscapeSpread)) out$wholeLandscape <- TRUE

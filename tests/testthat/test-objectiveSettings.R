@@ -3,7 +3,7 @@
 ## Helpers: debugArgs() and fitArgs() in helper-debugEvent.R.
 
 settings <- list(weighted = "sqrt", sizeLik = "t", sizeLikDf = 7, adWeight = 2,
-                 yearAreaWeight = "auto", areaDistWeight = "auto", jumpTries = 20, jumpMeanDist = 4)
+                 yearAreaWeight = "auto", areaDistWeight = "auto", jumpTries = 20, jumpMeanDist = 4, annualAreaYearWeights = "climate")
 
 test_that("the debug call and the fit get the same objective settings", {
   dbg <- debugArgs(settings)
@@ -92,6 +92,8 @@ test_that("the CRPS objective's options reach the fit and the debug call, at the
     expect_identical(a$crpsWeights, list(top10 = 5))
     expect_identical(a$gateRefusal, "simulate")
   }
+  ## the annual-area year weights reach the fit only when not the default, so a fit's cache key is unchanged
+  expect_null(fitArgs()$annualAreaYearWeights)
   ## defaults: the decided configuration (test-decidedDefaults.R)
   for (a in list(debugArgs(), fitArgs()))
     expect_identical(a$crpsWeights$annualArea, 520)
