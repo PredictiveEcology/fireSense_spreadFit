@@ -113,7 +113,7 @@ spreadFitDEArgs <- function(sim, covs, runName, diagnostics = TRUE) {
                             paste0("DEoptimProgress_", runName, ".csv"))
   ## runDEoptim()'s arguments, once: the fit gets them, and the emulator (`initialPopMethod = "emulator"`)
   ## evaluates the objective they define
-  deArgs <- c(crpsObjectiveArgs(P(sim)), list(landscape = sim$rasterToMatch,
+  deArgs <- c(crpsObjectiveArgs(P(sim)), yearClimateArgs(P(sim), covs$annualDTx1000, sim$fireSense_ignitionCovariates), list(landscape = sim$rasterToMatch,
                    annualDTx1000 = covs$annualDTx1000,
                    nonAnnualDTx1000 = covs$nonAnnualDTx1000,
                    fireBufferedListDT = covs$fireBufferedListDT,
@@ -217,6 +217,21 @@ crpsObjectiveArgs <- function(Par) {
   ## only a whole-landscape fit has it, so every other fit keeps its cache key
   if (isTRUE(Par$wholeLandscapeSpread)) out$wholeLandscape <- TRUE
   out
+}
+
+## The year climate of the `"climate"` year weights and of `crpsWeights$climateSlope`: the covariate of the ignition
+## year-climate term (`annualClimateCovariate`, "CMDsm"), as `fireSenseUtils::spreadYearClimate()` finds it in the spread data or,
+## if it is not there, in the ignition fit's covariates (`fireSense_ignitionCovariates`). Nothing at the defaults (neither
+## option on), so a fit's cache key is what it was before. Stops, once, when it is needed and neither source has it.
+yearClimateArgs <- function(Par, annualDTx1000, ignitionCovariates = NULL) {
+  needed <- identical(Par$annualAreaYearWeights, "climate") || isTRUE(as.numeric(Par$crpsWeights$climateSlope) != 0)
+  if (!needed) return(list())
+  z <- fireSenseUtils::spreadYearClimate(annualDTx1000, Par$annualClimateCovariate, covariates = ignitionCovariates)
+  if (is.null(z))
+    stop("fireSense_spreadFit: `annualAreaYearWeights = \"climate\"` or `crpsWeights$climateSlope` needs the year climate ",
+         "covariate `annualClimateCovariate` ('", Par$annualClimateCovariate, "'), which is neither in the spread covariates ",
+         "nor in `fireSense_ignitionCovariates`.", call. = FALSE)
+  list(annualClimateCovariate = Par$annualClimateCovariate, yearClimateZ = z)
 }
 
 ## `wholeLandscapeSpread` needs a link of `fireSenseUtils::spreadLinearLinks` (fireSenseUtils computes p per cell from it), and cannot go with

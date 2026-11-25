@@ -27,7 +27,7 @@ test_that("parameter classes", {
       link = "character", spreadLink = "character", spreadClimate = "character", activationInterceptBounds = "numeric", activationFuelInterceptBounds = "numeric", powerLawGamma = "numeric", powerLawShape = "numeric", lowerAsymptote = "numeric", richardsNu = "numeric", powerLawPcMargin = "numeric", powerLawPcAtP50 = "logical", powerLawFires = "integer", powerLawPGrid = "numeric", profileReps = "integer", profileAt = "numeric", profileCoefs = "character", simulateMembers = "integer",
       sizeLik = "character", sizeLikDf = "numeric", escapeSizeHa = "numeric", weighted = "logical|character",
       adWeight = "character|numeric", yearAreaWeight = "numeric|character",
-      areaDistWeight = "numeric|character", crpsWeights = "list", annualAreaYearWeights = "character", gateRefusal = "character", penaliseRunaways = "logical", wholeLandscapeSpread = "logical", runawayEdgeFrac = "numeric", runawayEdgeMin = "integer", runawayBufferMultiple = "numeric", jumpTries = "numeric", jumpMeanDist = "numeric",
+      areaDistWeight = "numeric|character", crpsWeights = "list", annualAreaYearWeights = "character", annualClimateCovariate = "character", gateRefusal = "character", penaliseRunaways = "logical", wholeLandscapeSpread = "logical", runawayEdgeFrac = "numeric", runawayEdgeMin = "integer", runawayBufferMultiple = "numeric", jumpTries = "numeric", jumpMeanDist = "numeric",
       upperTailBounds = "numeric", fireSpreadSDBounds = "numeric", yearSpreadSDBounds = "numeric", fireCauses = "character",
       verbose = "numeric", visualizeDEoptim = "Path"))
   )
