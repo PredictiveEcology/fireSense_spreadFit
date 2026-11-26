@@ -1,7 +1,7 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9059"
-date: "Last updated: 2026-11-23"
+subtitle: "v.1.2.0.9060"
+date: "Last updated: 2026-11-26"
 output:
   bookdown::html_document2:
     toc: true
@@ -84,6 +84,12 @@ Table \@ref(tab:moduleInputs-fireSense-spreadFit) shows the full list of module 
    <td style="text-align:left;"> fireBufferedListDT </td>
    <td style="text-align:left;"> list </td>
    <td style="text-align:left;"> list of data.tables with fire id, pixelID, and buffer status </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> fireSense_ignitionCovariates </td>
+   <td style="text-align:left;"> data.frame </td>
+   <td style="text-align:left;"> Optional: the ignition fit's covariate table (`year`, climate columns, optional `coreFraction`). Read only when `annualAreaYearWeights = 'climate'` or `crpsWeights$climateSlope` is on and `annualClimateCovariate` is not a spread covariate: its yearly mean (`fireSenseUtils::yearClimateMeans()`) is then the year climate, as in the ignition fit's year-climate term. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -253,7 +259,25 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-fireSense-sprea
    <td style="text-align:left;"> 1, 0.34,.... </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> Named list of the multipliers of the `'crps'` objective's terms: `fire`, `adTest`, `areaDist`, `totalArea`, `top10`, `annualArea`, `topShare`. Names left out take `fireSenseUtils::crpsWeightsDefault()` (1, 0.34, 2.6, 164, 16.5, 0, 0). The default is the decided configuration (trial lp05): top10 49.5 (3 times the profile's 16.5) and an annual-area term of 520, which `crpsWeightsDefault()` leaves out. NULL is all `crpsWeightsDefault()`. Passed to `fireSenseUtils::runDEoptim()`; unused without `'crps'` in `DEoptimTests`. </td>
+   <td style="text-align:left;"> Named list of the multipliers of the `'crps'` objective's terms: `fire`, `adTest`, `areaDist`, `totalArea`, `top10`, `annualArea`, `topShare`, `climateSlope` (0: the CRPS of the slope of log annual area on the year's climate, off unless weighted). Names left out take `fireSenseUtils::crpsWeightsDefault()` (1, 0.34, 2.6, 164, 16.5, 0, 0, 0). The default is the decided configuration (trial lp05): top10 49.5 (3 times the profile's 16.5) and an annual-area term of 520, which `crpsWeightsDefault()` leaves out. NULL is all `crpsWeightsDefault()`. Passed to `fireSenseUtils::runDEoptim()`; unused without `'crps'` in `DEoptimTests`. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> annualAreaYearWeights </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> equal </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> How the fit years count in the annual-area term of the `'crps'` objective (`crpsWeights$annualArea`): 'equal' (default) every year the same, or 'climate' each year's score times max(abs(z), 0.25) of its standardised climate (`fireSenseUtils::spreadYearClimate()`, rescaled to average 1), so extreme-climate years count more and the term's scale is unchanged on average. Passed to `fireSenseUtils::runDEoptim()`. </td>
+   <td style="text-align:left;"> TRUE </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> annualClimateCovariate </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> CMDsm </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> The climate covariate whose yearly mean gives the year climate z of `annualAreaYearWeights = 'climate'` and of `crpsWeights$climateSlope`: the one the ignition year-climate term (`fireSense_ignitionFit`'s `ignitionYearClimate`) and the hindcast validation use. Matched ignoring underscores. Taken from the spread covariates, else from `fireSense_ignitionCovariates` (as the ignition fit does); stops if neither has it. Unused when both options are off. </td>
    <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>

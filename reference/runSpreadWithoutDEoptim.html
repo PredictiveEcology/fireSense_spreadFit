@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9059</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9060</span>
       </span>
     </div>
 
@@ -95,6 +95,9 @@
 <span>  yearAreaWeight <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  areaDistWeight <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  crpsWeights <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  annualAreaYearWeights <span class="op">=</span> <span class="st">"equal"</span>,</span>
+<span>  annualClimateCovariate <span class="op">=</span> <span class="st">"CMDsm"</span>,</span>
+<span>  yearClimateZ <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  gateRefusal <span class="op">=</span> <span class="st">"minLik"</span>,</span>
 <span>  penaliseRunaways <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  runawayEdgeFrac <span class="op">=</span> <span class="fu">fireSenseUtils</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseSharedDefaults.html" class="external-link">fireSenseRunawayEdgeFrac</a></span>,</span>
@@ -210,6 +213,10 @@ threshold p50 (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadLinkI
 <dt id="arg-lowerasymptote-richardsnu">lowerAsymptote, richardsNu<a class="anchor" aria-label="anchor" href="#arg-lowerasymptote-richardsnu"></a></dt>
 <dd><p>numeric; the lower asymptote of the <code>"powerLawSmooth"</code> and <code>"richards"</code> links and the
 <code>nu</code> of <code>"richards"</code> (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/powerLawSmoothLink.html" class="external-link">fireSenseUtils::powerLawSmoothLink()</a></code>, <code>richardsLink()</code>), passed like <code>powerLawGamma</code>.</p></dd>
+
+
+<dt id="arg-crpsweights-annualareayearweights-annualclimatecovariate-yearclimatez-gaterefusal">crpsWeights, annualAreaYearWeights, annualClimateCovariate, yearClimateZ, gateRefusal<a class="anchor" aria-label="anchor" href="#arg-crpsweights-annualareayearweights-annualclimatecovariate-yearclimatez-gaterefusal"></a></dt>
+<dd><p>passed to <code>.objfunSpreadFit()</code>.</p></dd>
 
 
 <dt id="arg-wholelandscape">wholeLandscape<a class="anchor" aria-label="anchor" href="#arg-wholelandscape"></a></dt>
