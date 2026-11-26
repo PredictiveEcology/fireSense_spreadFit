@@ -9,7 +9,7 @@
 #' either the same way.
 #'
 #' @param sim a `simList`; uses `fireSenseUtils::escapeDefinitionOf()` (parameters `escapeSizeHa` and `fireCauses`), `.ELFind`, `studyArea`, `sppEquiv`, `nonForestedLCCGroups`,
-#'   `missingLCCgroup`, `covMinMax_spread`, `covCentre_spread`, `covMedianNonZero_spread`, `covSD_spread` and `climateRef_spread`, and the parameters
+#'   `missingLCCgroup`, `covMinMax_spread`, `covCentre_spread`, `climateCurvePars`, `covMedianNonZero_spread`, `covSD_spread` and `climateRef_spread`, and the parameters
 #'   `spreadLink`, `spreadClimate`, `powerLawGamma`, `powerLawShape`, `lowerAsymptote`, `richardsNu` and `powerLawPcMargin`, and `powerLawCalibration`.
 #' @param numIterations integer, the number of DEoptim generations.
 #' @param objFunVal numeric, the objective values of the members in `params`.
@@ -30,6 +30,10 @@ spreadFitLedgerRow <- function(sim, numIterations, objFunVal, params, inSample =
   ## A fit without one has no such column, so its row is what it always was.
   if (!is.null(sim$covCentre_spread))
     df[[fireSenseUtils::spreadFitCovCentreTxt]] <- I(list(sim$covCentre_spread))
+  ## climateCurvePars: a fit with curve terms (`<var>_curve`) stores `k` and `s` of each variable, and prediction builds the terms from them.
+  ## A fit without curve terms has no such column, so its row is what it always was.
+  if (!is.null(sim$climateCurvePars))
+    df[[fireSenseUtils::spreadFitClimateCurveParsTxt]] <- I(list(sim$climateCurvePars))
   ## the fuel covariates' median non-zero value and sd, on the scale of the centres: what fireSenseUtils::spreadFuelEffect() reads.
   ## A fit without a fuel covariate has no such columns, and a row written before them has neither.
   if (!is.null(sim$covMedianNonZero_spread))

@@ -131,3 +131,18 @@ test_that("the split climate terms (spreadClimateSplit) get ranges derived from 
   expect_error(deriveCovMinMax(list(year2001 = dt(pixelID = 1:2, Foo_yr = c(1, 2))), list(a = dt(pixelID = 1:2, nf = 0:1)),
                                fuelCols = character()), "no fixed range")
 })
+
+## fireSense_dataPrepFit's spreadClimateCurve adds `<var>_curve` columns to the annual covariates: a fixed range, 0 to half the variable's
+test_that("a curve climate term has the fixed range c(0, half the variable's width), the same in every polygon", {
+  annual <- list(year2001 = dt(pixelID = 1:2, CMD = c(10, 40), CMD_curve = c(0, 25), youngAge = c(0, 1)))
+  out <- deriveCovMinMax(annual, list(a = dt(pixelID = 1:2, nf = c(0.1, 0.2))), fuelCols = character())
+  expect_identical(out$CMD_curve, c(0, 50))
+  other <- list(year2001 = dt(pixelID = 1:2, CMD = c(80, 90), CMD_curve = c(0, 1), youngAge = c(0, 1)))
+  expect_identical(deriveCovMinMax(other, list(a = dt(pixelID = 1:2, nf = c(0.1, 0.2))), fuelCols = character())$CMD_curve, c(0, 50))
+})
+
+test_that("the ledger row stores the curve k and s only when the fit has them", {
+  rowSrc <- paste(readLines(file.path(moduleRoot, "R", "spreadFitLedgerRow.R"), warn = FALSE), collapse = "\n")
+  expect_match(rowSrc, "if (!is.null(sim$climateCurvePars))", fixed = TRUE)
+  expect_match(rowSrc, "df[[fireSenseUtils::spreadFitClimateCurveParsTxt]] <- I(list(sim$climateCurvePars))", fixed = TRUE)
+})
