@@ -30,6 +30,7 @@
 #' @param tests character; objective function tests, e.g. "crps", "adTest".
 #' @param formulaToFit character; the spread formula.
 #' @param pars optional numeric vector, or list of them, to evaluate instead of random sets.
+#' @param crpsWeights,annualAreaYearWeights,annualClimateCovariate,yearClimateZ,gateRefusal passed to `.objfunSpreadFit()`.
 #' @param plot.it passed to `.objfunSpreadFit()`.
 #' @param seed integer or NULL; `set.seed()` value. NULL draws one at random.
 #' @param escapeSizeHa passed to `.objfunSpreadFit()`: fit escaped fires only (NULL: any fire over 1 pixel).
@@ -51,7 +52,7 @@ runSpreadWithoutDEoptim <- function(nSets = 1L, lower, upper, fireSense_spreadFo
                                     powerLawShape = fireSenseUtils::spreadPowerLawShape,
                                     lowerAsymptote = fireSenseUtils::spreadProbFloor,
                                     richardsNu = fireSenseUtils::spreadRichardsNu, jumpTries = 0, jumpMeanDist = 0, yearAreaWeight = 0, areaDistWeight = 0,
-                                    crpsWeights = NULL, gateRefusal = "minLik",
+                                    crpsWeights = NULL, annualAreaYearWeights = "equal", annualClimateCovariate = "CMDsm", yearClimateZ = NULL, gateRefusal = "minLik",
                                     penaliseRunaways = TRUE,
                                     runawayEdgeFrac = fireSenseUtils::fireSenseRunawayEdgeFrac,
                                     runawayEdgeMin = fireSenseUtils::fireSenseRunawayEdgeMin,
@@ -98,7 +99,8 @@ runSpreadWithoutDEoptim <- function(nSets = 1L, lower, upper, fireSense_spreadFo
                      powerLawGamma = powerLawGamma, powerLawShape = powerLawShape,
                      lowerAsymptote = lowerAsymptote, richardsNu = richardsNu, jumpTries = jumpTries, jumpMeanDist = jumpMeanDist,
                      yearAreaWeight = yearAreaWeight, areaDistWeight = areaDistWeight,
-                     crpsWeights = crpsWeights, gateRefusal = gateRefusal,
+                     crpsWeights = crpsWeights, annualAreaYearWeights = annualAreaYearWeights,
+                     annualClimateCovariate = annualClimateCovariate, yearClimateZ = yearClimateZ, gateRefusal = gateRefusal,
                      penaliseRunaways = penaliseRunaways,
                      runawayEdgeFrac = runawayEdgeFrac, runawayEdgeMin = runawayEdgeMin,
                      runawayBufferMultiple = runawayBufferMultiple, wholeLandscape = wholeLandscape,

@@ -15,7 +15,7 @@ defineModule(sim, list(
     person("Alex M.", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(fireSense_spreadFit = "1.2.0.9060"),
+  version = list(fireSense_spreadFit = "1.2.0.9061"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = NA_character_, # e.g., "year",
   citation = list("citation.bib"),
@@ -29,7 +29,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 3.2.1.9067)", # CacheGeo: `le = le` no longer partially matches `ledger`
                   "PredictiveEcology/clusters@development (>= 0.0.95)", # requestedWorkers(); .slurmAllocation(): the job's memory; DEoptimIterative() stops with `deoptimNoFeasibleMember`; clusterSetup() cuts initialpop to NP
                   "PredictiveEcology/Require@development (>= 0.3.1)",
-                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9193)", # 9193 (placeholder until the climate curve PR (fireSenseUtils) merges and is bumped): climateCurveRanges(), spreadFitClimateCurveParsTxt; 9191 (placeholder until fireSenseUtils#260 merges and is bumped): spreadCovStats(), spreadFuelEffect(), spreadFitCovMedianNonZeroTxt, spreadFitCovSDTxt (fireSenseUtils fuel effect PR); 9186: climateSplitRanges() (fireSenseUtils#244); 9183: spreadClimate = "activation" and pcAtP50 (activationInterceptTxt, spreadClimateTxt, checkLinkParams(activation =), activationDudYearShare(), fireSenseUtils#255); 9181: spreadLinkInputs(), powerLawPc50 (climate in the power-law ceiling, fireSenseUtils#250); 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.2.3.9196)", # 9196 (fireSenseUtils#265): climateCurveRanges(), spreadFitClimateCurveParsTxt; 9194 (fireSenseUtils#263): annualAreaYearWeights, annualClimateCovariate, yearClimateZ, crpsWeights$climateSlope, spreadYearClimate(); 9191 (placeholder until fireSenseUtils#260 merges and is bumped): spreadCovStats(), spreadFuelEffect(), spreadFitCovMedianNonZeroTxt, spreadFitCovSDTxt (fireSenseUtils fuel effect PR); 9186: climateSplitRanges() (fireSenseUtils#244); 9183: spreadClimate = "activation" and pcAtP50 (activationInterceptTxt, spreadClimateTxt, checkLinkParams(activation =), activationDudYearShare(), fireSenseUtils#255); 9181: spreadLinkInputs(), powerLawPc50 (climate in the power-law ceiling, fireSenseUtils#250); 9172: scoreFireSizesByYear(), spreadFitInSampleSizesTxt (fireSenseUtils#238); 9171: spreadHasCovariates() (#236); 9169: fitDataNeeded() (#234); 9166: profileCoefficients(at =), phaseEvents(profiles =) (#231); 9165: lowerAsymptote >= spreadLowerAsymptoteMin (#230); 9162: spreadLink "powerLawSmooth" and "richards", checkLinkParams() (#229); 9159: spreadFitValidationData() takes wholeLandscape, fitFireSpreadSD (#225); 9156: wholeLandscape, every fire spreads on the given (whole-ELF) tables (fireSenseUtils#219; CHECK the version after it merges); 9144: SNLL_FS and the threshold removed, tests = "crps" default; 9141: spreadFitLedgerInputs(), spreadFitLedgerInputLists(); 9138: powerLawShape; 9132: tests = "crps", gateRefusal, crpsWeights; 9128: burnableHaTxt: fire target size on burnable pixels
                   "PredictiveEcology/SpaDES.core@development (>= 3.2.1.9047)", # defineParameter(cacheKey = FALSE)
                   "PredictiveEcology/SpaDES.tools@development (>= 2.2.0.9004)"),
   parameters = rbind(
@@ -73,9 +73,19 @@ defineModule(sim, list(
     defineParameter("crpsWeights", "list",
                     default = list(fire = 1, adTest = 0.34, areaDist = 2.6, totalArea = 164, top10 = 49.5, annualArea = 520),
                     desc = paste("Named list of the multipliers of the `'crps'` objective's terms: `fire`, `adTest`,",
-                                 "`areaDist`, `totalArea`, `top10`, `annualArea`, `topShare`. Names left out take `fireSenseUtils::crpsWeightsDefault()`",
-                                 "(1, 0.34, 2.6, 164, 16.5, 0, 0). The default is the decided configuration (trial lp05): top10 49.5 (3 times the",
+                                 "`areaDist`, `totalArea`, `top10`, `annualArea`, `topShare`, `climateSlope` (0: the CRPS of the slope of log annual area on the year's climate, off unless weighted). Names left out take `fireSenseUtils::crpsWeightsDefault()`",
+                                 "(1, 0.34, 2.6, 164, 16.5, 0, 0, 0). The default is the decided configuration (trial lp05): top10 49.5 (3 times the",
                                  "profile's 16.5) and an annual-area term of 520, which `crpsWeightsDefault()` leaves out. NULL is all `crpsWeightsDefault()`. Passed to `fireSenseUtils::runDEoptim()`; unused without `'crps'` in `DEoptimTests`.")),
+    defineParameter("annualAreaYearWeights", "character", default = "equal",
+                    desc = paste("How the fit years count in the annual-area term of the `'crps'` objective (`crpsWeights$annualArea`):",
+                                 "'equal' (default) every year the same, or 'climate' each year's score times max(abs(z), 0.25) of its standardised",
+                                 "climate (`fireSenseUtils::spreadYearClimate()`, rescaled to average 1), so extreme-climate years count more and the term's scale is unchanged on average.",
+                                 "Passed to `fireSenseUtils::runDEoptim()`.")),
+    defineParameter("annualClimateCovariate", "character", default = "CMDsm",
+                    desc = paste("The climate covariate whose yearly mean gives the year climate z of `annualAreaYearWeights = 'climate'` and of",
+                                 "`crpsWeights$climateSlope`: the one the ignition year-climate term (`fireSense_ignitionFit`'s `ignitionYearClimate`)",
+                                 "and the hindcast validation use. Matched ignoring underscores. Taken from the spread covariates, else from",
+                                 "`fireSense_ignitionCovariates` (as the ignition fit does); stops if neither has it. Unused when both options are off.")),
     defineParameter("gateRefusal", "character", default = "simulate",
                     desc = paste("What a year that fails the spread-probability gates gets in the objective: 'simulate'",
                                  "(default) simulates and scores it like any other year; 'minLik' is not simulated and scores the floor. Passed to `fireSenseUtils::runDEoptim()`, for any `DEoptimTests`.")),
@@ -542,6 +552,11 @@ defineModule(sim, list(
                               "Defaults to the `.runName` parameter.")),
     expectsInput("fireBufferedListDT", "list",
                  desc = "list of data.tables with fire id, pixelID, and buffer status"),
+    expectsInput("fireSense_ignitionCovariates", "data.frame", sourceURL = NA,
+                 desc = paste("Optional: the ignition fit's covariate table (`year`, climate columns, optional `coreFraction`). Read only when",
+                              "`annualAreaYearWeights = 'climate'` or `crpsWeights$climateSlope` is on and `annualClimateCovariate` is not a",
+                              "spread covariate: its yearly mean (`fireSenseUtils::yearClimateMeans()`) is then the year climate, as in the",
+                              "ignition fit's year-climate term.")),
     expectsInput("fireSense_annualSpreadFitCovariates", "data.table",
                  desc = "table of climate and/or veg covariates, burn status, polyID, and pixelID"),
     expectsInput("climateCurvePars", "list",
@@ -763,7 +778,10 @@ doEvent.fireSense_spreadFit = function(sim, eventTime, eventType, debug = FALSE)
         powerLawShape = P(sim)$powerLawShape, lowerAsymptote = P(sim)$lowerAsymptote, richardsNu = P(sim)$richardsNu,
         jumpTries = P(sim)$jumpTries, jumpMeanDist = P(sim)$jumpMeanDist,
         yearAreaWeight = P(sim)$yearAreaWeight, areaDistWeight = P(sim)$areaDistWeight,
-        crpsWeights = P(sim)$crpsWeights, gateRefusal = P(sim)$gateRefusal,
+        crpsWeights = P(sim)$crpsWeights, annualAreaYearWeights = P(sim)$annualAreaYearWeights,
+        annualClimateCovariate = P(sim)$annualClimateCovariate,
+        yearClimateZ = yearClimateArgs(P(sim), mod$covsX1000$annualDTx1000, sim$fireSense_ignitionCovariates)$yearClimateZ,
+        gateRefusal = P(sim)$gateRefusal,
         penaliseRunaways = P(sim)$penaliseRunaways,
         runawayEdgeFrac = P(sim)$runawayEdgeFrac, runawayEdgeMin = P(sim)$runawayEdgeMin,
         runawayBufferMultiple = runawayBufferMultipleOrNULL(P(sim)$runawayBufferMultiple),
