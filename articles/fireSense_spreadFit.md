@@ -1,6 +1,6 @@
 ---
 title: "fireSense_spreadFit Manual"
-subtitle: "v.1.2.0.9060"
+subtitle: "v.1.2.0.9061"
 date: "Last updated: 2026-11-26"
 output:
   bookdown::html_document2:
@@ -96,6 +96,12 @@ Table \@ref(tab:moduleInputs-fireSense-spreadFit) shows the full list of module 
    <td style="text-align:left;"> fireSense_annualSpreadFitCovariates </td>
    <td style="text-align:left;"> data.table </td>
    <td style="text-align:left;"> table of climate and/or veg covariates, burn status, polyID, and pixelID </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> climateCurvePars </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> Optional. With `fireSense_dataPrepFit`'s `spreadClimateCurve`, `k` and `s` of each climate variable's curve term (`&lt;var&gt;_curve`) in the annual covariates (`fireSenseUtils::climateCurvePars()`); stored in the ledger row (`fireSenseUtils::spreadFitClimateCurveParsTxt`) so `fireSense_spreadPredict` builds the term alike. `NULL` for a fit without curve terms. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>

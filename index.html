@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9060</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9061</span>
       </span>
     </div>
 
@@ -142,6 +142,20 @@ list
 </td>
 <td style="text-align:left;">
 list of data.tables with fire id, pixelID, and buffer status
+</td>
+<td style="text-align:left;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+fireSense_ignitionCovariates
+</td>
+<td style="text-align:left;">
+data.frame
+</td>
+<td style="text-align:left;">
+Optional: the ignition fit’s covariate table (<code>year</code>, climate columns, optional <code>coreFraction</code>). Read only when <code>annualAreaYearWeights = 'climate'</code> or <code>crpsWeights$climateSlope</code> is on and <code>annualClimateCovariate</code> is not a spread covariate: its yearly mean (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/yearClimate.html" class="external-link">fireSenseUtils::yearClimateMeans()</a></code>) is then the year climate, as in the ignition fit’s year-climate term.
 </td>
 <td style="text-align:left;">
 NA
@@ -541,7 +555,53 @@ NA
 NA
 </td>
 <td style="text-align:left;">
-Named list of the multipliers of the <code>'crps'</code> objective’s terms: <code>fire</code>, <code>adTest</code>, <code>areaDist</code>, <code>totalArea</code>, <code>top10</code>, <code>annualArea</code>, <code>topShare</code>. Names left out take <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/crpsWeightsDefault.html" class="external-link">fireSenseUtils::crpsWeightsDefault()</a></code> (1, 0.34, 2.6, 164, 16.5, 0, 0). The default is the decided configuration (trial lp05): top10 49.5 (3 times the profile’s 16.5) and an annual-area term of 520, which <code>crpsWeightsDefault()</code> leaves out. NULL is all <code>crpsWeightsDefault()</code>. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>; unused without <code>'crps'</code> in <code>DEoptimTests</code>.
+Named list of the multipliers of the <code>'crps'</code> objective’s terms: <code>fire</code>, <code>adTest</code>, <code>areaDist</code>, <code>totalArea</code>, <code>top10</code>, <code>annualArea</code>, <code>topShare</code>, <code>climateSlope</code> (0: the CRPS of the slope of log annual area on the year’s climate, off unless weighted). Names left out take <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/crpsWeightsDefault.html" class="external-link">fireSenseUtils::crpsWeightsDefault()</a></code> (1, 0.34, 2.6, 164, 16.5, 0, 0, 0). The default is the decided configuration (trial lp05): top10 49.5 (3 times the profile’s 16.5) and an annual-area term of 520, which <code>crpsWeightsDefault()</code> leaves out. NULL is all <code>crpsWeightsDefault()</code>. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>; unused without <code>'crps'</code> in <code>DEoptimTests</code>.
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+annualAreaYearWeights
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+equal
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+How the fit years count in the annual-area term of the <code>'crps'</code> objective (<code>crpsWeights$annualArea</code>): ‘equal’ (default) every year the same, or ‘climate’ each year’s score times max(abs(z), 0.25) of its standardised climate (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/spreadYearClimate.html" class="external-link">fireSenseUtils::spreadYearClimate()</a></code>, rescaled to average 1), so extreme-climate years count more and the term’s scale is unchanged on average. Passed to <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/runDEoptim.html" class="external-link">fireSenseUtils::runDEoptim()</a></code>.
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+annualClimateCovariate
+</td>
+<td style="text-align:left;">
+character
+</td>
+<td style="text-align:left;">
+CMDsm
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+The climate covariate whose yearly mean gives the year climate z of <code>annualAreaYearWeights = 'climate'</code> and of <code>crpsWeights$climateSlope</code>: the one the ignition year-climate term (<code>fireSense_ignitionFit</code>’s <code>ignitionYearClimate</code>) and the hindcast validation use. Matched ignoring underscores. Taken from the spread covariates, else from <code>fireSense_ignitionCovariates</code> (as the ignition fit does); stops if neither has it. Unused when both options are off.
 </td>
 <td style="text-align:left;">
 TRUE

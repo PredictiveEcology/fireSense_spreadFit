@@ -18,7 +18,7 @@ the data's, so that rescaling is biomass / 1e4 in every polygon and in every pre
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9060</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9061</span>
       </span>
     </div>
 
@@ -86,7 +86,7 @@ the data's, so that rescaling is <code>biomass / 1e4</code> in every polygon and
 <dt id="arg-fixedrange">fixedRange<a class="anchor" aria-label="anchor" href="#arg-fixedrange"></a></dt>
 <dd><p>named list of <code>c(min, max)</code> that replace the data's range for those covariates;
 default <code><a href="https://rdrr.io/pkg/fireSenseUtils/man/climateCovRanges.html" class="external-link">fireSenseUtils::climateCovRanges</a></code>, with the ranges of the split terms of each variable added
-(<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/climateSplitRanges.html" class="external-link">fireSenseUtils::climateSplitRanges()</a></code>). Every annual covariate that is not a 0/1 indicator is
+(<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/climateSplitRanges.html" class="external-link">fireSenseUtils::climateSplitRanges()</a></code>) and of the curve terms (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/climateCurveRanges.html" class="external-link">fireSenseUtils::climateCurveRanges()</a></code>). Every annual covariate that is not a 0/1 indicator is
 climate and must be in it, or this stops. Indicators are always <code>c(0, 1)</code>.</p></dd>
 
 </dl></div>

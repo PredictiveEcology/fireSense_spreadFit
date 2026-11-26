@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">fireSense_spreadFit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9060</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9061</span>
       </span>
     </div>
 
@@ -70,7 +70,7 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>fireSense_spreadFit Manual</h1>
-            <h3 data-toc-skip class="subtitle">v.1.2.0.9060</h3>
+            <h3 data-toc-skip class="subtitle">v.1.2.0.9061</h3>
             
             <h4 data-toc-skip class="date">Last updated: 2026-11-26</h4>
       
@@ -195,6 +195,20 @@ data.table
 </td>
 <td style="text-align:left;">
 table of climate and/or veg covariates, burn status, polyID, and pixelID
+</td>
+<td style="text-align:left;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+climateCurvePars
+</td>
+<td style="text-align:left;">
+list
+</td>
+<td style="text-align:left;">
+Optional. With <code>fireSense_dataPrepFit</code>’s <code>spreadClimateCurve</code>, <code>k</code> and <code>s</code> of each climate variable’s curve term (<code>&amp;lt;var&amp;gt;_curve</code>) in the annual covariates (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/climateCurve.html" class="external-link">fireSenseUtils::climateCurvePars()</a></code>); stored in the ledger row (<code><a href="https://rdrr.io/pkg/fireSenseUtils/man/fireSenseUtils-constants.html" class="external-link">fireSenseUtils::spreadFitClimateCurveParsTxt</a></code>) so <code>fireSense_spreadPredict</code> builds the term alike. <code>NULL</code> for a fit without curve terms.
 </td>
 <td style="text-align:left;">
 NA
