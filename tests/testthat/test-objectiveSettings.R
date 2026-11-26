@@ -3,7 +3,7 @@
 ## Helpers: debugArgs() and fitArgs() in helper-debugEvent.R.
 
 settings <- list(weighted = "sqrt", sizeLik = "t", sizeLikDf = 7, adWeight = 2,
-                 yearAreaWeight = "auto", areaDistWeight = "auto", jumpTries = 20, jumpMeanDist = 4)
+                 yearAreaWeight = "auto", areaDistWeight = "auto", jumpTries = 20, jumpMeanDist = 4, annualAreaYearWeights = "climate")
 
 test_that("the debug call and the fit get the same objective settings", {
   dbg <- debugArgs(settings)
@@ -92,7 +92,34 @@ test_that("the CRPS objective's options reach the fit and the debug call, at the
     expect_identical(a$crpsWeights, list(top10 = 5))
     expect_identical(a$gateRefusal, "simulate")
   }
+  ## the annual-area year weights reach the fit only when not the default, so a fit's cache key is unchanged
+  expect_null(fitArgs()$annualAreaYearWeights)
   ## defaults: the decided configuration (test-decidedDefaults.R)
   for (a in list(debugArgs(), fitArgs()))
     expect_identical(a$crpsWeights$annualArea, 520)
+})
+
+test_that("the year climate z of the climate year weights and climateSlope reaches the fit and the debug call, standardised, from the ignition covariate CMDsm", {
+  ## toy years 2001 and 2002: two years, so z is +/- 1/sqrt(2)
+  for (p in list(list(annualAreaYearWeights = "climate"), list(crpsWeights = list(climateSlope = 5)))) {
+    for (a in list(debugArgs(p), fitArgs(p))) {
+      expect_identical(a$annualClimateCovariate, "CMDsm")
+      expect_equal(unname(a$yearClimateZ), c(1, -1) / sqrt(2)) # 2001 mean 23.3 > 2002 mean 22
+      expect_named(a$yearClimateZ, c("year2001", "year2002"))
+    }
+  }
+  ## off by default: nothing reaches the fit, so its cache key is unchanged
+  expect_null(fitArgs()$yearClimateZ)
+  expect_null(fitArgs()$annualClimateCovariate)
+})
+
+test_that("a covariate not in the spread data comes from the ignition covariates; with neither, the fit stops with a message", {
+  ann <- list(year2001 = data.table::data.table(pixelID = 1:2, CMDsm = c(1, 3)), year2002 = data.table::data.table(pixelID = 1:2, CMDsm = c(5, 7)))
+  Par <- list(annualAreaYearWeights = "climate", annualClimateCovariate = "CMDsp", crpsWeights = list(annualArea = 1))
+  ign <- data.frame(year = c(2001, 2001, 2002, 2002), CMDsp = c(1, 3, 10, 30), coreFraction = 1)
+  r <- yearClimateArgs(Par, ann, ign)
+  expect_identical(r$annualClimateCovariate, "CMDsp")
+  expect_equal(unname(r$yearClimateZ), c(-1, 1) / sqrt(2))
+  expect_error(yearClimateArgs(Par, ann, NULL), "annualClimateCovariate")
+  expect_identical(yearClimateArgs(list(annualAreaYearWeights = "equal", crpsWeights = list(climateSlope = 0)), ann, NULL), list())
 })

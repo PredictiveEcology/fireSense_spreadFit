@@ -9,6 +9,8 @@ test_that("the parameter defaults are the decided configuration", {
   expect_identical(def$wholeLandscapeSpread, TRUE)
   expect_identical(def$objfunFireReps, 50L)
   expect_identical(def$gateRefusal, "simulate")
+  expect_identical(def$annualAreaYearWeights, "equal")
+  expect_identical(def$annualClimateCovariate, "CMDsm") # the ignition year-climate default (ignitionYearClimate)
   expect_identical(def$DEoptimTests, "crps")
   expect_identical(def$crpsWeights, list(fire = 1, adTest = 0.34, areaDist = 2.6, totalArea = 164,
                                               top10 = 49.5, annualArea = 520))
